@@ -25,14 +25,12 @@ pub fn extraer_nombre_servicio(url: &str, titulo: &str) -> String {
 }
 
 fn extraer_servicio_de_url(url: &str) -> Option<String> {
-    // Quitar esquema si existe
     let sin_esquema = if let Some(idx) = url.find("://") {
         &url[idx + 3..]
     } else {
         url
     };
 
-    // Tomar solo la parte del host (hasta '/', '?', '#', ':')
     let host_completo = sin_esquema
         .split('/')
         .next()?
@@ -53,7 +51,6 @@ fn extraer_servicio_de_url(url: &str) -> Option<String> {
         return None;
     }
 
-    // Identificar nombre base eliminando subdominios comunes y TLDs
     let subdominios_ignorados = [
         "www", "m", "mobile", "app", "apps", "login", "auth", "accounts", "account",
         "myaccount", "signin", "id", "portal", "secure", "api", "admin", "web",
@@ -80,7 +77,6 @@ fn extraer_servicio_de_url(url: &str) -> Option<String> {
     } else if es_tld_compuesto && partes_filtradas.len() >= 3 {
         partes_filtradas[partes_filtradas.len() - 3]
     } else {
-        // En dominios estándar como amazon.com o login.amazon.es, la parte principal es la penúltima
         partes_filtradas[partes_filtradas.len() - 2]
     };
 
@@ -93,7 +89,6 @@ fn extraer_servicio_de_titulo(titulo: &str) -> String {
         return "General".to_string();
     }
 
-    // Separar por delimitadores comunes como '(', '-', ':', '|', '/'
     let primer_token = t
         .split(['(', '-', ':', '|', '/'])
         .next()
@@ -104,14 +99,12 @@ fn extraer_servicio_de_titulo(titulo: &str) -> String {
         return capitalizar_palabra(t);
     }
 
-    // Tomar las 1 o 2 primeras palabras si forman un nombre común
     let palabras: Vec<&str> = primer_token.split_whitespace().collect();
     if palabras.is_empty() {
         capitalizar_palabra(t)
     } else if palabras.len() == 1 {
         capitalizar_palabra(palabras[0])
     } else {
-        // Ej: "Mercado Libre", "Google Drive", "Amazon AWS"
         format!("{} {}", capitalizar_palabra(palabras[0]), capitalizar_palabra(palabras[1]))
     }
 }
@@ -127,7 +120,8 @@ fn capitalizar_palabra(s: &str) -> String {
 /// Agrupa las entradas según las reglas canónicas de Bóveda:
 /// - Si `agrupar_activo == false`: no se crean grupos; se respetan anclados si está activo.
 /// - Si `agrupar_activo == true`: si hay >= 2 entradas con el mismo nombre de servicio,
-///   se inserta una cabecera de grupo sintética. Los hijos sólo se incluyen si el grupo está expandido.
+///   se crea una cabecera de grupo sintética y sus cuentas hijas se posicionan de forma integrada contigua.
+///   El último hijo se marca con `es_ultimo_hijo_grupo = true` para cerrar visualmente el paquete único.
 /// - Entradas con cuenta única se muestran normalmente como ítems sueltos.
 /// - Si `fijar_anclados_arriba == true`: las cuentas ancladas se procesan al inicio sin agrupar.
 pub fn aplicar_agrupamiento_servicios(
@@ -152,11 +146,13 @@ pub fn aplicar_agrupamiento_servicios(
         for mut e in ancladas {
             e.es_cabecera_grupo = false;
             e.es_hijo_grupo = false;
+            e.es_ultimo_hijo_grupo = false;
             resultado.push(e);
         }
         for mut e in no_ancladas {
             e.es_cabecera_grupo = false;
             e.es_hijo_grupo = false;
+            e.es_ultimo_hijo_grupo = false;
             resultado.push(e);
         }
         return resultado;
@@ -179,68 +175,89 @@ pub fn aplicar_agrupamiento_servicios(
     for mut e in ancladas.drain(..) {
         e.es_cabecera_grupo = false;
         e.es_hijo_grupo = false;
+        e.es_ultimo_hijo_grupo = false;
         resultado.push(e);
     }
 
-    // Procesar no_ancladas con agrupación >= 2
-    let mut grupos_insertados: HashSet<String> = HashSet::new();
+    // Procesar no_ancladas agrupando juntos los ítems del mismo servicio
+    let mut grupos_procesados: HashSet<String> = HashSet::new();
 
-    for mut e in no_ancladas {
+    for e in &no_ancladas {
         let servicio = if e.servicio.is_empty() {
             extraer_nombre_servicio("", &e.titulo)
         } else {
             e.servicio.to_string()
         };
 
+        if grupos_procesados.contains(&servicio) {
+            continue;
+        }
+
         let conteo = *conteos.get(&servicio).unwrap_or(&1);
 
         if conteo >= 2 {
+            grupos_procesados.insert(servicio.clone());
             let expandido = grupos_expandidos.contains(&servicio);
 
-            // Si es la primera vez que encontramos este servicio, creamos la cabecera
-            if !grupos_insertados.contains(&servicio) {
-                grupos_insertados.insert(servicio.clone());
+            let cabecera = EntryOverview {
+                id: SharedString::from(format!("grp:{}", servicio)),
+                titulo: SharedString::from(&servicio),
+                subtitulo: SharedString::from(format!("{} cuentas", conteo)),
+                tipo: SharedString::from("grupo"),
+                favorito: false,
+                anclado: false,
+                categoria_id: SharedString::from(""),
+                tiene_usuario: false,
+                tiene_password: false,
+                tiene_totp: false,
+                tiene_passkey: false,
+                tiene_url: false,
+                tiene_app: false,
+                tiene_notas: false,
+                totp_codigo: SharedString::from(""),
+                totp_restante: 0,
+                servicio: SharedString::from(&servicio),
+                es_cabecera_grupo: true,
+                clave_grupo: SharedString::from(&servicio),
+                grupo_conteo: conteo as i32,
+                grupo_expandido: expandido,
+                es_hijo_grupo: false,
+                es_ultimo_hijo_grupo: false,
+            };
+            resultado.push(cabecera);
 
-                let cabecera = EntryOverview {
-                    id: SharedString::from(format!("grp:{}", servicio)),
-                    titulo: SharedString::from(&servicio),
-                    subtitulo: SharedString::from(format!("{} cuentas", conteo)),
-                    tipo: SharedString::from("grupo"),
-                    favorito: false,
-                    anclado: false,
-                    categoria_id: SharedString::from(""),
-                    tiene_usuario: false,
-                    tiene_password: false,
-                    tiene_totp: false,
-                    tiene_passkey: false,
-                    tiene_url: false,
-                    tiene_app: false,
-                    tiene_notas: false,
-                    totp_codigo: SharedString::from(""),
-                    totp_restante: 0,
-                    servicio: SharedString::from(&servicio),
-                    es_cabecera_grupo: true,
-                    clave_grupo: SharedString::from(&servicio),
-                    grupo_conteo: conteo as i32,
-                    grupo_expandido: expandido,
-                    es_hijo_grupo: false,
-                };
-                resultado.push(cabecera);
-            }
-
-            // Si el grupo está expandido, agregamos la entrada como hijo
+            // Si el grupo está expandido, agregamos todos sus hijos contiguos
             if expandido {
-                e.es_cabecera_grupo = false;
-                e.es_hijo_grupo = true;
-                e.clave_grupo = SharedString::from(&servicio);
-                resultado.push(e);
+                let hijos: Vec<EntryOverview> = no_ancladas
+                    .iter()
+                    .filter(|item| {
+                        let item_serv = if item.servicio.is_empty() {
+                            extraer_nombre_servicio("", &item.titulo)
+                        } else {
+                            item.servicio.to_string()
+                        };
+                        item_serv == servicio
+                    })
+                    .cloned()
+                    .collect();
+
+                let total_hijos = hijos.len();
+                for (idx, mut hijo) in hijos.into_iter().enumerate() {
+                    hijo.es_cabecera_grupo = false;
+                    hijo.es_hijo_grupo = true;
+                    hijo.es_ultimo_hijo_grupo = idx == total_hijos - 1;
+                    hijo.clave_grupo = SharedString::from(&servicio);
+                    resultado.push(hijo);
+                }
             }
         } else {
             // Entrada individual (suelta)
-            e.es_cabecera_grupo = false;
-            e.es_hijo_grupo = false;
-            e.clave_grupo = SharedString::from("");
-            resultado.push(e);
+            let mut solitaria = e.clone();
+            solitaria.es_cabecera_grupo = false;
+            solitaria.es_hijo_grupo = false;
+            solitaria.es_ultimo_hijo_grupo = false;
+            solitaria.clave_grupo = SharedString::from("");
+            resultado.push(solitaria);
         }
     }
 
@@ -287,6 +304,7 @@ mod tests {
                 grupo_conteo: 0,
                 grupo_expandido: false,
                 es_hijo_grupo: false,
+                es_ultimo_hijo_grupo: false,
             },
             EntryOverview {
                 id: SharedString::from("2"),
@@ -311,6 +329,7 @@ mod tests {
                 grupo_conteo: 0,
                 grupo_expandido: false,
                 es_hijo_grupo: false,
+                es_ultimo_hijo_grupo: false,
             },
             EntryOverview {
                 id: SharedString::from("3"),
@@ -335,6 +354,7 @@ mod tests {
                 grupo_conteo: 0,
                 grupo_expandido: false,
                 es_hijo_grupo: false,
+                es_ultimo_hijo_grupo: false,
             },
         ];
 
@@ -342,7 +362,6 @@ mod tests {
 
         // 1. Colapsado
         let res_colapsado = aplicar_agrupamiento_servicios(&entradas, true, false, &expandidos);
-        // Debe tener 2 elementos: la cabecera de grupo "Amazon" (2 cuentas) y el elemento individual "GitHub"
         assert_eq!(res_colapsado.len(), 2);
         assert!(res_colapsado[0].es_cabecera_grupo);
         assert_eq!(res_colapsado[0].titulo.as_str(), "Amazon");
@@ -353,11 +372,12 @@ mod tests {
         // 2. Expandido
         expandidos.insert("Amazon".to_string());
         let res_expandido = aplicar_agrupamiento_servicios(&entradas, true, false, &expandidos);
-        // Debe tener 4 elementos: Cabecera Amazon + 2 hijos Amazon + 1 GitHub
         assert_eq!(res_expandido.len(), 4);
         assert!(res_expandido[0].es_cabecera_grupo);
         assert!(res_expandido[1].es_hijo_grupo);
+        assert!(!res_expandido[1].es_ultimo_hijo_grupo);
         assert!(res_expandido[2].es_hijo_grupo);
+        assert!(res_expandido[2].es_ultimo_hijo_grupo);
         assert!(!res_expandido[3].es_hijo_grupo);
     }
 }

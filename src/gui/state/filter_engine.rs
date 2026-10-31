@@ -240,6 +240,7 @@ pub fn filtrar_entradas(
                 grupo_conteo: 0,
                 grupo_expandido: false,
                 es_hijo_grupo: false,
+                es_ultimo_hijo_grupo: false,
             }
         })
         .collect()

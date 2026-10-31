@@ -13,9 +13,12 @@ export component GroupHeaderItem inherits Rectangle {
     in property <bool> expandido: false;
     callback alternar();
 
-    height: 44px;
+    height: 64px;
     background: touch.has-hover ? Theme.surface-hover : Theme.surface;
-    border-radius: Theme.radio-tarjetas;
+    border-top-left-radius: Theme.radio-tarjetas;
+    border-top-right-radius: Theme.radio-tarjetas;
+    border-bottom-left-radius: root.expandido ? 0px : Theme.radio-tarjetas;
+    border-bottom-right-radius: root.expandido ? 0px : Theme.radio-tarjetas;
     border-width: Theme.grosor-borde;
     border-color: root.expandido ? Theme.accent-primary.transparentize(50%) : Theme.border;
 
@@ -25,30 +28,46 @@ export component GroupHeaderItem inherits Rectangle {
         HorizontalLayout {
             padding-left: 14px;
             padding-right: 14px;
-            spacing: 10px;
+            spacing: 12px;
             alignment: space-between;
 
-            // Izquierda: Icono representativo + Nombre de Servicio + Badge de conteo
+            // Izquierda: Círculo de avatar + Nombre de Servicio + Badge de conteo
             HorizontalLayout {
-                spacing: 10px;
+                spacing: 12px;
                 alignment: start;
 
-                AppIcon {
-                    source: @image-url("../../assets/icons/folder.svg");
-                    icon-size: 16px;
-                    icon-color: Theme.accent-primary;
-                    vertical-alignment: center;
+                // Círculo de avatar estilizado (36px x 36px) como en Android
+                VerticalLayout {
+                    alignment: center;
+                    Rectangle {
+                        width: 36px;
+                        height: 36px;
+                        border-radius: 18px;
+                        background: Theme.accent-primary.transparentize(85%);
+
+                        AppIcon {
+                            source: root.titulo == "Anclados" ? @image-url("../../assets/icons/pin.svg") : @image-url("../../assets/icons/folder.svg");
+                            icon-size: 18px;
+                            icon-color: Theme.accent-primary;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
                 }
 
-                Text {
-                    text: root.titulo;
-                    color: Theme.text-primary;
-                    font-size: 13px;
-                    font-weight: 700;
-                    vertical-alignment: center;
+                // Título del Servicio en Negrita
+                VerticalLayout {
+                    alignment: center;
+                    Text {
+                        text: root.titulo;
+                        color: Theme.text-primary;
+                        font-size: 13px;
+                        font-weight: 700;
+                        vertical-alignment: center;
+                    }
                 }
 
-                // Badge de cantidad de cuentas
+                // Badge tipo chip con la cantidad de cuentas
                 VerticalLayout {
                     alignment: center;
                     Rectangle {
@@ -56,17 +75,19 @@ export component GroupHeaderItem inherits Rectangle {
                         border-radius: Theme.curvatura-esquinas > 4px ? Theme.curvatura-esquinas / 2 : 4px;
                         border-width: Theme.grosor-borde;
                         border-color: Theme.accent-primary.transparentize(70%);
-                        height: 20px;
+                        height: 22px;
 
                         HorizontalLayout {
-                            padding-left: 6px;
-                            padding-right: 6px;
+                            padding-left: 8px;
+                            padding-right: 8px;
                             alignment: center;
 
                             Text {
-                                text: root.conteo == 1 ? "1 cuenta" : "\{root.conteo} cuentas";
+                                text: root.titulo == "Anclados" ?
+                                    (root.conteo == 1 ? "1 anclada" : "\{root.conteo} ancladas") :
+                                    (root.conteo == 1 ? "1 cuenta" : "\{root.conteo} cuentas");
                                 color: Theme.accent-primary;
-                                font-size: 10px;
+                                font-size: 11px;
                                 font-weight: 600;
                                 vertical-alignment: center;
                             }
@@ -76,11 +97,14 @@ export component GroupHeaderItem inherits Rectangle {
             }
 
             // Derecha: Chevron expandir / colapsar
-            AppIcon {
-                source: root.expandido ? @image-url("../../assets/icons/expand_more.svg") : @image-url("../../assets/icons/chevron_right.svg");
-                icon-size: 16px;
-                icon-color: root.expandido ? Theme.accent-primary : Theme.text-secondary;
-                vertical-alignment: center;
+            VerticalLayout {
+                alignment: center;
+                AppIcon {
+                    source: root.expandido ? @image-url("../../assets/icons/expand_less.svg") : @image-url("../../assets/icons/expand_more.svg");
+                    icon-size: 20px;
+                    icon-color: root.expandido ? Theme.accent-primary : Theme.text-secondary;
+                    vertical-alignment: center;
+                }
             }
         }
     }

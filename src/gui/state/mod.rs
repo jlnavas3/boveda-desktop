@@ -332,6 +332,7 @@ mod tests {
                 grupo_conteo: 0,
                 grupo_expandido: false,
                 es_hijo_grupo: false,
+                es_ultimo_hijo_grupo: false,
             },
             EntryOverview {
                 id: "2".into(),
@@ -356,6 +357,7 @@ mod tests {
                 grupo_conteo: 0,
                 grupo_expandido: false,
                 es_hijo_grupo: false,
+                es_ultimo_hijo_grupo: false,
             },
             EntryOverview {
                 id: "3".into(),
@@ -380,6 +382,7 @@ mod tests {
                 grupo_conteo: 0,
                 grupo_expandido: false,
                 es_hijo_grupo: false,
+                es_ultimo_hijo_grupo: false,
             },
         ];
 

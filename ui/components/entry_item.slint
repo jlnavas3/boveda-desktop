@@ -34,6 +34,7 @@ export struct EntryOverview {
     grupo_conteo: int,
     grupo_expandido: bool,
     es_hijo_grupo: bool,
+    es_ultimo_hijo_grupo: bool,
 }
 
 export component EntryItem inherits Rectangle {
@@ -45,14 +46,26 @@ export component EntryItem inherits Rectangle {
     background: seleccionado ? Theme.surface-selected :
                 touch.has-hover ? Theme.surface-hover :
                 Theme.surface;
-    border-radius: Theme.radio-tarjetas;
+    border-top-left-radius: entrada.es_hijo_grupo ? 0px : Theme.radio-tarjetas;
+    border-top-right-radius: entrada.es_hijo_grupo ? 0px : Theme.radio-tarjetas;
+    border-bottom-left-radius: entrada.es_hijo_grupo ? (entrada.es_ultimo_hijo_grupo ? Theme.radio-tarjetas : 0px) : Theme.radio-tarjetas;
+    border-bottom-right-radius: entrada.es_hijo_grupo ? (entrada.es_ultimo_hijo_grupo ? Theme.radio-tarjetas : 0px) : Theme.radio-tarjetas;
     border-width: 1px;
     border-color: seleccionado ? Theme.accent-primary : Theme.border;
     height: 64px;
 
+    // Divisor sutil interno en la parte superior para ítems agrupados
+    if entrada.es_hijo_grupo : Rectangle {
+        y: 0px;
+        x: 14px;
+        width: root.width - 28px;
+        height: 1px;
+        background: Theme.border;
+    }
+
     // Conector visual sutil para cuentas hijas agrupadas
     if entrada.es_hijo_grupo : Rectangle {
-        x: 6px;
+        x: 8px;
         y: 12px;
         width: 3px;
         height: root.height - 24px;
@@ -75,7 +88,7 @@ export component EntryItem inherits Rectangle {
     touch := TouchArea {
         pointer-event(event) => {
             if (event.button == PointerEventButton.right && event.kind == PointerEventKind.down) {
-                root.abrir-menu-contextual(root.entrada.id, touch.mouse-x, root.y + touch.mouse-y);
+                root.abrir-menu-contextual(root.entrada.id, touch.mouse-x, touch.mouse-y);
             }
         }
         clicked => {

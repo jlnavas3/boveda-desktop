@@ -94,6 +94,25 @@ export component MainScreen inherits Rectangle {
     property <length> menu-contextual-pos-x: 0px;
     property <length> menu-contextual-pos-y: 0px;
 
+    pure function calcular-posicion-menu-contextual(
+        sidebar-ancho: length,
+        sidebar-colapsada: bool,
+        flickable-offset-y: length,
+        fila-offset-y: length,
+        scroll-y: length,
+        click-x: length,
+        click-y: length,
+        ventana-ancho: length,
+        ventana-alto: length
+    ) -> { x: length, y: length } {
+        let base-x = (sidebar-colapsada ? 64px : sidebar-ancho) + 16px + click-x;
+        let base-y = flickable-offset-y + fila-offset-y + scroll-y + click-y;
+        return {
+            x: Math.max(10px, Math.min(ventana-ancho - 220px, base-x)),
+            y: Math.max(10px, Math.min(ventana-alto - 250px, base-y))
+        };
+    }
+
     menu-ctx := ContextMenu {
         x: root.menu-contextual-pos-x;
         y: root.menu-contextual-pos-y;
@@ -592,9 +611,11 @@ export component MainScreen inherits Rectangle {
 
                         items-layout := VerticalLayout {
                             alignment: start;
-                            spacing: 6px;
+                            spacing: 0px;
 
-                            for entrada in lista-entradas : HorizontalLayout {
+                            for entrada in lista-entradas : fila := VerticalLayout {
+                                padding-bottom: (entrada.es_cabecera_grupo && entrada.grupo_expandido) || (entrada.es_hijo_grupo && !entrada.es_ultimo_hijo_grupo) ? 0px : 6px;
+
                                 if entrada.es_cabecera_grupo : GroupHeaderItem {
                                     titulo: entrada.titulo;
                                     conteo: entrada.grupo_conteo;
@@ -613,8 +634,20 @@ export component MainScreen inherits Rectangle {
                                         root.menu-contextual-tiene-password = entrada.tiene_password;
                                         root.menu-contextual-tiene-usuario = entrada.tiene_usuario;
                                         root.menu-contextual-subtitulo = entrada.subtitulo;
-                                        root.menu-contextual-pos-x = Math.max(10px, Math.min(root.width - 210px, (root.sidebar-colapsada ? 64px : root.ancho-sidebar) + 16px + mx));
-                                        root.menu-contextual-pos-y = Math.max(10px, Math.min(root.height - 240px, 126px + my + root.lista-viewport-y));
+
+                                        let coords = root.calcular-posicion-menu-contextual(
+                                            root.ancho-sidebar,
+                                            root.sidebar-colapsada,
+                                            lista-flickable.y,
+                                            fila.y,
+                                            root.lista-viewport-y,
+                                            mx,
+                                            my,
+                                            root.width,
+                                            root.height
+                                        );
+                                        root.menu-contextual-pos-x = coords.x;
+                                        root.menu-contextual-pos-y = coords.y;
                                         menu-ctx.show();
                                     }
                                 }
