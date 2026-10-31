@@ -70,12 +70,12 @@ export component SubAppearanceNiagara inherits VerticalLayout {
         }
     }
 
-    // Área Horizontal: Panel de Bloques en Cuadrícula (Izquierda) + Banco de Prueba Dinámico (Derecha)
+    // Área Horizontal: Panel de Bloques en Cuadrícula (Izquierda) + Banco de Prueba Dinámico (Derecha pegada al borde)
     HorizontalLayout {
         spacing: 16px;
-        alignment: start;
+        alignment: space-between;
 
-        // Contenedor de Ajustes: 2 Columnas de bloques que mantienen su altura normal (alignment: start)
+        // Contenedor de Ajustes: Ancho flexible con límites min/max para uniformidad perfecta
         VerticalLayout {
             horizontal-stretch: 1;
             alignment: start;
@@ -89,6 +89,8 @@ export component SubAppearanceNiagara inherits VerticalLayout {
                 // 1. Grupo: Efecto ola niagara
                 SettingBlock {
                     horizontal-stretch: 1;
+                    min-width: 280px;
+                    max-width: 580px;
                     titulo: "Efecto ola niagara";
                     descripcion: "Curvatura dinámica y deflexión horizontal sinusoidal proyectada al arrastrar sobre las letras.";
                     restaurar => {
@@ -139,6 +141,8 @@ export component SubAppearanceNiagara inherits VerticalLayout {
                 // 2. Grupo: Círculo en cresta
                 SettingBlock {
                     horizontal-stretch: 1;
+                    min-width: 280px;
+                    max-width: 580px;
                     titulo: "Círculo en cresta";
                     descripcion: "Globo flotante proyectado hacia la izquierda que magnifica e ilumina la letra seleccionada.";
                     restaurar => {
@@ -191,6 +195,8 @@ export component SubAppearanceNiagara inherits VerticalLayout {
                 // 3. Grupo: Respuesta táctil
                 SettingBlock {
                     horizontal-stretch: 1;
+                    min-width: 280px;
+                    max-width: 580px;
                     titulo: "Respuesta táctil";
                     descripcion: "Sensibilidad de agarre en el margen derecho y juego de caracteres alfabéticos habilitados.";
                     restaurar => {
@@ -241,6 +247,8 @@ export component SubAppearanceNiagara inherits VerticalLayout {
                 // 4. Grupo: Resaltado alfabético
                 SettingBlock {
                     horizontal-stretch: 1;
+                    min-width: 280px;
+                    max-width: 580px;
                     titulo: "Resaltado alfabético";
                     descripcion: "Coordinación visual entre la barra alfabética y las entradas visibles de la bóveda.";
                     restaurar => {
@@ -278,11 +286,12 @@ export component SubAppearanceNiagara inherits VerticalLayout {
             }
         }
 
-        // Columna Derecha: Tarjeta de Vista Previa Interactiva con Altura Dinámica Calibrada Exacta
+        // Columna Derecha: Tarjeta de Vista Previa Pegada a la Derecha con Altura Exactamente Calibrada al Límite Inferior
         Rectangle {
             width: 170px;
-            // Descuenta exactamente: Padding sup (24px) + GroupHeader (~50px) + Gap (12px) + Switch Maestro (~84px) + Gap (16px) + Padding inf (24px) = 210px
-            height: Math.max(480px, root.altura-disponible - 210px);
+            // Descuenta exactamente 240px:
+            // TopBar (56px) + Padding superior (24px) + GroupHeader (50px) + Gap (12px) + Switch Maestro (84px) + Gap (16px) + Padding inferior (24px)
+            height: Math.max(460px, root.altura-disponible - 240px);
             background: Theme.surface;
             border-radius: Theme.curvatura-esquinas;
             border-width: Theme.grosor-borde;
