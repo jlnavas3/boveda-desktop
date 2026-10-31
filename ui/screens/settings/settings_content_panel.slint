@@ -162,6 +162,7 @@ export component SettingsContentPanel inherits Rectangle {
             }
 
             if root.subseccion-activa == 106 : SubAppearanceNiagara {
+                ancho-disponible: root.width;
                 altura-disponible: root.height;
                 mostrar-ola-niagara <=> root.datos.mostrar_ola_niagara;
                 incluir-enie-niagara <=> root.datos.incluir_enie_niagara;

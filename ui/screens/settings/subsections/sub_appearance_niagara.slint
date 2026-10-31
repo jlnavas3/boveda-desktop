@@ -15,6 +15,7 @@ export component SubAppearanceNiagara inherits VerticalLayout {
     in-out property <bool> mostrar-ola-niagara: true;
     in-out property <bool> incluir-enie-niagara: true;
     in property <length> altura-disponible: 700px;
+    in property <length> ancho-disponible: 1000px;
 
     callback restaurar-todo();
     callback restaurar-grupo-ola();
@@ -23,6 +24,9 @@ export component SubAppearanceNiagara inherits VerticalLayout {
     callback restaurar-grupo-resaltado();
 
     property <string> letra-previsualizada: "";
+
+    // Activar modo 2 columnas si el ancho disponible supera los 710px para los grupos + 170px de preview + márgenes (~940px)
+    property <bool> modo-dos-columnas: root.ancho-disponible >= 940px;
 
     spacing: 12px;
 
@@ -70,27 +74,26 @@ export component SubAppearanceNiagara inherits VerticalLayout {
         }
     }
 
-    // Área Horizontal: Panel de Bloques en Cuadrícula (Izquierda) + Banco de Prueba Dinámico (Derecha pegada al borde)
+    // Área Horizontal: Panel de Bloques (Izquierda) + Banco de Prueba Dinámico (Derecha pegada al borde)
     HorizontalLayout {
         spacing: 16px;
         alignment: space-between;
 
-        // Contenedor de Ajustes: Ancho flexible con límites min/max para uniformidad perfecta
+        // Contenedor de Ajustes: Ancho flexible dinámico
         VerticalLayout {
             horizontal-stretch: 1;
             alignment: start;
             spacing: 12px;
 
-            // Fila 1 de Bloques: Efecto Ola (Izq) ⟷ Círculo en Cresta (Der)
-            HorizontalLayout {
+            // Fila 1 de Bloques: En modo dos columnas se colocan uno al lado de otro. En ventana reducida, uno debajo de otro.
+            if root.modo-dos-columnas : HorizontalLayout {
                 spacing: 12px;
                 alignment: start;
 
                 // 1. Grupo: Efecto ola niagara
                 SettingBlock {
                     horizontal-stretch: 1;
-                    min-width: 280px;
-                    max-width: 580px;
+                    min-width: 210px;
                     titulo: "Efecto ola niagara";
                     descripcion: "Curvatura dinámica y deflexión horizontal sinusoidal proyectada al arrastrar sobre las letras.";
                     restaurar => {
@@ -141,8 +144,7 @@ export component SubAppearanceNiagara inherits VerticalLayout {
                 // 2. Grupo: Círculo en cresta
                 SettingBlock {
                     horizontal-stretch: 1;
-                    min-width: 280px;
-                    max-width: 580px;
+                    min-width: 210px;
                     titulo: "Círculo en cresta";
                     descripcion: "Globo flotante proyectado hacia la izquierda que magnifica e ilumina la letra seleccionada.";
                     restaurar => {
@@ -187,16 +189,15 @@ export component SubAppearanceNiagara inherits VerticalLayout {
                 }
             }
 
-            // Fila 2 de Bloques: Respuesta Táctil (Izq) ⟷ Resaltado Alfabético (Der)
-            HorizontalLayout {
+            // Fila 2 de Bloques: En modo dos columnas se colocan uno al lado de otro.
+            if root.modo-dos-columnas : HorizontalLayout {
                 spacing: 12px;
                 alignment: start;
 
                 // 3. Grupo: Respuesta táctil
                 SettingBlock {
                     horizontal-stretch: 1;
-                    min-width: 280px;
-                    max-width: 580px;
+                    min-width: 210px;
                     titulo: "Respuesta táctil";
                     descripcion: "Sensibilidad de agarre en el margen derecho y juego de caracteres alfabéticos habilitados.";
                     restaurar => {
@@ -247,8 +248,193 @@ export component SubAppearanceNiagara inherits VerticalLayout {
                 // 4. Grupo: Resaltado alfabético
                 SettingBlock {
                     horizontal-stretch: 1;
-                    min-width: 280px;
-                    max-width: 580px;
+                    min-width: 210px;
+                    titulo: "Resaltado alfabético";
+                    descripcion: "Coordinación visual entre la barra alfabética y las entradas visibles de la bóveda.";
+                    restaurar => {
+                        Theme.niagara-resaltar-arrastrar = true;
+                        Theme.niagara-resaltar-primera = false;
+                        Theme.niagara-alinear-cresta = true;
+                        root.restaurar-grupo-resaltado();
+                    }
+
+                    VerticalLayout {
+                        spacing: 6px;
+
+                        SettingSwitchRow {
+                            titulo: "Resaltar cuentas al arrastrar";
+                            subtitulo: "Acentúa visualmente los elementos que coinciden con la letra seleccionada";
+                            checked: Theme.niagara-resaltar-arrastrar;
+                            toggled(val) => { Theme.niagara-resaltar-arrastrar = val; }
+                        }
+
+                        SettingSwitchRow {
+                            titulo: "Resaltar solo la primera cuenta";
+                            subtitulo: "Enfoca únicamente el primer registro que empieza con la letra seleccionada";
+                            checked: Theme.niagara-resaltar-primera;
+                            toggled(val) => { Theme.niagara-resaltar-primera = val; }
+                        }
+
+                        SettingSwitchRow {
+                            titulo: "Alinear con la cresta de la ola";
+                            subtitulo: "Sincroniza el desplazamiento vertical con el ápice de la curvatura";
+                            checked: Theme.niagara-alinear-cresta;
+                            toggled(val) => { Theme.niagara-alinear-cresta = val; }
+                        }
+                    }
+                }
+            }
+
+            // Modo 1 Columna (Pantallas o ventanas estrechas cuando el ancho de grupos baja): Se apilan verticalmente con width 100% dinámico
+            if !root.modo-dos-columnas : VerticalLayout {
+                spacing: 12px;
+                alignment: start;
+
+                // 1. Grupo: Efecto ola niagara (1 columna)
+                SettingBlock {
+                    titulo: "Efecto ola niagara";
+                    descripcion: "Curvatura dinámica y deflexión horizontal sinusoidal proyectada al arrastrar sobre las letras.";
+                    restaurar => {
+                        Theme.niagara-amplitud = 60.0;
+                        Theme.niagara-alcance = 160.0;
+                        Theme.niagara-escala-letras = 1.8;
+                        root.restaurar-grupo-ola();
+                    }
+
+                    VerticalLayout {
+                        spacing: 6px;
+
+                        SettingSliderRow {
+                            titulo: "Amplitud de la ola";
+                            subtitulo: "Deflexión máxima horizontal";
+                            sufijo: "px";
+                            minimum: 15.0;
+                            maximum: 120.0;
+                            step: 2.0;
+                            value: Theme.niagara-amplitud;
+                            changed(val) => { Theme.niagara-amplitud = val; }
+                        }
+
+                        SettingSliderRow {
+                            titulo: "Alcance vertical de la ola";
+                            subtitulo: "Radio de dispersión de la curva";
+                            sufijo: "px";
+                            minimum: 60.0;
+                            maximum: 300.0;
+                            step: 5.0;
+                            value: Theme.niagara-alcance;
+                            changed(val) => { Theme.niagara-alcance = val; }
+                        }
+
+                        SettingSliderRow {
+                            titulo: "Escala máxima de letras";
+                            subtitulo: "Factor de aumento en la cresta";
+                            sufijo: "x";
+                            minimum: 1.0;
+                            maximum: 3.0;
+                            step: 0.1;
+                            value: Theme.niagara-escala-letras;
+                            changed(val) => { Theme.niagara-escala-letras = val; }
+                        }
+                    }
+                }
+
+                // 2. Grupo: Círculo en cresta (1 columna)
+                SettingBlock {
+                    titulo: "Círculo en cresta";
+                    descripcion: "Globo flotante proyectado hacia la izquierda que magnifica e ilumina la letra seleccionada.";
+                    restaurar => {
+                        Theme.niagara-mostrar-circulo = true;
+                        Theme.niagara-diametro-circulo = 52.0;
+                        Theme.niagara-desplazamiento-circulo = -64.0;
+                        root.restaurar-grupo-circulo();
+                    }
+
+                    VerticalLayout {
+                        spacing: 6px;
+
+                        SettingSwitchRow {
+                            titulo: "Mostrar el círculo en la cresta";
+                            subtitulo: "Despliega la burbuja de la letra activa al deslizar el cursor o dedo";
+                            checked: Theme.niagara-mostrar-circulo;
+                            toggled(val) => { Theme.niagara-mostrar-circulo = val; }
+                        }
+
+                        SettingSliderRow {
+                            titulo: "Diámetro de la cresta";
+                            subtitulo: "Tamaño de la burbuja";
+                            sufijo: "px";
+                            minimum: 36.0;
+                            maximum: 96.0;
+                            step: 2.0;
+                            value: Theme.niagara-diametro-circulo;
+                            changed(val) => { Theme.niagara-diametro-circulo = val; }
+                        }
+
+                        SettingSliderRow {
+                            titulo: "Desplazamiento horizontal";
+                            subtitulo: "Separación lateral respecto a las letras";
+                            sufijo: "px";
+                            minimum: -120.0;
+                            maximum: -30.0;
+                            step: 2.0;
+                            value: Theme.niagara-desplazamiento-circulo;
+                            changed(val) => { Theme.niagara-desplazamiento-circulo = val; }
+                        }
+                    }
+                }
+
+                // 3. Grupo: Respuesta táctil (1 columna)
+                SettingBlock {
+                    titulo: "Respuesta táctil";
+                    descripcion: "Sensibilidad de agarre en el margen derecho y juego de caracteres alfabéticos habilitados.";
+                    restaurar => {
+                        Theme.niagara-incluir-enie = true;
+                        Theme.niagara-ancho-tactil = 28.0;
+                        Theme.niagara-opacidad-inactivas = 0.7;
+                        root.incluir-enie-niagara = true;
+                        root.restaurar-grupo-tactil();
+                    }
+
+                    VerticalLayout {
+                        spacing: 6px;
+
+                        SettingSwitchRow {
+                            titulo: "Incluir Ñ en el abecedario";
+                            subtitulo: "Incorpora la letra Ñ entre la N y la O según el estándar en español";
+                            checked: Theme.niagara-incluir-enie;
+                            toggled(val) => {
+                                Theme.niagara-incluir-enie = val;
+                                root.incluir-enie-niagara = val;
+                            }
+                        }
+
+                        SettingSliderRow {
+                            titulo: "Ancho de la zona táctil";
+                            subtitulo: "Margen de captura para puntero o pantalla táctil";
+                            sufijo: "px";
+                            minimum: 16.0;
+                            maximum: 60.0;
+                            step: 2.0;
+                            value: Theme.niagara-ancho-tactil;
+                            changed(val) => { Theme.niagara-ancho-tactil = val; }
+                        }
+
+                        SettingSliderRow {
+                            titulo: "Tono y luminosidad de las letras";
+                            subtitulo: "Visibilidad de las letras en reposo";
+                            sufijo: "%";
+                            minimum: 20.0;
+                            maximum: 100.0;
+                            step: 5.0;
+                            value: Theme.niagara-opacidad-inactivas * 100.0;
+                            changed(val) => { Theme.niagara-opacidad-inactivas = val / 100.0; }
+                        }
+                    }
+                }
+
+                // 4. Grupo: Resaltado alfabético (1 columna)
+                SettingBlock {
                     titulo: "Resaltado alfabético";
                     descripcion: "Coordinación visual entre la barra alfabética y las entradas visibles de la bóveda.";
                     restaurar => {
