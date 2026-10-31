@@ -51,14 +51,14 @@ export component EntryItem inherits Rectangle {
     border-bottom-left-radius: entrada.es_hijo_grupo ? (entrada.es_ultimo_hijo_grupo ? Theme.radio-tarjetas : 0px) : Theme.radio-tarjetas;
     border-bottom-right-radius: entrada.es_hijo_grupo ? (entrada.es_ultimo_hijo_grupo ? Theme.radio-tarjetas : 0px) : Theme.radio-tarjetas;
     border-width: 1px;
-    border-color: seleccionado ? Theme.accent-primary : Theme.border;
+    border-color: seleccionado ? Theme.accent-primary : (entrada.es_hijo_grupo ? Theme.accent-primary.transparentize(60%) : Theme.border);
     height: 64px;
 
-    // Divisor sutil interno en la parte superior para ítems agrupados
+    // Divisor sutil interno de 1px único en la parte superior para ítems agrupados
     if entrada.es_hijo_grupo : Rectangle {
         y: 0px;
-        x: 14px;
-        width: root.width - 28px;
+        x: 0px;
+        width: root.width;
         height: 1px;
         background: Theme.border;
     }

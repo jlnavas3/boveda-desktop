@@ -69,7 +69,15 @@ export component AppWindow inherits Window {
     in-out property <string> generador-destino: "";
 
     in-out property <bool> mostrar-ajustes: false;
-    in-out property <SettingsData> ajustes-datos;
+    in-out property <SettingsData> ajustes-datos: {
+        mostrar_ola_niagara: true,
+        incluir_enie_niagara: true,
+        criterio_ordenacion: "NOMBRE_AZ",
+        fijar_anclados_arriba: true,
+        nombre_boveda: "Mi Bóveda Principal",
+        color_acento: "menta",
+        modo_tema: "oscuro",
+    };
     in-out property <string> ajustes-error: "";
     in-out property <string> ajustes-exito: "";
     in-out property <bool> ajustes-cambiando-clave: false;

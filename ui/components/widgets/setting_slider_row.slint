@@ -1,0 +1,94 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Slider } from "std-widgets.slint";
+import { Theme } from "../../theme.slint";
+
+export component SettingSliderRow inherits Rectangle {
+    in property <string> titulo: "";
+    in property <string> subtitulo: "";
+    in property <string> sufijo: "";
+    in property <float> minimum: 0.0;
+    in property <float> maximum: 100.0;
+    in property <float> step: 1.0;
+    in-out property <float> value: 0.0;
+    callback changed(float);
+
+    background: Colors.transparent;
+    border-radius: Theme.curvatura-esquinas;
+
+    VerticalLayout {
+        padding-top: 6px;
+        padding-bottom: 6px;
+        padding-left: 8px;
+        padding-right: 8px;
+        spacing: 4px;
+
+        // Fila 1: Título y descripción breve
+        HorizontalLayout {
+            alignment: space-between;
+            spacing: 8px;
+
+            Text {
+                text: root.titulo;
+                color: Theme.text-primary;
+                font-size: 12px;
+                font-weight: 600;
+                horizontal-alignment: left;
+                vertical-alignment: center;
+            }
+
+            if root.subtitulo != "" : Text {
+                text: root.subtitulo;
+                color: Theme.text-secondary;
+                font-size: 11px;
+                horizontal-alignment: right;
+                vertical-alignment: center;
+            }
+        }
+
+        // Fila 2: Slider y Badge con valor numérico
+        HorizontalLayout {
+            spacing: 16px;
+
+            Slider {
+                horizontal-stretch: 1;
+                minimum: root.minimum;
+                maximum: root.maximum;
+                step: root.step;
+                value <=> root.value;
+                changed(val) => { root.changed(Math.round(val)); }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                horizontal-stretch: 0;
+
+                Rectangle {
+                    background: Theme.accent-primary.transparentize(85%);
+                    border-radius: Theme.radius-sm;
+                    border-width: Theme.grosor-borde;
+                    border-color: Theme.accent-primary.transparentize(50%);
+                    height: 24px;
+
+                    HorizontalLayout {
+                        padding-left: 8px;
+                        padding-right: 8px;
+                        alignment: center;
+
+                        Text {
+                            text: "\{Math.round(root.value)}\{root.sufijo}";
+                            color: Theme.accent-primary;
+                            font-size: 11px;
+                            font-weight: 700;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

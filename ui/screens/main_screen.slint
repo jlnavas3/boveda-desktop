@@ -105,8 +105,10 @@ export component MainScreen inherits Rectangle {
         ventana-ancho: length,
         ventana-alto: length
     ) -> { x: length, y: length } {
+        // Offset de cabecera superior del panel central (Padding 12px + SearchBar 36px + Gap 10px + FilterBar 32px + Gap 10px + Conteo 18px + Gap 10px = 128px)
+        let cabecera-panel-y = 128px;
         let base-x = (sidebar-colapsada ? 64px : sidebar-ancho) + 16px + click-x;
-        let base-y = flickable-offset-y + fila-offset-y + scroll-y + click-y;
+        let base-y = cabecera-panel-y + flickable-offset-y + fila-offset-y + scroll-y + click-y;
         return {
             x: Math.max(10px, Math.min(ventana-ancho - 220px, base-x)),
             y: Math.max(10px, Math.min(ventana-alto - 250px, base-y))
@@ -656,10 +658,17 @@ export component MainScreen inherits Rectangle {
                     }
 
                     // Franja A-Z Niagara
-                    if root.mostrar-ola-niagara && lista-entradas.length > 5 : AlphabetIndex {
-                        incluir-enie: root.incluir-enie-niagara;
+                    if root.mostrar-ola-niagara && Theme.niagara-mostrar && lista-entradas.length > 5 : AlphabetIndex {
+                        incluir-enie: root.incluir-enie-niagara && Theme.niagara-incluir-enie;
                         efecto-ola: root.efecto-ola-niagara;
-                        amplitud-ola: root.amplitud-ola-niagara;
+                        amplitud-ola: Theme.niagara-amplitud * 1px;
+                        radio-ola: Theme.niagara-alcance * 1px;
+                        escala-letras: Theme.niagara-escala-letras;
+                        mostrar-circulo: Theme.niagara-mostrar-circulo;
+                        diametro-circulo: Theme.niagara-diametro-circulo * 1px;
+                        desplazamiento-circulo: Theme.niagara-desplazamiento-circulo * 1px;
+                        opacidad-inactivas: Theme.niagara-opacidad-inactivas;
+                        ancho-tactil: Theme.niagara-ancho-tactil * 1px;
                         letra-seleccionada(l) => { root.saltar-a-letra(l); }
                     }
                 }

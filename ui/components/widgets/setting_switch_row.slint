@@ -1,0 +1,82 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+
+export component SettingSwitchRow inherits Rectangle {
+    in property <string> titulo: "";
+    in property <string> subtitulo: "";
+    in-out property <bool> checked: false;
+    callback toggled(bool);
+
+    background: touch.has-hover ? Theme.surface-hover : Colors.transparent;
+    border-radius: Theme.curvatura-esquinas;
+
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.checked = !root.checked;
+            root.toggled(root.checked);
+        }
+
+        HorizontalLayout {
+            padding-top: 6px;
+            padding-bottom: 6px;
+            padding-left: 8px;
+            padding-right: 8px;
+            spacing: 16px;
+            alignment: space-between;
+
+            // Bloque izquierdo: Título y descripción alineados a la izquierda
+            VerticalLayout {
+                horizontal-stretch: 1;
+                spacing: 2px;
+                alignment: center;
+
+                Text {
+                    text: root.titulo;
+                    color: Theme.text-primary;
+                    font-size: 12px;
+                    font-weight: 600;
+                    horizontal-alignment: left;
+                }
+
+                if root.subtitulo != "" : Text {
+                    text: root.subtitulo;
+                    color: Theme.text-secondary;
+                    font-size: 11px;
+                    wrap: word-wrap;
+                    horizontal-alignment: left;
+                }
+            }
+
+            // Bloque derecho: Switch interactivo centrado verticalmente
+            VerticalLayout {
+                alignment: center;
+
+                Rectangle {
+                    width: 40px;
+                    height: 22px;
+                    border-radius: 11px;
+                    background: root.checked ? Theme.accent-primary : Theme.background;
+                    border-width: 1px;
+                    border-color: root.checked ? Theme.accent-primary : Theme.border;
+                    animate background { duration: 150ms; }
+
+                    Rectangle {
+                        x: root.checked ? 20px : 2px;
+                        y: 2px;
+                        width: 16px;
+                        height: 16px;
+                        border-radius: 8px;
+                        background: root.checked ? #000000 : Theme.text-muted;
+                        animate x { duration: 150ms; easing: ease-out; }
+                    }
+                }
+            }
+        }
+    }
+}

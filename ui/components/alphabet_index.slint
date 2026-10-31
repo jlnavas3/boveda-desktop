@@ -1,16 +1,23 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
 import { Theme } from "../theme.slint";
 
 export component AlphabetIndex inherits Rectangle {
-    in property <bool> incluir-enie: true;
+    in property <bool> incluir-enie: Theme.niagara-incluir-enie;
     in property <bool> activo: true;
     in property <bool> efecto-ola: true;
-    in property <length> amplitud-ola: 24px;
-    in property <length> radio-ola: 110px;
-    in property <bool> mostrar-circulo: true;
-    in property <length> diametro-circulo: 48px;
-    in property <length> desplazamiento-circulo: -56px;
-    in property <float> opacidad-inactivas: 0.6;
-    in property <length> ancho-tactil: 26px;
+    in property <length> amplitud-ola: Theme.niagara-amplitud * 1px;
+    in property <length> radio-ola: Theme.niagara-alcance * 1px;
+    in property <float> escala-letras: Theme.niagara-escala-letras;
+    in property <bool> mostrar-circulo: Theme.niagara-mostrar-circulo;
+    in property <length> diametro-circulo: Theme.niagara-diametro-circulo * 1px;
+    in property <length> desplazamiento-circulo: Theme.niagara-desplazamiento-circulo * 1px;
+    in property <float> opacidad-inactivas: Theme.niagara-opacidad-inactivas;
+    in property <length> ancho-tactil: Theme.niagara-ancho-tactil * 1px;
 
     callback letra-seleccionada(string);
 
@@ -61,7 +68,7 @@ export component AlphabetIndex inherits Rectangle {
                        (root.arrastrando && delta-y < root.radio-ola) ? Theme.text-primary :
                        Theme.text-muted.transparentize(100% - (root.opacidad-inactivas * 100%));
                 font-size: 9px;
-                font-weight: 600;
+                font-weight: (root.arrastrando && root.letra-activa == letra) ? 800 : 600;
                 horizontal-alignment: center;
                 vertical-alignment: center;
             }
@@ -89,3 +96,4 @@ export component AlphabetIndex inherits Rectangle {
         }
     }
 }
+

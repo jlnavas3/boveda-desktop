@@ -230,6 +230,7 @@ fn main() -> Result<(), slint::PlatformError> {
 
                             ui.set_filtro_tipo_actual("TODOS".into());
                             ui.set_filtro_categoria_actual("TODAS".into());
+                            ui.set_ajustes_datos(boveda_core::config::defaults::valores_predeterminados());
                             refrescar_ui(&ui, &mut st, None);
                             ui.set_boveda_desbloqueada(true);
                         }
