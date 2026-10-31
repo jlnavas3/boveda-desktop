@@ -75,14 +75,16 @@ export component SubAppearanceNiagara inherits VerticalLayout {
         spacing: 16px;
         alignment: start;
 
-        // Contenedor de Ajustes: 2 Columnas de bloques en pantallas amplias
+        // Contenedor de Ajustes: 2 Columnas de bloques que mantienen su altura normal (alignment: start)
         VerticalLayout {
             horizontal-stretch: 1;
+            alignment: start;
             spacing: 12px;
 
             // Fila 1 de Bloques: Efecto Ola (Izq) ⟷ Círculo en Cresta (Der)
             HorizontalLayout {
                 spacing: 12px;
+                alignment: start;
 
                 // 1. Grupo: Efecto ola niagara
                 SettingBlock {
@@ -184,6 +186,7 @@ export component SubAppearanceNiagara inherits VerticalLayout {
             // Fila 2 de Bloques: Respuesta Táctil (Izq) ⟷ Resaltado Alfabético (Der)
             HorizontalLayout {
                 spacing: 12px;
+                alignment: start;
 
                 // 3. Grupo: Respuesta táctil
                 SettingBlock {
@@ -275,10 +278,11 @@ export component SubAppearanceNiagara inherits VerticalLayout {
             }
         }
 
-        // Columna Derecha: Tarjeta de Vista Previa Interactiva con Altura Dinámica hasta el Fondo
+        // Columna Derecha: Tarjeta de Vista Previa Interactiva con Altura Dinámica Calibrada Exacta
         Rectangle {
             width: 170px;
-            height: Math.max(540px, root.altura-disponible - 180px);
+            // Descuenta exactamente: Padding sup (24px) + GroupHeader (~50px) + Gap (12px) + Switch Maestro (~84px) + Gap (16px) + Padding inf (24px) = 210px
+            height: Math.max(480px, root.altura-disponible - 210px);
             background: Theme.surface;
             border-radius: Theme.curvatura-esquinas;
             border-width: Theme.grosor-borde;
