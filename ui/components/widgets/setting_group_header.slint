@@ -1,0 +1,52 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { RestoreButton } from "restore_button.slint";
+
+export component SettingGroupHeader inherits Rectangle {
+    in property <string> titulo: "";
+    in property <string> descripcion: "";
+    callback restaurar-grupo();
+
+    height: 52px;
+    background: transparent;
+
+    HorizontalLayout {
+        alignment: space-between;
+        spacing: 12px;
+
+        VerticalLayout {
+            horizontal-stretch: 1;
+            alignment: center;
+            spacing: 2px;
+
+            Text {
+                text: root.titulo;
+                font-size: 16px;
+                font-weight: 700;
+                color: Theme.text-primary;
+                horizontal-alignment: left;
+            }
+
+            if root.descripcion != "" : Text {
+                text: root.descripcion;
+                font-size: 11px;
+                color: Theme.text-secondary;
+                horizontal-alignment: left;
+                wrap: word-wrap;
+            }
+        }
+
+        VerticalLayout {
+            alignment: center;
+            RestoreButton {
+                compacto: false;
+                restored => { root.restaurar-grupo(); }
+            }
+        }
+    }
+}

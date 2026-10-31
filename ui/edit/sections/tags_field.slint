@@ -1,0 +1,56 @@
+import { Theme } from "../../theme.slint";
+
+export component TagsField inherits VerticalLayout {
+    in-out property <string> etiquetas: "";
+    in-out property <string> fecha-caducidad: "";
+
+    spacing: 6px;
+
+    HorizontalLayout {
+        spacing: 8px;
+
+        // Etiquetas
+        VerticalLayout {
+            horizontal-stretch: 2; spacing: 4px;
+            HorizontalLayout {
+                alignment: space-between;
+                Text { text: "Etiquetas"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+                Text { text: "Separadas por comas"; color: Theme.text-muted; font-size: 10px; }
+            }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.etiquetas;
+                        color: Theme.text-primary; font-size: 11px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+        }
+
+        // Fecha de Caducidad
+        VerticalLayout {
+            horizontal-stretch: 1; spacing: 4px;
+            HorizontalLayout {
+                alignment: space-between;
+                Text { text: "Caducidad"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+                Text { text: "AAAA-MM-DD"; color: Theme.text-muted; font-size: 10px; }
+            }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.fecha-caducidad;
+                        color: Theme.text-primary; font-size: 11px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+        }
+    }
+}

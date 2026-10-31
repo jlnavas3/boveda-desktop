@@ -1,0 +1,167 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+import { RuleChip } from "../../../components/widgets/rule_chip.slint";
+
+export struct SubdomainRuleItem {
+    id: string,
+    texto: string,
+}
+
+export struct SubdomainRuleRow {
+    items: [SubdomainRuleItem],
+}
+
+export component SubSystemSubdomains inherits VerticalLayout {
+    in-out property <string> prefijos-subdominios: "";
+
+    callback restaurar-todo();
+    callback restaurar-subdominios();
+    callback agregar-subdominio(string);
+    callback eliminar-subdominio(string);
+
+    in property <[SubdomainRuleRow]> filas-subdominios: [];
+
+    property <bool> mostrando-agregar: false;
+    property <string> nuevo-subdominio: "";
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Normalización de Títulos";
+        descripcion: "Prefijos de red y subdominios descartados al autogenerar el nombre de una entrada web.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingBlock {
+        titulo: "Prefijos de Subdominios Descartables";
+        descripcion: "Etiquetas interactivas de subdominios que se omiten para extraer el dominio principal (ej: admin, api, login).";
+        restaurar => { root.restaurar-subdominios(); }
+
+        VerticalLayout {
+            spacing: 12px;
+            alignment: start;
+
+            // Botón + Agregar
+            HorizontalLayout {
+                alignment: start;
+                TouchArea {
+                    width: 100px;
+                    height: 30px;
+                    clicked => {
+                        root.mostrando-agregar = !root.mostrando-agregar;
+                    }
+
+                    Rectangle {
+                        border-radius: 15px;
+                        background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                        border-width: 1px;
+                        border-color: Theme.accent-primary;
+
+                        HorizontalLayout {
+                            alignment: center;
+                            spacing: 4px;
+                            Text {
+                                text: "+ Agregar";
+                                font-size: 11px;
+                                font-weight: 600;
+                                color: Theme.accent-primary;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Lista de Chips de subdominios organizados en filas horizontales dinámicas
+            VerticalLayout {
+                spacing: 8px;
+                alignment: start;
+
+                for row in root.filas-subdominios : HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+
+                    for item in row.items : RuleChip {
+                        texto: item.texto;
+                        eliminar => { root.eliminar-subdominio(item.id); }
+                    }
+                }
+            }
+
+            // Formulario inline para nuevo subdominio
+            if root.mostrando-agregar : Rectangle {
+                width: 320px;
+                background: Theme.background;
+                border-radius: Theme.radius-sm;
+                border-width: 1px;
+                border-color: Theme.border;
+
+                VerticalLayout {
+                    padding: 10px;
+                    spacing: 8px;
+
+                    VerticalLayout {
+                        spacing: 2px;
+                        Text { text: "Prefijo de subdominio (ej: portal):"; font-size: 10px; color: Theme.text-secondary; }
+                        Rectangle {
+                            height: 32px;
+                            background: Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            border-width: 1px; border-color: Theme.border;
+                            HorizontalLayout {
+                                padding-left: 6px; padding-right: 6px;
+                                TextInput {
+                                    text <=> root.nuevo-subdominio;
+                                    color: Theme.text-primary;
+                                    font-size: 11px;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: end;
+
+                        TouchArea {
+                            width: 80px; height: 28px;
+                            clicked => {
+                                root.nuevo-subdominio = "";
+                                root.mostrando-agregar = false;
+                            }
+                            Rectangle {
+                                border-radius: Theme.radius-sm;
+                                background: parent.has-hover ? Theme.surface-hover : transparent;
+                                Text { text: "Cancelar"; font-size: 11px; color: Theme.text-secondary; horizontal-alignment: center; vertical-alignment: center; }
+                            }
+                        }
+
+                        TouchArea {
+                            width: 80px; height: 28px;
+                            clicked => {
+                                if root.nuevo-subdominio != "" {
+                                    root.agregar-subdominio(root.nuevo-subdominio);
+                                    root.nuevo-subdominio = "";
+                                    root.mostrando-agregar = false;
+                                }
+                            }
+                            Rectangle {
+                                border-radius: Theme.radius-sm;
+                                background: parent.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                                Text { text: "Guardar"; font-size: 11px; font-weight: 700; color: #000000; horizontal-alignment: center; vertical-alignment: center; }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

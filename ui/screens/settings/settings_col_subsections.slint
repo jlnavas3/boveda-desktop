@@ -1,0 +1,105 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+
+export struct SubCategoryItem {
+    id: int,
+    categoria_padre: int,
+    titulo: string,
+    badge: string,
+}
+
+export component SettingsColSubsections inherits Rectangle {
+    in property <[SubCategoryItem]> subsecciones: [];
+    in property <int> categoria-activa: 1;
+    in-out property <int> subseccion-activa: 1;
+    callback seleccionada(int);
+
+    width: 420px;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    Flickable {
+        width: 100%;
+        height: 100%;
+        content-height: col2-layout.min-height;
+
+        col2-layout := VerticalLayout {
+            padding: 12px;
+            spacing: 4px;
+            alignment: start;
+
+            for sub in root.subsecciones : sub-touch := TouchArea {
+                height: 42px;
+                clicked => {
+                    root.subseccion-activa = sub.id;
+                    root.seleccionada(sub.id);
+                }
+
+                Rectangle {
+                    background: root.subseccion-activa == sub.id ?
+                        Theme.accent-primary.transparentize(85%) :
+                        (sub-touch.has-hover ? Theme.surface-hover : transparent);
+                    border-radius: Theme.radius-sm;
+                    border-width: root.subseccion-activa == sub.id ? 1px : 0px;
+                    border-color: Theme.accent-primary.transparentize(50%);
+
+                    HorizontalLayout {
+                        padding-left: 14px;
+                        padding-right: 14px;
+                        spacing: 12px;
+                        alignment: space-between;
+
+                        // Título de la sub-sección alineado a la izquierda
+                        Text {
+                            text: sub.titulo;
+                            color: root.subseccion-activa == sub.id ? Theme.accent-primary : Theme.text-primary;
+                            font-size: 12px;
+                            font-weight: root.subseccion-activa == sub.id ? 700 : 500;
+                            vertical-alignment: center;
+                            horizontal-stretch: 1;
+                            overflow: elide;
+                        }
+
+                        // Badge tipo píldora alineado a la derecha y centrado verticalmente
+                        if sub.badge != "" : VerticalLayout {
+                            alignment: center;
+
+                            Rectangle {
+                                height: 22px;
+                                min-width: 24px;
+                                background: root.subseccion-activa == sub.id ?
+                                    Theme.accent-primary.transparentize(80%) :
+                                    Theme.surface-hover;
+                                border-radius: Theme.radius-sm;
+                                border-width: Theme.grosor-borde;
+                                border-color: root.subseccion-activa == sub.id ?
+                                    Theme.accent-primary.transparentize(50%) :
+                                    Theme.border;
+
+                                HorizontalLayout {
+                                    padding-left: 8px;
+                                    padding-right: 8px;
+                                    alignment: center;
+
+                                    Text {
+                                        text: sub.badge;
+                                        color: root.subseccion-activa == sub.id ? Theme.accent-primary : Theme.text-secondary;
+                                        font-size: 11px;
+                                        font-weight: 700;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

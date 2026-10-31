@@ -1,0 +1,51 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingSwitch } from "../../../components/widgets/setting_switch.slint";
+
+export component SubAppearanceNotices inherits VerticalLayout {
+    callback restaurar-todo();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Avisos y Asistencia";
+        descripcion: "Alertas preventivas de seguridad, sugerencias de normalización y recordatorios.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingSwitch {
+        titulo: "Mostrar Campana de Avisos en Cabecera";
+        subtitulo: "Despliega el icono de campana interactivo para ver notificaciones pendientes de la bóveda.";
+        checked <=> Theme.avisos-mostrar-campana;
+    }
+
+    SettingSwitch {
+        titulo: "Avisar Cuentas Duplicadas";
+        subtitulo: "Alerta cuando existan dos o más entradas con el mismo usuario y servicio web.";
+        checked <=> Theme.avisos-duplicados;
+    }
+
+    SettingSwitch {
+        titulo: "Avisar Títulos Sin Normalizar";
+        subtitulo: "Detecta URLs crudas o prefijos redundantes (www., login., etc.) pendientes de limpiar.";
+        checked <=> Theme.avisos-titulos-sin-normalizar;
+    }
+
+    SettingSwitch {
+        titulo: "Avisar Problemas de Salud de Contraseñas";
+        subtitulo: "Notifica proactivamente si existen claves débiles o comprometidas.";
+        checked <=> Theme.avisos-salud-contrasenas;
+    }
+
+    SettingSwitch {
+        titulo: "Avisar Respaldo Periódico Pendiente";
+        subtitulo: "Recuerda generar una copia de seguridad cifrada tras cumplirse 30 días del último respaldo.";
+        checked <=> Theme.avisos-respaldo-pendiente;
+    }
+}

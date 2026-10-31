@@ -1,0 +1,144 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "app_icon.slint";
+
+export component ContextMenu inherits PopupWindow {
+    in property <bool> es-favorito: false;
+    in property <bool> es-anclado: false;
+    in property <bool> tiene-totp: false;
+    in property <bool> tiene-password: true;
+    in property <bool> tiene-usuario: true;
+
+    callback copiar-usuario();
+    callback copiar-password();
+    callback copiar-totp();
+    callback alternar-favorito();
+    callback alternar-anclado();
+    callback editar();
+    callback eliminar();
+
+    close-policy: close-on-click;
+    width: 200px;
+
+    Rectangle {
+        background: Theme.surface;
+        border-radius: Theme.radius-md;
+        border-width: 1px;
+        border-color: Theme.border;
+        drop-shadow-blur: 16px;
+        drop-shadow-color: #000000.transparentize(50%);
+        clip: true;
+
+        VerticalLayout {
+            padding: 6px;
+            spacing: 2px;
+
+            if root.tiene-usuario : TouchArea {
+                height: 28px;
+                clicked => { root.copiar-usuario(); }
+                Rectangle {
+                    background: parent.has-hover ? Theme.surface-hover : transparent;
+                    border-radius: Theme.radius-sm;
+                    HorizontalLayout {
+                        padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                        AppIcon { source: @image-url("../../assets/icons/person.svg"); icon-size: 14px; icon-color: Theme.text-secondary; vertical-alignment: center; }
+                        Text { text: "Copiar usuario"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            if root.tiene-password : TouchArea {
+                height: 28px;
+                clicked => { root.copiar-password(); }
+                Rectangle {
+                    background: parent.has-hover ? Theme.surface-hover : transparent;
+                    border-radius: Theme.radius-sm;
+                    HorizontalLayout {
+                        padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                        AppIcon { source: @image-url("../../assets/icons/key.svg"); icon-size: 14px; icon-color: Theme.text-secondary; vertical-alignment: center; }
+                        Text { text: "Copiar contraseña"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            if root.tiene-totp : TouchArea {
+                height: 28px;
+                clicked => { root.copiar-totp(); }
+                Rectangle {
+                    background: parent.has-hover ? Theme.surface-hover : transparent;
+                    border-radius: Theme.radius-sm;
+                    HorizontalLayout {
+                        padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                        AppIcon { source: @image-url("../../assets/icons/timer.svg"); icon-size: 14px; icon-color: Theme.accent-primary; vertical-alignment: center; }
+                        Text { text: "Copiar código 2FA / TOTP"; color: Theme.accent-primary; font-size: 11px; font-weight: 600; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            Rectangle { height: 1px; background: Theme.border; }
+
+            TouchArea {
+                height: 28px;
+                clicked => { root.alternar-favorito(); }
+                Rectangle {
+                    background: parent.has-hover ? Theme.surface-hover : transparent;
+                    border-radius: Theme.radius-sm;
+                    HorizontalLayout {
+                        padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                        AppIcon { source: root.es-favorito ? @image-url("../../assets/icons/star.svg") : @image-url("../../assets/icons/star_border.svg"); icon-size: 14px; icon-color: #F59E0B; vertical-alignment: center; }
+                        Text { text: root.es-favorito ? "Quitar de favoritos" : "Marcar favorito"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            TouchArea {
+                height: 28px;
+                clicked => { root.alternar-anclado(); }
+                Rectangle {
+                    background: parent.has-hover ? Theme.surface-hover : transparent;
+                    border-radius: Theme.radius-sm;
+                    HorizontalLayout {
+                        padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                        AppIcon { source: @image-url("../../assets/icons/pin.svg"); icon-size: 14px; icon-color: Theme.text-secondary; vertical-alignment: center; }
+                        Text { text: root.es-anclado ? "Desanclar" : "Anclar"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            Rectangle { height: 1px; background: Theme.border; }
+
+            TouchArea {
+                height: 28px;
+                clicked => { root.editar(); }
+                Rectangle {
+                    background: parent.has-hover ? Theme.surface-hover : transparent;
+                    border-radius: Theme.radius-sm;
+                    HorizontalLayout {
+                        padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                        AppIcon { source: @image-url("../../assets/icons/edit.svg"); icon-size: 14px; icon-color: Theme.text-secondary; vertical-alignment: center; }
+                        Text { text: "Editar entrada"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            TouchArea {
+                height: 28px;
+                clicked => { root.eliminar(); }
+                Rectangle {
+                    background: parent.has-hover ? Theme.danger.transparentize(80%) : transparent;
+                    border-radius: Theme.radius-sm;
+                    HorizontalLayout {
+                        padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                        AppIcon { source: @image-url("../../assets/icons/delete.svg"); icon-size: 14px; icon-color: Theme.danger; vertical-alignment: center; }
+                        Text { text: "Mover a papelera"; color: Theme.danger; font-size: 11px; font-weight: 600; vertical-alignment: center; }
+                    }
+                }
+            }
+        }
+    }
+}

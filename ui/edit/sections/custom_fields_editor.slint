@@ -1,0 +1,31 @@
+import { Theme } from "../../theme.slint";
+
+export component CustomFieldsEditor inherits VerticalLayout {
+    in-out property <string> campos-personalizados: "";
+
+    spacing: 4px;
+
+    HorizontalLayout {
+        alignment: space-between;
+        Text { text: "Campos Personalizados (Formato: Nombre: Valor)"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        Text { text: "* Prefijo con * para secreto"; color: Theme.text-muted; font-size: 10px; }
+    }
+
+    Rectangle {
+        height: 56px;
+        background: Theme.background;
+        border-width: 1px;
+        border-color: Theme.border;
+        border-radius: Theme.radius-sm;
+
+        HorizontalLayout {
+            padding: 8px;
+            TextInput {
+                text <=> root.campos-personalizados;
+                color: Theme.text-primary;
+                font-size: 11px;
+                wrap: word-wrap;
+            }
+        }
+    }
+}

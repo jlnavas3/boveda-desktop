@@ -1,0 +1,52 @@
+import { Theme } from "../../theme.slint";
+
+export component SystemSection inherits VerticalLayout {
+    in-out property <string> prefijos-subdominios: "admin, api, auth, cdn, dev, login, mail, portal, vpn";
+    in-out property <string> puertos-homelab: "8006: Proxmox\n8096: Jellyfin\n8123: Home Assistant\n9000: Portainer\n9443: Portainer SSL\n5000: Synology DSM";
+
+    spacing: 12px;
+
+    // 1. Prefijos de Subdominios
+    VerticalLayout {
+        spacing: 4px;
+        HorizontalLayout {
+            alignment: space-between;
+            Text { text: "Prefijos de Subdominios Web"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Text { text: "Separados por coma"; color: Theme.text-muted; font-size: 10px; }
+        }
+        Rectangle {
+            height: 38px; background: Theme.background;
+            border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+            HorizontalLayout {
+                padding-left: 8px; padding-right: 8px;
+                TextInput {
+                    text <=> root.prefijos-subdominios;
+                    color: Theme.text-primary; font-size: 11px;
+                    vertical-alignment: center; single-line: true;
+                }
+            }
+        }
+    }
+
+    // 2. Puertos de Servicios Locales y Homelab
+    VerticalLayout {
+        spacing: 4px;
+        HorizontalLayout {
+            alignment: space-between;
+            Text { text: "Mapeo de Puertos Homelab (Formato: Puerto: Nombre)"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Text { text: "1 servicio por línea"; color: Theme.text-muted; font-size: 10px; }
+        }
+        Rectangle {
+            height: 72px; background: Theme.background;
+            border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+            HorizontalLayout {
+                padding: 8px;
+                TextInput {
+                    text <=> root.puertos-homelab;
+                    color: Theme.text-primary; font-size: 11px;
+                    wrap: word-wrap;
+                }
+            }
+        }
+    }
+}

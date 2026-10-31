@@ -1,0 +1,66 @@
+import { Theme } from "../../theme.slint";
+
+export component IdentityForm inherits VerticalLayout {
+    in-out property <string> nombre: "";
+    in-out property <string> tipo-doc: "DNI";
+    in-out property <string> numero: "";
+
+    spacing: 10px;
+
+    // Nombre Completo
+    VerticalLayout {
+        spacing: 4px;
+        Text { text: "Nombre Completo"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        Rectangle {
+            height: 36px; background: Theme.background;
+            border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+            HorizontalLayout {
+                padding-left: 8px; padding-right: 8px;
+                TextInput {
+                    text <=> root.nombre;
+                    color: Theme.text-primary; font-size: 12px;
+                    vertical-alignment: center; single-line: true;
+                }
+            }
+        }
+    }
+
+    // Tipo de Documento y Número
+    HorizontalLayout {
+        spacing: 8px;
+
+        VerticalLayout {
+            horizontal-stretch: 1; spacing: 4px;
+            Text { text: "Tipo de Documento"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.tipo-doc;
+                        color: Theme.text-primary; font-size: 12px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+        }
+
+        VerticalLayout {
+            horizontal-stretch: 2; spacing: 4px;
+            Text { text: "Número de Identificación"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.numero;
+                        color: Theme.accent-rose; font-size: 12px; font-weight: 700;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+        }
+    }
+}

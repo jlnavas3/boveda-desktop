@@ -1,0 +1,112 @@
+import { Theme } from "../../theme.slint";
+
+export component BackupsSection inherits VerticalLayout {
+    callback exportar-json();
+    callback exportar-csv();
+    callback importar-bitwarden();
+    callback importar-csv();
+    callback fusionar-boveda();
+
+    spacing: 12px;
+
+    // 1. Exportación Segura de Datos
+    VerticalLayout {
+        spacing: 6px;
+        Text { text: "Exportación Soberana de Datos"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+        HorizontalLayout {
+            spacing: 8px;
+            TouchArea {
+                horizontal-stretch: 1; height: 38px;
+                clicked => { root.exportar-json(); }
+                Rectangle {
+                    background: Theme.background; border-radius: Theme.radius-sm;
+                    border-width: 1px; border-color: Theme.border;
+                    HorizontalLayout {
+                        alignment: center; spacing: 6px;
+                        Text { text: "📄"; font-size: 12px; vertical-alignment: center; }
+                        Text { text: "Exportar JSON Descifrado"; color: Theme.text-primary; font-size: 11px; font-weight: 600; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            TouchArea {
+                horizontal-stretch: 1; height: 38px;
+                clicked => { root.exportar-csv(); }
+                Rectangle {
+                    background: Theme.background; border-radius: Theme.radius-sm;
+                    border-width: 1px; border-color: Theme.border;
+                    HorizontalLayout {
+                        alignment: center; spacing: 6px;
+                        Text { text: "📊"; font-size: 12px; vertical-alignment: center; }
+                        Text { text: "Exportar CSV Universal"; color: Theme.text-primary; font-size: 11px; font-weight: 600; vertical-alignment: center; }
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Importación y Migración
+    VerticalLayout {
+        spacing: 6px;
+        Text { text: "Importación desde Otros Gestores"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+        HorizontalLayout {
+            spacing: 8px;
+            TouchArea {
+                horizontal-stretch: 1; height: 38px;
+                clicked => { root.importar-bitwarden(); }
+                Rectangle {
+                    background: Theme.background; border-radius: Theme.radius-sm;
+                    border-width: 1px; border-color: Theme.border;
+                    HorizontalLayout {
+                        alignment: center; spacing: 6px;
+                        Text { text: "🛡"; font-size: 12px; vertical-alignment: center; }
+                        Text { text: "Bitwarden (JSON)"; color: Theme.accent-blue; font-size: 11px; font-weight: 600; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            TouchArea {
+                horizontal-stretch: 1; height: 38px;
+                clicked => { root.importar-csv(); }
+                Rectangle {
+                    background: Theme.background; border-radius: Theme.radius-sm;
+                    border-width: 1px; border-color: Theme.border;
+                    HorizontalLayout {
+                        alignment: center; spacing: 6px;
+                        Text { text: "📥"; font-size: 12px; vertical-alignment: center; }
+                        Text { text: "Google Passwords (CSV)"; color: Theme.accent-primary; font-size: 11px; font-weight: 600; vertical-alignment: center; }
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Fusión de Bóvedas Sin Pérdida (Lossless Merge)
+    Rectangle {
+        background: Theme.background; border-radius: Theme.radius-sm;
+        border-width: 1px; border-color: Theme.border;
+
+        HorizontalLayout {
+            padding: 12px;
+            spacing: 12px; alignment: center;
+            Rectangle {
+                width: 32px; height: 32px; border-radius: Theme.radius-sm;
+                background: Theme.accent-primary.transparentize(85%);
+                Text { text: "⚡"; font-size: 14px; horizontal-alignment: center; vertical-alignment: center; }
+            }
+            VerticalLayout {
+                horizontal-stretch: 1; spacing: 2px;
+                Text { text: "Fusión Soberana de Bóvedas (.bvda)"; color: Theme.text-primary; font-size: 13px; font-weight: 600; }
+                Text { text: "Unifica dos archivos .bvda combinando historiales, passkeys secundarias y categorías sin sobrescribir datos"; color: Theme.text-secondary; font-size: 11px; wrap: word-wrap; }
+            }
+            TouchArea {
+                width: 100px; height: 32px;
+                clicked => { root.fusionar-boveda(); }
+                Rectangle {
+                    background: Theme.accent-primary; border-radius: Theme.radius-sm;
+                    Text { text: "Fusionar .bvda"; color: #FFFFFF; font-size: 11px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+                }
+            }
+        }
+    }
+}

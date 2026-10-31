@@ -1,0 +1,57 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "../widgets/app_icon.slint";
+
+export component IndicatorIcons inherits HorizontalLayout {
+    in property <bool> tiene-usuario: false;
+    in property <bool> tiene-password: false;
+    in property <bool> tiene-totp: false;
+    in property <bool> tiene-passkey: false;
+    in property <bool> tiene-url: false;
+    in property <bool> tiene-app: false;
+    in property <bool> tiene-notas: false;
+
+    spacing: 5px;
+    alignment: end;
+
+    if root.tiene-usuario : AppIcon {
+        source: @image-url("../../assets/icons/person.svg");
+        icon-size: Theme.tamanio-indicadores;
+        icon-color: Theme.color-ind-usuario.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+    }
+    if root.tiene-password : AppIcon {
+        source: @image-url("../../assets/icons/key.svg");
+        icon-size: Theme.tamanio-indicadores;
+        icon-color: Theme.color-ind-password.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+    }
+    if root.tiene-totp : AppIcon {
+        source: @image-url("../../assets/icons/timer.svg");
+        icon-size: Theme.tamanio-indicadores;
+        icon-color: Theme.color-ind-totp.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+    }
+    if root.tiene-passkey : AppIcon {
+        source: @image-url("../../assets/icons/fingerprint.svg");
+        icon-size: Theme.tamanio-indicadores;
+        icon-color: Theme.color-ind-passkey.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+    }
+    if root.tiene-url : AppIcon {
+        source: @image-url("../../assets/icons/language.svg");
+        icon-size: Theme.tamanio-indicadores;
+        icon-color: Theme.color-ind-url.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+    }
+    if root.tiene-app : AppIcon {
+        source: @image-url("../../assets/icons/android.svg");
+        icon-size: Theme.tamanio-indicadores;
+        icon-color: Theme.color-ind-app.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+    }
+    if root.tiene-notas : AppIcon {
+        source: @image-url("../../assets/icons/note.svg");
+        icon-size: Theme.tamanio-indicadores;
+        icon-color: Theme.color-ind-notas.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+    }
+}

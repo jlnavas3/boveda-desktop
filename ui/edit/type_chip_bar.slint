@@ -1,0 +1,66 @@
+import { Theme } from "../theme.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
+
+export component TypeChipBar inherits Rectangle {
+    in-out property <string> tipo-seleccionado: "LOGIN";
+    callback seleccionar(string);
+
+    height: 40px;
+
+    HorizontalLayout {
+        spacing: 6px;
+        alignment: start;
+
+        for t in [
+            { id: "LOGIN", nombre: "Login" },
+            { id: "TARJETA", nombre: "Tarjeta" },
+            { id: "CUENTA_BANCARIA", nombre: "Banco" },
+            { id: "SERVIDOR", nombre: "Servidor" },
+            { id: "WIFI", nombre: "Wi-Fi" },
+            { id: "WALLET", nombre: "Wallet" },
+            { id: "IDENTIDAD", nombre: "Doc" },
+            { id: "CONTACTO", nombre: "Contacto" },
+            { id: "NOTA", nombre: "Nota" }
+        ]: TouchArea {
+            height: 32px;
+            clicked => {
+                root.tipo-seleccionado = t.id;
+                root.seleccionar(t.id);
+            }
+
+            Rectangle {
+                background: root.tipo-seleccionado == t.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                border-width: 1px;
+                border-color: root.tipo-seleccionado == t.id ? Theme.accent-primary : Theme.border;
+                border-radius: Theme.radius-sm;
+
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    spacing: 6px; alignment: center;
+
+                    AppIcon {
+                        source: t.id == "LOGIN" ? @image-url("../assets/icons/key.svg") :
+                                t.id == "TARJETA" ? @image-url("../assets/icons/credit_card.svg") :
+                                t.id == "CUENTA_BANCARIA" ? @image-url("../assets/icons/account_balance.svg") :
+                                t.id == "SERVIDOR" ? @image-url("../assets/icons/computer.svg") :
+                                t.id == "WIFI" ? @image-url("../assets/icons/wifi.svg") :
+                                t.id == "WALLET" ? @image-url("../assets/icons/wallet.svg") :
+                                t.id == "IDENTIDAD" ? @image-url("../assets/icons/badge.svg") :
+                                t.id == "CONTACTO" ? @image-url("../assets/icons/person.svg") :
+                                @image-url("../assets/icons/note.svg");
+                        icon-size: 13px;
+                        icon-color: root.tipo-seleccionado == t.id ? Theme.accent-primary : Theme.text-secondary;
+                        vertical-alignment: center;
+                    }
+                    Text {
+                        text: t.nombre;
+                        color: root.tipo-seleccionado == t.id ? Theme.accent-primary : Theme.text-secondary;
+                        font-size: 11px;
+                        font-weight: root.tipo-seleccionado == t.id ? 700 : 500;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

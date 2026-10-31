@@ -1,0 +1,27 @@
+import { Theme } from "../../theme.slint";
+
+export component NoteForm inherits VerticalLayout {
+    in-out property <string> notas: "";
+
+    spacing: 6px;
+
+    Text { text: "Contenido de la Nota Segura (Texto Libre Cifrado)"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+
+    Rectangle {
+        min-height: 120px;
+        background: Theme.background;
+        border-width: 1px;
+        border-color: Theme.border;
+        border-radius: Theme.radius-sm;
+
+        HorizontalLayout {
+            padding: 8px;
+            TextInput {
+                text <=> root.notas;
+                color: Theme.text-primary;
+                font-size: 12px;
+                wrap: word-wrap;
+            }
+        }
+    }
+}

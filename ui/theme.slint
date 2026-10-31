@@ -1,0 +1,79 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+export global Theme {
+    // Modo y configuración dinámica
+    in-out property <bool> es-oscuro: true;
+    in-out property <string> modo-actual: "oscuro";
+    in-out property <string> acento-actual: "menta";
+
+    // Fondos dinámicos
+    in-out property <color> background: #0D1117;
+    in-out property <color> surface: #161B22;
+    in-out property <color> surface-hover: #21262D;
+    in-out property <color> surface-selected: #1F2937;
+    in-out property <color> border: #30363D;
+    in-out property <color> border-focus: #58A6FF;
+
+    // Textos
+    in-out property <color> text-primary: #F0F6FC;
+    in-out property <color> text-secondary: #8B949E;
+    in-out property <color> text-muted: #6E7681;
+
+    // Colores de acento dinámicos (19 paletas oficiales)
+    in-out property <color> accent-primary: #57E6B4;    // Menta por defecto
+    in-out property <color> accent-hover: #23C08D;
+    in-out property <color> accent-blue: #6FA8FF;
+    in-out property <color> accent-purple: #B98BFF;
+    in-out property <color> accent-amber: #FF9800;
+    in-out property <color> accent-cyan: #00BCD4;
+    in-out property <color> accent-rose: #FF8FCB;
+    in-out property <color> danger: #EF4444;
+    in-out property <color> danger-hover: #DC2626;
+
+    // Formas y bordes (AjustesDefaults.Formas)
+    in-out property <length> curvatura-esquinas: 8px;
+    in-out property <length> grosor-borde: 1px;
+    in-out property <length> espaciado-componentes: 6px;
+    in-out property <string> estilo-borde: "sutil";
+
+    // Derivados reactivos para el esqueleto global de la app
+    in-out property <length> radius-sm: root.curvatura-esquinas * 0.5;
+    in-out property <length> radius-md: root.curvatura-esquinas;
+    in-out property <length> radius-lg: root.curvatura-esquinas * 1.5;
+    in-out property <length> radio-tarjetas: root.curvatura-esquinas;
+
+    // Tipografía (AjustesDefaults.Tipografia)
+    in-out property <float> escala-texto: 1.0;
+    in-out property <string> familia-fuente: "sans";
+    in-out property <string> peso-texto: "normal";
+
+    // Personalización del Menú Lateral / Sidebar (AjustesDefaults.MenuLateral)
+    in-out property <bool> menu-lateral-mostrar-cabecera: true;
+    in-out property <bool> menu-lateral-mostrar-pie: true;
+    in-out property <bool> menu-lateral-mostrar-boton-bloquear: true;
+    in-out property <bool> menu-lateral-agrupar-items: false;
+    in-out property <bool> menu-lateral-sin-bordes: false;
+
+    // Avisos y Asistencia (AjustesDefaults.Avisos)
+    in-out property <bool> avisos-mostrar-campana: true;
+    in-out property <bool> avisos-duplicados: true;
+    in-out property <bool> avisos-titulos-sin-normalizar: true;
+    in-out property <bool> avisos-salud-contrasenas: true;
+    in-out property <bool> avisos-respaldo-pendiente: true;
+
+    // Indicadores de campos en tarjetas (Fiel a Android)
+    in-out property <string> estilo-indicadores: "iconos";
+    in-out property <length> tamanio-indicadores: 12px;
+    in-out property <float> opacidad-indicadores: 1.0;
+    in-out property <color> color-ind-usuario: #2563EB;
+    in-out property <color> color-ind-password: #EAB308;
+    in-out property <color> color-ind-totp: #F97316;
+    in-out property <color> color-ind-passkey: #8B5CF6;
+    in-out property <color> color-ind-url: #06B6D4;
+    in-out property <color> color-ind-app: #16A34A;
+    in-out property <color> color-ind-notas: #94A3B8;
+}

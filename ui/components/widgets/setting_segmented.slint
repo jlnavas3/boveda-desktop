@@ -1,0 +1,122 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+
+export struct SegmentOption {
+    id: string,
+    etiqueta: string,
+    icono: string,
+}
+
+export component SettingSegmented inherits Rectangle {
+    in property <string> icono: "";
+    in property <string> titulo: "";
+    in property <string> subtitulo: "";
+    in property <[SegmentOption]> opciones: [];
+    in-out property <string> seleccion: "";
+    callback changed(string);
+
+    background: Theme.surface;
+    border-radius: Theme.curvatura-esquinas;
+    border-width: Theme.grosor-borde;
+    border-color: Theme.border;
+    min-height: 52px;
+
+    HorizontalLayout {
+        padding-left: 14px;
+        padding-right: 14px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        spacing: 12px;
+        alignment: center;
+
+        if root.icono != "" : Rectangle {
+            width: 32px;
+            height: 32px;
+            border-radius: Theme.radius-sm;
+            background: Theme.background;
+            border-width: 1px;
+            border-color: Theme.border;
+
+            Text {
+                text: root.icono;
+                font-size: 14px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+
+        VerticalLayout {
+            horizontal-stretch: 1;
+            spacing: 2px;
+            alignment: center;
+
+            Text {
+                text: root.titulo;
+                color: Theme.text-primary;
+                font-size: 13px;
+                font-weight: 600;
+                horizontal-alignment: left;
+            }
+
+            if root.subtitulo != "" : Text {
+                text: root.subtitulo;
+                color: Theme.text-secondary;
+                font-size: 11px;
+                wrap: word-wrap;
+                horizontal-alignment: left;
+            }
+        }
+
+        // Grupo segmentado de botones
+        Rectangle {
+            height: 34px;
+            background: Theme.background;
+            border-radius: Theme.radius-sm;
+            border-width: 1px;
+            border-color: Theme.border;
+
+            HorizontalLayout {
+                padding: 3px;
+                spacing: 4px;
+
+                for opc in root.opciones: seg-item := Rectangle {
+                    border-radius: Theme.radius-sm;
+                    background: root.seleccion == opc.id ? Theme.accent-primary : (seg-touch.has-hover ? Theme.surface-hover : transparent);
+
+                    seg-touch := TouchArea {
+                        clicked => {
+                            root.seleccion = opc.id;
+                            root.changed(opc.id);
+                        }
+
+                        HorizontalLayout {
+                            padding-left: 10px;
+                            padding-right: 10px;
+                            spacing: 4px;
+                            alignment: center;
+
+                            if opc.icono != "" : Text {
+                                text: opc.icono;
+                                font-size: 12px;
+                                vertical-alignment: center;
+                            }
+
+                            Text {
+                                text: opc.etiqueta;
+                                color: root.seleccion == opc.id ? #000000 : Theme.text-primary;
+                                font-size: 12px;
+                                font-weight: root.seleccion == opc.id ? 700 : 500;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

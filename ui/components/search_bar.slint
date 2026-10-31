@@ -1,0 +1,78 @@
+import { Theme } from "../theme.slint";
+import { AppIcon } from "widgets/app_icon.slint";
+
+export component SearchBar inherits Rectangle {
+    in-out property <string> text <=> input.text;
+    in property <string> placeholder: "Buscar entradas...";
+    callback search-changed(string);
+    callback clear-clicked();
+
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: input.has-focus ? Theme.border-focus : Theme.border;
+    border-radius: Theme.radius-md;
+    height: 40px;
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        spacing: 8px;
+
+        AppIcon {
+            source: @image-url("../assets/icons/search.svg");
+            icon-size: 14px;
+            icon-color: Theme.text-muted;
+            vertical-alignment: center;
+        }
+
+        Rectangle {
+            horizontal-stretch: 1;
+            clip: true;
+
+            input := TextInput {
+                width: 100%;
+                height: 100%;
+                color: Theme.text-primary;
+                font-size: 13px;
+                vertical-alignment: center;
+                single-line: true;
+                
+                edited => {
+                    root.search-changed(self.text);
+                }
+            }
+
+            if !input.has-focus && input.text == "" : Text {
+                width: 100%;
+                height: 100%;
+                text: root.placeholder;
+                color: Theme.text-muted;
+                font-size: 13px;
+                vertical-alignment: center;
+                horizontal-alignment: left;
+            }
+        }
+
+        if input.text != "" : TouchArea {
+            width: 20px;
+            height: 20px;
+            clicked => {
+                input.text = "";
+                root.search-changed("");
+                root.clear-clicked();
+            }
+
+            Rectangle {
+                background: parent.has-hover ? Theme.surface-hover : Colors.transparent;
+                border-radius: Theme.radius-sm;
+                AppIcon {
+                    source: @image-url("../assets/icons/close.svg");
+                    icon-size: 12px;
+                    icon-color: Theme.text-secondary;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,52 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+
+export component SubBackupsKit inherits VerticalLayout {
+    callback generar-kit();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Kit de Emergencia";
+        descripcion: "Generación de documento físico imprimible con los parámetros de recuperación nuclear de la bóveda.";
+    }
+
+    SettingBlock {
+        titulo: "Documento de Recuperación en Papel (PDF)";
+        descripcion: "Genera una hoja física con la ruta de tu bóveda, huella criptográfica de clave y pautas de contingencia.";
+        mostrar-restaurar: false;
+
+        HorizontalLayout {
+            alignment: start;
+            TouchArea {
+                width: 190px; height: 34px;
+                clicked => { root.generar-kit(); }
+
+                Rectangle {
+                    border-radius: Theme.radius-sm;
+                    background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                    border-width: Theme.grosor-borde;
+                    border-color: Theme.border;
+
+                    HorizontalLayout {
+                        alignment: center; spacing: 6px;
+                        Text {
+                            text: "Exportar Kit de Emergencia";
+                            color: Theme.accent-primary;
+                            font-size: 12px;
+                            font-weight: 700;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,125 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { FormFieldBox } from "../../components/widgets/form_field_box.slint";
+
+export component LoginForm inherits VerticalLayout {
+    in-out property <string> usuario: "";
+    in-out property <string> password: "";
+    in-out property <string> url: "";
+    in-out property <string> urls-secundarias: "";
+
+    callback invocar-generador();
+
+    spacing: 10px;
+
+    // Usuario o Correo
+    FormFieldBox {
+        etiqueta: "Usuario o Correo";
+        texto <=> root.usuario;
+        color-indicador: Theme.color-ind-usuario;
+    }
+
+    // Contraseña con botón de generador
+    VerticalLayout {
+        spacing: 4px;
+        Text { text: "Contraseña"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        HorizontalLayout {
+            spacing: 8px;
+            Rectangle {
+                horizontal-stretch: 1;
+                height: 36px;
+                background: Theme.background;
+                border-width: Theme.grosor-borde;
+                border-color: Theme.color-ind-password.transparentize(65%);
+                border-radius: Theme.curvatura-esquinas;
+                clip: true;
+
+                // Franja vertical izquierda de acento (4.5px) fiel a Android TarjetaDatoDetalle
+                Rectangle {
+                    x: 0px;
+                    y: 0px;
+                    width: 4.5px;
+                    height: parent.height;
+                    background: Theme.color-ind-password;
+                }
+
+                HorizontalLayout {
+                    padding-left: 12px;
+                    padding-right: 8px;
+                    TextInput {
+                        text <=> root.password;
+                        color: Theme.text-primary;
+                        font-size: 12px;
+                        vertical-alignment: center;
+                        single-line: true;
+                    }
+                }
+            }
+
+            TouchArea {
+                width: 36px; height: 36px;
+                mouse-cursor: pointer;
+                clicked => { root.invocar-generador(); }
+                Rectangle {
+                    background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                    border-width: Theme.grosor-borde;
+                    border-color: Theme.border;
+                    border-radius: Theme.curvatura-esquinas;
+                    Text { text: "🎲"; font-size: 14px; horizontal-alignment: center; vertical-alignment: center; }
+                }
+            }
+        }
+    }
+
+    // URL Principal
+    FormFieldBox {
+        etiqueta: "Sitio Web Principal (URL)";
+        texto <=> root.url;
+        color-indicador: Theme.color-ind-url;
+    }
+
+    // URLs Secundarias
+    VerticalLayout {
+        spacing: 4px;
+        HorizontalLayout {
+            alignment: space-between;
+            Text { text: "URLs Secundarias / Dominios Alternativos"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Text { text: "1 por línea"; color: Theme.text-muted; font-size: 10px; }
+        }
+        Rectangle {
+            height: 48px;
+            background: Theme.background;
+            border-width: Theme.grosor-borde;
+            border-color: Theme.color-ind-url.transparentize(65%);
+            border-radius: Theme.curvatura-esquinas;
+            clip: true;
+
+            // Franja vertical izquierda
+            Rectangle {
+                x: 0px;
+                y: 0px;
+                width: 4.5px;
+                height: parent.height;
+                background: Theme.color-ind-url;
+            }
+
+            HorizontalLayout {
+                padding-left: 12px;
+                padding-right: 6px;
+                padding-top: 6px;
+                padding-bottom: 6px;
+                TextInput {
+                    text <=> root.urls-secundarias;
+                    color: Theme.text-primary;
+                    font-size: 11px;
+                    wrap: word-wrap;
+                }
+            }
+        }
+    }
+}

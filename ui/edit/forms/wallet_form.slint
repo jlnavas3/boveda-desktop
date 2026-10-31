@@ -1,0 +1,70 @@
+import { Theme } from "../../theme.slint";
+
+export component WalletForm inherits VerticalLayout {
+    in-out property <string> red: "Bitcoin";
+    in-out property <string> direccion: "";
+    in-out property <string> semilla: "";
+
+    spacing: 10px;
+
+    // Red Blockchain
+    VerticalLayout {
+        spacing: 4px;
+        Text { text: "Red Blockchain"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        HorizontalLayout {
+            spacing: 8px;
+            for r in ["Bitcoin", "Ethereum", "Solana", "Monero", "Otra"]: TouchArea {
+                horizontal-stretch: 1; height: 30px;
+                clicked => { root.red = r; }
+                Rectangle {
+                    background: root.red == r ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: 1px;
+                    border-color: root.red == r ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+                    Text {
+                        text: r;
+                        color: root.red == r ? Theme.accent-primary : Theme.text-secondary;
+                        font-size: 11px; font-weight: 600;
+                        horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+
+    // Dirección Pública
+    VerticalLayout {
+        spacing: 4px;
+        Text { text: "Dirección Pública"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        Rectangle {
+            height: 36px; background: Theme.background;
+            border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+            HorizontalLayout {
+                padding-left: 8px; padding-right: 8px;
+                TextInput {
+                    text <=> root.direccion;
+                    color: Theme.text-primary; font-size: 11px;
+                    vertical-alignment: center; single-line: true;
+                }
+            }
+        }
+    }
+
+    // Frase Semilla / Clave Privada
+    VerticalLayout {
+        spacing: 4px;
+        Text { text: "Frase Semilla (Seed Phrase) o Clave Privada"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        Rectangle {
+            height: 60px; background: Theme.background;
+            border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+            HorizontalLayout {
+                padding: 6px;
+                TextInput {
+                    text <=> root.semilla;
+                    color: Theme.accent-amber; font-size: 11px;
+                    wrap: word-wrap;
+                }
+            }
+        }
+    }
+}

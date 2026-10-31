@@ -1,0 +1,68 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { RestoreButton } from "restore_button.slint";
+
+export component SettingBlock inherits Rectangle {
+    in property <string> titulo: "";
+    in property <string> descripcion: "";
+    in property <bool> mostrar-restaurar: true;
+    callback restaurar();
+
+    background: Theme.surface;
+    border-radius: Theme.curvatura-esquinas;
+    border-width: Theme.grosor-borde;
+    border-color: Theme.border;
+
+    VerticalLayout {
+        padding: 14px;
+        spacing: Theme.espaciado-componentes;
+
+        // Fila 1: Título a la izquierda ⟷ RestoreButton a la derecha
+        HorizontalLayout {
+            alignment: space-between;
+            spacing: 8px;
+
+            Text {
+                text: root.titulo;
+                font-size: 13px;
+                font-weight: 600;
+                color: Theme.text-primary;
+                horizontal-stretch: 1;
+                horizontal-alignment: left;
+                vertical-alignment: center;
+            }
+
+            if root.mostrar-restaurar : RestoreButton {
+                compacto: true;
+                restored => { root.restaurar(); }
+            }
+        }
+
+        // Fila 2: Descripción explicativa
+        if root.descripcion != "" : Text {
+            text: root.descripcion;
+            font-size: 11px;
+            color: Theme.text-secondary;
+            wrap: word-wrap;
+            horizontal-alignment: left;
+        }
+
+        // Separador tenue con margen antes y después
+        VerticalLayout {
+            padding-top: 6px;
+            padding-bottom: 6px;
+            Rectangle {
+                height: 1px;
+                background: Theme.border;
+            }
+        }
+
+        // Contenedor hijo para los controles específicos
+        @children
+    }
+}

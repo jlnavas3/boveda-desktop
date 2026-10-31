@@ -1,0 +1,56 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "app_icon.slint";
+
+export component RuleChip inherits Rectangle {
+    in property <string> texto: "";
+    callback eliminar();
+
+    height: 30px;
+    border-radius: 15px;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 8px;
+        spacing: 8px;
+        alignment: center;
+
+        Text {
+            text: root.texto;
+            font-size: 11px;
+            font-weight: 500;
+            color: Theme.text-primary;
+            vertical-alignment: center;
+        }
+
+        VerticalLayout {
+            alignment: center;
+            btn-del := TouchArea {
+                width: 18px;
+                height: 18px;
+                clicked => { root.eliminar(); }
+
+                Rectangle {
+                    border-radius: 9px;
+                    background: btn-del.has-hover ? Theme.danger.transparentize(80%) : transparent;
+
+                    AppIcon {
+                        source: @image-url("../../assets/icons/close.svg");
+                        icon-size: 10px;
+                        icon-color: btn-del.has-hover ? Theme.danger : Theme.text-muted;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

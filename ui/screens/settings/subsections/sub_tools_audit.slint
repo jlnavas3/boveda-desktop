@@ -1,0 +1,51 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+
+export component SubToolsAudit inherits VerticalLayout {
+    callback auditoria-salud();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Auditoría y Salud";
+        descripcion: "Diagnóstico proactivo de vulnerabilidades en las credenciales almacenadas.";
+    }
+
+    SettingBlock {
+        titulo: "Diagnóstico de Fortaleza y Reutilización";
+        descripcion: "Analiza toda la base de datos detectando contraseñas duplicadas, débiles o sin autenticación 2FA.";
+        mostrar-restaurar: false;
+
+        HorizontalLayout {
+            alignment: start;
+            TouchArea {
+                width: 180px; height: 34px;
+                clicked => { root.auditoria-salud(); }
+
+                Rectangle {
+                    border-radius: Theme.radius-sm;
+                    background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                    border-width: 1px; border-color: Theme.border;
+
+                    HorizontalLayout {
+                        alignment: center; spacing: 6px;
+                        Text {
+                            text: "Ejecutar Diagnóstico";
+                            color: Theme.accent-primary;
+                            font-size: 12px;
+                            font-weight: 700;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

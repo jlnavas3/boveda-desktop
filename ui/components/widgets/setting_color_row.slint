@@ -1,0 +1,93 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "app_icon.slint";
+
+export component SettingColorRow inherits Rectangle {
+    in property <image> icono-fuente;
+    in property <string> titulo: "";
+    in property <string> subtitulo: "";
+    in property <color> color-actual: #2563EB;
+    in property <string> hex-texto: "#2563EB";
+
+    callback al-pulsar();
+
+    background: ta.has-hover ? Theme.surface-hover : Colors.transparent;
+    border-radius: Theme.curvatura-esquinas;
+
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.al-pulsar(); }
+    }
+
+    VerticalLayout {
+        padding-top: 6px;
+        padding-bottom: 6px;
+        padding-left: 8px;
+        padding-right: 8px;
+        spacing: 4px;
+
+        // Fila de control: [Icono] Nombre .......... (●) [#HEX]
+        HorizontalLayout {
+            alignment: space-between;
+            spacing: 8px;
+
+            HorizontalLayout {
+                alignment: start;
+                spacing: 8px;
+
+                AppIcon {
+                    source: root.icono-fuente;
+                    icon-size: 16px;
+                    icon-color: root.color-actual;
+                    vertical-alignment: center;
+                }
+
+                Text {
+                    text: root.titulo;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: Theme.text-primary;
+                    vertical-alignment: center;
+                }
+            }
+
+            HorizontalLayout {
+                alignment: end;
+                spacing: 8px;
+
+                Rectangle {
+                    width: 18px;
+                    height: 18px;
+                    border-radius: 9px;
+                    background: root.color-actual;
+                    border-width: Theme.grosor-borde;
+                    border-color: Theme.border;
+                    y: (parent.height - self.height) / 2;
+                }
+
+                Text {
+                    text: root.hex-texto;
+                    font-size: 11px;
+                    font-family: "monospace";
+                    font-weight: 600;
+                    color: Theme.text-secondary;
+                    vertical-alignment: center;
+                }
+            }
+        }
+
+        // Fila de descripción en cursiva
+        Text {
+            text: root.subtitulo;
+            font-size: 11px;
+            font-italic: true;
+            color: Theme.text-secondary;
+            wrap: word-wrap;
+        }
+    }
+}

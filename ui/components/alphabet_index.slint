@@ -1,0 +1,91 @@
+import { Theme } from "../theme.slint";
+
+export component AlphabetIndex inherits Rectangle {
+    in property <bool> incluir-enie: true;
+    in property <bool> activo: true;
+    in property <bool> efecto-ola: true;
+    in property <length> amplitud-ola: 24px;
+    in property <length> radio-ola: 110px;
+    in property <bool> mostrar-circulo: true;
+    in property <length> diametro-circulo: 48px;
+    in property <length> desplazamiento-circulo: -56px;
+    in property <float> opacidad-inactivas: 0.6;
+    in property <length> ancho-tactil: 26px;
+
+    callback letra-seleccionada(string);
+
+    property <string> letra-activa: "";
+    property <bool> arrastrando: false;
+    property <length> mouse-pos-y: 0px;
+
+    width: root.ancho-tactil;
+    background: transparent;
+
+    touch := TouchArea {
+        pointer-event(event) => {
+            if event.kind == PointerEventKind.down || (event.kind == PointerEventKind.move && root.arrastrando) {
+                root.arrastrando = true;
+                root.mouse-pos-y = touch.mouse-y;
+                let total-letras = root.incluir-enie ? 27 : 26;
+                let y-norm = Math.clamp(touch.mouse-y / root.height, 0.0, 0.999);
+                let idx = Math.floor(y-norm * total-letras);
+                let letras = root.incluir-enie ?
+                    ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","Ñ","O","P","Q","R","S","T","U","V","W","X","Y","Z"] :
+                    ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
+                root.letra-activa = letras[idx];
+                root.letra-seleccionada(root.letra-activa);
+            } else if event.kind == PointerEventKind.up || event.kind == PointerEventKind.cancel {
+                root.arrastrando = false;
+            }
+        }
+
+        // Columna vertical de letras A-Z con curva Niagara
+        VerticalLayout {
+            alignment: space-between;
+            padding-top: 4px;
+            padding-bottom: 4px;
+
+            for letra[idx] in (root.incluir-enie ?
+                ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","Ñ","O","P","Q","R","S","T","U","V","W","X","Y","Z"] :
+                ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]) : Text {
+                
+                property <length> letra-y: (idx + 0.5) * (root.height / (root.incluir-enie ? 27 : 26));
+                property <length> delta-y: Math.abs(letra-y - root.mouse-pos-y);
+                property <float> factor-ola: Math.max(0.0, 1.0 - (delta-y / root.radio-ola));
+
+                x: (root.efecto-ola && root.arrastrando && delta-y < root.radio-ola) ?
+                    -root.amplitud-ola * (factor-ola * factor-ola) : 0px;
+
+                text: letra;
+                color: (root.arrastrando && root.letra-activa == letra) ? Theme.accent-primary :
+                       (root.arrastrando && delta-y < root.radio-ola) ? Theme.text-primary :
+                       Theme.text-muted.transparentize(100% - (root.opacidad-inactivas * 100%));
+                font-size: 9px;
+                font-weight: 600;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+    }
+
+    // Globo flotante ampliado (Ola Niagara) proyectado hacia la izquierda
+    if root.mostrar-circulo && root.arrastrando && root.letra-activa != "" : Rectangle {
+        x: root.desplazamiento-circulo;
+        y: Math.clamp(touch.mouse-y - (root.diametro-circulo * 0.5), 10px, root.height - root.diametro-circulo - 10px);
+        width: root.diametro-circulo;
+        height: root.diametro-circulo;
+        border-radius: root.diametro-circulo * 0.5;
+        background: Theme.accent-primary;
+        drop-shadow-blur: 8px;
+        drop-shadow-color: #000000.transparentize(50%);
+
+        Text {
+            text: root.letra-activa;
+            color: #FFFFFF;
+            font-size: root.diametro-circulo * 0.45;
+            font-weight: 800;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+}

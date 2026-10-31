@@ -1,0 +1,28 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+
+export component AppIcon inherits Rectangle {
+    in property <image> source <=> img.source;
+    in property <length> icon-size: 16px;
+    in property <color> icon-color: Theme.text-primary;
+    in property <TextHorizontalAlignment> horizontal-alignment: center;
+    in property <TextVerticalAlignment> vertical-alignment: center;
+
+    width: root.icon-size;
+    min-height: root.icon-size;
+    background: transparent;
+
+    img := Image {
+        width: root.icon-size;
+        height: root.icon-size;
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        colorize: root.icon-color;
+        image-fit: contain;
+    }
+}

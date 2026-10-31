@@ -1,0 +1,48 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingSlider } from "../../../components/widgets/setting_slider.slint";
+
+export component SubSecurityTimers inherits VerticalLayout {
+    in-out property <int> autobloqueo-segundos: 60;
+    in-out property <int> portapapeles-segundos: 30;
+
+    callback restaurar-todo();
+    callback restaurar-autobloqueo();
+    callback restaurar-portapapeles();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Temporizadores y Freno";
+        descripcion: "Configuración de expiración de sesión en memoria y purga de contraseñas.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingSlider {
+        titulo: "Tiempo de Autobloqueo por Inactividad";
+        subtitulo: "Cierra la sesión y borra las claves de la memoria al cumplirse el periodo establecido.";
+        sufijo: "s";
+        minimum: 15.0;
+        maximum: 900.0;
+        step: 15.0;
+        value: root.autobloqueo-segundos;
+        changed(val) => { root.autobloqueo-segundos = Math.round(val); }
+    }
+
+    SettingSlider {
+        titulo: "Limpieza Automática del Portapapeles";
+        subtitulo: "Segundos antes de eliminar contraseñas y códigos TOTP copiados en el portapapeles.";
+        sufijo: "s";
+        minimum: 5.0;
+        maximum: 120.0;
+        step: 5.0;
+        value: root.portapapeles-segundos;
+        changed(val) => { root.portapapeles-segundos = Math.round(val); }
+    }
+}

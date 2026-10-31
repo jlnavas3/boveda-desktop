@@ -1,0 +1,100 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+
+export component IndicatorDots inherits HorizontalLayout {
+    in property <bool> tiene-usuario: false;
+    in property <bool> tiene-password: false;
+    in property <bool> tiene-totp: false;
+    in property <bool> tiene-passkey: false;
+    in property <bool> tiene-url: false;
+    in property <bool> tiene-app: false;
+    in property <bool> tiene-notas: false;
+
+    spacing: 4px;
+    alignment: end;
+
+    property <length> punto-d: Theme.tamanio-indicadores * 0.55;
+
+    if root.tiene-usuario : Rectangle {
+        width: root.punto-d;
+        background: transparent;
+        Rectangle {
+            width: root.punto-d;
+            height: root.punto-d;
+            y: (parent.height - self.height) / 2;
+            border-radius: root.punto-d * 0.5;
+            background: Theme.color-ind-usuario.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+        }
+    }
+    if root.tiene-password : Rectangle {
+        width: root.punto-d;
+        background: transparent;
+        Rectangle {
+            width: root.punto-d;
+            height: root.punto-d;
+            y: (parent.height - self.height) / 2;
+            border-radius: root.punto-d * 0.5;
+            background: Theme.color-ind-password.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+        }
+    }
+    if root.tiene-totp : Rectangle {
+        width: root.punto-d;
+        background: transparent;
+        Rectangle {
+            width: root.punto-d;
+            height: root.punto-d;
+            y: (parent.height - self.height) / 2;
+            border-radius: root.punto-d * 0.5;
+            background: Theme.color-ind-totp.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+        }
+    }
+    if root.tiene-passkey : Rectangle {
+        width: root.punto-d;
+        background: transparent;
+        Rectangle {
+            width: root.punto-d;
+            height: root.punto-d;
+            y: (parent.height - self.height) / 2;
+            border-radius: root.punto-d * 0.5;
+            background: Theme.color-ind-passkey.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+        }
+    }
+    if root.tiene-url : Rectangle {
+        width: root.punto-d;
+        background: transparent;
+        Rectangle {
+            width: root.punto-d;
+            height: root.punto-d;
+            y: (parent.height - self.height) / 2;
+            border-radius: root.punto-d * 0.5;
+            background: Theme.color-ind-url.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+        }
+    }
+    if root.tiene-app : Rectangle {
+        width: root.punto-d;
+        background: transparent;
+        Rectangle {
+            width: root.punto-d;
+            height: root.punto-d;
+            y: (parent.height - self.height) / 2;
+            border-radius: root.punto-d * 0.5;
+            background: Theme.color-ind-app.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+        }
+    }
+    if root.tiene-notas : Rectangle {
+        width: root.punto-d;
+        background: transparent;
+        Rectangle {
+            width: root.punto-d;
+            height: root.punto-d;
+            y: (parent.height - self.height) / 2;
+            border-radius: root.punto-d * 0.5;
+            background: Theme.color-ind-notas.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+        }
+    }
+}

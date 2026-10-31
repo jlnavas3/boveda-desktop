@@ -1,0 +1,62 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingSlider } from "../../../components/widgets/setting_slider.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+
+export component SubAccountsTrash inherits VerticalLayout {
+    in-out property <float> dias-retencion: 30.0;
+    callback vaciar-papelera();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Papelera de Reciclaje";
+        descripcion: "Retención temporal de cuentas eliminadas y purga irreversible de registros obsoletos.";
+    }
+
+    SettingSlider {
+        titulo: "Días de Retención en Papelera";
+        subtitulo: "Tiempo que permanecen las cuentas eliminadas antes de destruirse permanentemente.";
+        sufijo: " días";
+        minimum: 7.0;
+        maximum: 90.0;
+        step: 1.0;
+        value <=> root.dias-retencion;
+    }
+
+    SettingBlock {
+        titulo: "Purga Inmediata";
+        descripcion: "Elimina de forma irreversible todas las cuentas que se encuentran actualmente en la papelera.";
+        mostrar-restaurar: false;
+
+        HorizontalLayout {
+            alignment: start;
+            TouchArea {
+                width: 170px; height: 34px;
+                clicked => { root.vaciar-papelera(); }
+
+                Rectangle {
+                    border-radius: Theme.radius-sm;
+                    background: parent.has-hover ? Theme.danger-hover : Theme.danger;
+
+                    HorizontalLayout {
+                        alignment: center; spacing: 6px;
+                        Text {
+                            text: "Vaciar Papelera";
+                            color: #FFFFFF;
+                            font-size: 12px;
+                            font-weight: 700;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

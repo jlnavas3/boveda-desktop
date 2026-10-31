@@ -1,0 +1,41 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingSwitch } from "../../../components/widgets/setting_switch.slint";
+import { SettingSlider } from "../../../components/widgets/setting_slider.slint";
+
+export component SubAppearanceTransitions inherits VerticalLayout {
+    in-out property <bool> animaciones-activas: true;
+    in-out property <float> duracion-ms: 220.0;
+
+    callback restaurar-todo();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Animaciones y Transiciones";
+        descripcion: "Fluidez de movimiento entre pantallas y velocidad temporal de las transiciones.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingSwitch {
+        titulo: "Animaciones de Interfaz";
+        subtitulo: "Activa los cambios graduales de vista y efectos de apertura.";
+        checked <=> root.animaciones-activas;
+    }
+
+    SettingSlider {
+        titulo: "Duración de Transiciones";
+        subtitulo: "Tiempo de desvanecimiento y cambio entre paneles en milisegundos.";
+        sufijo: "ms";
+        minimum: 100.0;
+        maximum: 500.0;
+        step: 20.0;
+        value <=> root.duracion-ms;
+    }
+}

@@ -1,0 +1,284 @@
+import { Theme } from "theme.slint";
+import { UnlockScreen } from "screens/unlock_screen.slint";
+import { MainScreen, FilterItem } from "screens/main_screen.slint";
+import { EntryOverview } from "components/entry_item.slint";
+import { EntryDetailData } from "screens/entry_detail.slint";
+import { GeneratorDialog, GeneratorOptions } from "screens/generator_dialog.slint";
+import { SettingsScreen, PortRuleItem, PortRuleRow, SubdomainRuleItem, SubdomainRuleRow, HsvColorResult } from "screens/settings_screen.slint";
+import { SettingsData } from "settings/settings_modal.slint";
+import { EditModal as EditDialog, EntryEditData } from "edit/edit_modal.slint";
+import { DropdownOption } from "components/dropdown_filter.slint";
+
+export { Theme, FilterItem, EntryOverview, EntryDetailData, GeneratorOptions, SettingsData, EntryEditData, DropdownOption, PortRuleItem, PortRuleRow, SubdomainRuleItem, SubdomainRuleRow, HsvColorResult }
+
+export component AppWindow inherits Window {
+    title: "Bóveda Local Desktop";
+    preferred-width: 1080px;
+    preferred-height: 680px;
+    min-width: 800px;
+    min-height: 500px;
+    background: Theme.background;
+
+    // Propiedades de Estado
+    in-out property <bool> boveda-desbloqueada: false;
+    in-out property <string> ruta-boveda: "";
+    in-out property <string> error-desbloqueo: "";
+    in-out property <bool> desbloqueando: false;
+    in-out property <bool> biometria-disponible: false;
+    in-out property <bool> auto-cargar-ultima: true;
+
+    // Datos de la Bóveda en Memoria
+    in-out property <[FilterItem]> tipos-filtro: [];
+    in-out property <[FilterItem]> categorias-filtro: [];
+    in-out property <[DropdownOption]> perfiles-filtro: [];
+    in-out property <[DropdownOption]> etiquetas-filtro: [];
+    in-out property <string> filtro-tipo-actual: "TODOS";
+    in-out property <string> filtro-categoria-actual: "TODAS";
+    in-out property <string> filtro-perfil-actual: "TODOS";
+    in-out property <string> filtro-etiqueta-actual: "TODAS";
+    in-out property <string> entrada-seleccionada-id: "";
+    
+    in-out property <[EntryOverview]> lista-entradas: [];
+    in-out property <EntryDetailData> detalle-actual;
+    in-out property <string> texto-notificacion: "";
+    in-out property <length> lista-viewport-y: 0px;
+    in-out property <bool> solo-favoritos: false;
+    in-out property <string> orden-actual: "NOMBRE_AZ";
+
+    // Modales y Diálogos
+    in-out property <bool> mostrar-editor: false;
+    in-out property <bool> es-nueva-entrada: true;
+    in-out property <EntryEditData> editor-datos;
+
+    in-out property <bool> mostrar-generador: false;
+    in-out property <GeneratorOptions> generador-opciones: {
+        longitud: 20,
+        mayusculas: true,
+        minusculas: true,
+        numeros: true,
+        simbolos: true,
+        evitar_ambiguos: true,
+        modo_frase: false,
+        numero_palabras: 4,
+        separador: "-",
+        capitalizar_palabras: true,
+    };
+    in-out property <string> generador-resultado: "";
+    in-out property <int> generador-fuerza-puntuacion: 85;
+    in-out property <string> generador-fuerza-etiqueta: "Fuerte";
+    in-out property <string> generador-destino: "";
+
+    in-out property <bool> mostrar-ajustes: false;
+    in-out property <SettingsData> ajustes-datos;
+    in-out property <string> ajustes-error: "";
+    in-out property <string> ajustes-exito: "";
+    in-out property <bool> ajustes-cambiando-clave: false;
+    in-out property <[PortRuleRow]> ajustes-filas-puertos: [];
+    in-out property <[SubdomainRuleRow]> ajustes-filas-subdominios: [];
+
+    in-out property <string> ajustes-hex-usuario: "#2563EB";
+    in-out property <string> ajustes-hex-password: "#EAB308";
+    in-out property <string> ajustes-hex-totp: "#F97316";
+    in-out property <string> ajustes-hex-passkey: "#8B5CF6";
+    in-out property <string> ajustes-hex-url: "#06B6D4";
+    in-out property <string> ajustes-hex-app: "#16A34A";
+
+    // Callbacks conectados a Rust
+    callback intentar-desbloquear(string, string);
+    callback examinar-archivo();
+    callback desbloquear-biometria();
+    callback bloquear-boveda();
+    callback seleccionar-tipo(string);
+    callback seleccionar-categoria(string);
+    callback seleccionar-perfil(string);
+    callback seleccionar-etiqueta(string);
+    callback seleccionar-entrada(string);
+    callback buscar(string);
+    callback copiar-campo(string, string);
+    callback cerrar-detalle();
+    callback saltar-a-letra(string);
+
+    callback abrir-nueva-entrada();
+    callback abrir-editar-entrada(string);
+    callback guardar-entrada(EntryEditData);
+    callback mover-a-papelera(string);
+    callback restaurar-entrada(string);
+    callback eliminar-definitivo(string);
+    callback alternar-favorito(string);
+    callback alternar-anclado(string);
+    callback copiar-totp(string);
+
+    callback abrir-generador(string);
+    callback regenerar-contrasena(GeneratorOptions);
+    callback aplicar-contrasena(string);
+
+    callback abrir-ajustes();
+    callback guardar-ajustes(SettingsData);
+    callback restaurar-predeterminados();
+    callback restaurar-campo(string);
+    callback restaurar-seccion(string);
+    callback cambiar-clave-maestra(string, string, string);
+    callback exportar-json();
+    callback exportar-csv();
+    callback importar-bitwarden();
+    callback importar-csv();
+    callback fusionar-boveda();
+    callback auditoria-salud();
+    callback alternar-biometria(bool);
+    callback agregar-puerto(string, string);
+    callback eliminar-puerto(string);
+    callback agregar-subdominio(string);
+    callback eliminar-subdominio(string);
+    callback reportar-ancho-chips(float);
+    callback calcular-hsv(float, float, float) -> HsvColorResult;
+    callback aplicar-color-indicador(string, color, string);
+
+    // Callbacks menú de 3 puntos y grupos
+    callback alternar-grupo(string);
+    callback alternar-solo-favoritos();
+    callback normalizar-titulos();
+    callback crear-nuevo-tipo(string);
+    callback cambiar-orden(string);
+    callback exportar-bvda();
+    callback navegar-apariencia();
+    callback abrir-ayuda();
+
+    // Pantalla de Desbloqueo
+    if !boveda-desbloqueada : UnlockScreen {
+        ruta-boveda <=> root.ruta-boveda;
+        error-mensaje: root.error-desbloqueo;
+        cargando: root.desbloqueando;
+        auto-cargar-ultima <=> root.auto-cargar-ultima;
+        biometria-disponible: root.biometria-disponible;
+
+        intentar-desbloquear(ruta, pass) => {
+            root.intentar-desbloquear(ruta, pass);
+        }
+        examinar-archivo => {
+            root.examinar-archivo();
+        }
+        desbloquear-biometria => {
+            root.desbloquear-biometria();
+        }
+    }
+
+    // Pantalla Principal Tri-Panel (Visible si desbloqueada y no está en Ajustes)
+    if boveda-desbloqueada && !mostrar-ajustes : MainScreen {
+        tipos-filtro: root.tipos-filtro;
+        categorias-filtro: root.categorias-filtro;
+        perfiles-filtro: root.perfiles-filtro;
+        etiquetas-filtro: root.etiquetas-filtro;
+        filtro-tipo-actual: root.filtro-tipo-actual;
+        filtro-categoria-actual: root.filtro-categoria-actual;
+        filtro-perfil-actual: root.filtro-perfil-actual;
+        filtro-etiqueta-actual: root.filtro-etiqueta-actual;
+        entrada-seleccionada-id: root.entrada-seleccionada-id;
+        lista-entradas: root.lista-entradas;
+        detalle-actual: root.detalle-actual;
+        texto-notificacion: root.texto-notificacion;
+        mostrar-ola-niagara: root.ajustes-datos.mostrar_ola_niagara;
+        incluir-enie-niagara: root.ajustes-datos.incluir_enie_niagara;
+        lista-viewport-y <=> root.lista-viewport-y;
+        solo-favoritos: root.solo-favoritos;
+        orden-actual: root.orden-actual;
+
+        seleccionar-tipo(t) => { root.seleccionar-tipo(t); }
+        seleccionar-categoria(c) => { root.seleccionar-categoria(c); }
+        seleccionar-perfil(p) => { root.seleccionar-perfil(p); }
+        seleccionar-etiqueta(e) => { root.seleccionar-etiqueta(e); }
+        seleccionar-entrada(id) => { root.seleccionar-entrada(id); }
+        buscar(q) => { root.buscar(q); }
+        bloquear-boveda => { root.bloquear-boveda(); }
+        copiar-campo(v, n) => { root.copiar-campo(v, n); }
+        cerrar-detalle => { root.cerrar-detalle(); }
+        saltar-a-letra(l) => { root.saltar-a-letra(l); }
+
+        abrir-nueva-entrada => { root.abrir-nueva-entrada(); }
+        abrir-ajustes => { root.abrir-ajustes(); }
+        editar-entrada(id) => { root.abrir-editar-entrada(id); }
+        mover-papelera(id) => { root.mover-a-papelera(id); }
+        restaurar-entrada(id) => { root.restaurar-entrada(id); }
+        eliminar-definitivo(id) => { root.eliminar-definitivo(id); }
+        alternar-favorito(id) => { root.alternar-favorito(id); }
+        alternar-anclado(id) => { root.alternar-anclado(id); }
+        copiar-totp(id) => { root.copiar-totp(id); }
+
+        alternar-grupo(c) => { root.alternar-grupo(c); }
+        alternar-solo-favoritos => { root.alternar-solo-favoritos(); }
+        normalizar-titulos => { root.normalizar-titulos(); }
+        crear-nuevo-tipo(t) => { root.crear-nuevo-tipo(t); }
+        cambiar-orden(o) => { root.cambiar-orden(o); }
+        importar-bitwarden => { root.importar-bitwarden(); }
+        importar-csv => { root.importar-csv(); }
+        fusionar-boveda => { root.fusionar-boveda(); }
+        exportar-bvda => { root.exportar-bvda(); }
+        exportar-json => { root.exportar-json(); }
+        exportar-csv => { root.exportar-csv(); }
+        navegar-apariencia => { root.navegar-apariencia(); }
+        abrir-ayuda => { root.abrir-ayuda(); }
+    }
+
+    // Pantalla Integrada de Ajustes a Todo lo Ancho (Paridad Canónica con Android)
+    if boveda-desbloqueada && mostrar-ajustes : SettingsScreen {
+        width: 100%;
+        height: 100%;
+        datos <=> root.ajustes-datos;
+        mensaje-error: root.ajustes-error;
+        mensaje-exito: root.ajustes-exito;
+        cambiando-clave: root.ajustes-cambiando-clave;
+        filas-puertos: root.ajustes-filas-puertos;
+        filas-subdominios: root.ajustes-filas-subdominios;
+        hex-usuario: root.ajustes-hex-usuario;
+        hex-password: root.ajustes-hex-password;
+        hex-totp: root.ajustes-hex-totp;
+        hex-passkey: root.ajustes-hex-passkey;
+        hex-url: root.ajustes-hex-url;
+        hex-app: root.ajustes-hex-app;
+
+        guardar(d) => { root.guardar-ajustes(d); }
+        restaurar-predeterminados => { root.restaurar-predeterminados(); }
+        restaurar-campo(c) => { root.restaurar-campo(c); }
+        restaurar-seccion(s) => { root.restaurar-seccion(s); }
+        cambiar-clave-maestra(act, nva, conf) => { root.cambiar-clave-maestra(act, nva, conf); }
+        volver => { root.mostrar-ajustes = false; }
+        exportar-json => { root.exportar-json(); }
+        exportar-csv => { root.exportar-csv(); }
+        importar-bitwarden => { root.importar-bitwarden(); }
+        importar-csv => { root.importar-csv(); }
+        fusionar-boveda => { root.fusionar-boveda(); }
+        abrir-generador => { root.abrir-generador("ajustes"); }
+        auditoria-salud => { root.auditoria-salud(); }
+        alternar-biometria(act) => { root.alternar-biometria(act); }
+        agregar-puerto(p, n) => { root.agregar-puerto(p, n); }
+        eliminar-puerto(id) => { root.eliminar-puerto(id); }
+        agregar-subdominio(s) => { root.agregar-subdominio(s); }
+        eliminar-subdominio(id) => { root.eliminar-subdominio(id); }
+        reportar-ancho-chips(w) => { root.reportar-ancho-chips(w); }
+        calcular-hsv(h, s, v) => { return root.calcular-hsv(h, s, v); }
+        aplicar-color-indicador(c, col, hex) => { root.aplicar-color-indicador(c, col, hex); }
+    }
+
+    // Diálogo Modal: Edición de Entrada
+    if mostrar-editor : EditDialog {
+        datos <=> root.editor-datos;
+        es-nueva: root.es-nueva-entrada;
+
+        guardar(d) => { root.guardar-entrada(d); }
+        abrir-generador(destino) => { root.abrir-generador(destino); }
+        cancelar => { root.mostrar-editor = false; }
+    }
+
+    // Diálogo Modal: Generador de Contraseñas
+    if mostrar-generador : GeneratorDialog {
+        options <=> root.generador-opciones;
+        contrasena-generada: root.generador-resultado;
+        fuerza-puntuacion: root.generador-fuerza-puntuacion;
+        fuerza-etiqueta: root.generador-fuerza-etiqueta;
+        mostrar-boton-aplicar: root.generador-destino != "";
+
+        regenerar(opt) => { root.regenerar-contrasena(opt); }
+        copiar(p) => { root.copiar-campo(p, "Contraseña Generada"); }
+        aplicar(p) => { root.aplicar-contrasena(p); }
+        cerrar => { root.mostrar-generador = false; }
+    }
+}

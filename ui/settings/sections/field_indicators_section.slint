@@ -1,0 +1,188 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "../../components/widgets/app_icon.slint";
+
+export component FieldIndicatorsSection inherits VerticalLayout {
+    spacing: 12px;
+
+    // 1. Selector de Estilo
+    VerticalLayout {
+        spacing: 6px;
+        Text { text: "Estilo Visual de los Indicadores"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+        HorizontalLayout {
+            spacing: 6px;
+            for est in [
+                { id: "lineas", nombre: "Líneas" },
+                { id: "puntos", nombre: "Puntos" },
+                { id: "iconos", nombre: "Íconos" },
+                { id: "lateral", nombre: "Lateral" },
+                { id: "ninguno", nombre: "Ninguno" }
+            ]: TouchArea {
+                horizontal-stretch: 1; height: 32px;
+                clicked => { Theme.estilo-indicadores = est.id; }
+                Rectangle {
+                    background: Theme.estilo-indicadores == est.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: 1px;
+                    border-color: Theme.estilo-indicadores == est.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+
+                    Text {
+                        text: est.nombre;
+                        color: Theme.estilo-indicadores == est.id ? Theme.accent-primary : Theme.text-primary;
+                        font-size: 11px; font-weight: 600;
+                        horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Calibración de Dimensiones y Opacidad
+    HorizontalLayout {
+        spacing: 12px;
+
+        // Tamaño de Íconos / Puntos
+        Rectangle {
+            horizontal-stretch: 1;
+            background: Theme.background; border-radius: Theme.radius-md;
+            border-width: 1px; border-color: Theme.border;
+            VerticalLayout {
+                padding: 10px; spacing: 6px;
+                HorizontalLayout {
+                    alignment: space-between;
+                    Text { text: "Tamaño"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+                    Text {
+                        text: Theme.tamanio-indicadores == 10px ? "Pequeño" :
+                              Theme.tamanio-indicadores == 16px ? "Grande" : "Normal";
+                        color: Theme.accent-primary; font-size: 11px; font-weight: 700;
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 6px;
+                    for t in [
+                        { val: 10px, label: "10px" },
+                        { val: 12px, label: "12px" },
+                        { val: 16px, label: "16px" }
+                    ]: TouchArea {
+                        horizontal-stretch: 1; height: 26px;
+                        clicked => { Theme.tamanio-indicadores = t.val; }
+                        Rectangle {
+                            background: Theme.tamanio-indicadores == t.val ? Theme.accent-primary : Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            Text {
+                                text: t.label;
+                                color: Theme.tamanio-indicadores == t.val ? #FFFFFF : Theme.text-secondary;
+                                font-size: 10px; font-weight: 600;
+                                horizontal-alignment: center; vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Opacidad de Colores
+        Rectangle {
+            horizontal-stretch: 1;
+            background: Theme.background; border-radius: Theme.radius-md;
+            border-width: 1px; border-color: Theme.border;
+            VerticalLayout {
+                padding: 10px; spacing: 6px;
+                HorizontalLayout {
+                    alignment: space-between;
+                    Text { text: "Opacidad"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+                    Text {
+                        text: Math.round(Theme.opacidad-indicadores * 100) + "%";
+                        color: Theme.accent-primary; font-size: 11px; font-weight: 700;
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 6px;
+                    for op in [
+                        { val: 0.5, label: "50%" },
+                        { val: 0.75, label: "75%" },
+                        { val: 1.0, label: "100%" }
+                    ]: TouchArea {
+                        horizontal-stretch: 1; height: 26px;
+                        clicked => { Theme.opacidad-indicadores = op.val; }
+                        Rectangle {
+                            background: Math.abs(Theme.opacidad-indicadores - op.val) < 0.05 ? Theme.accent-primary : Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            Text {
+                                text: op.label;
+                                color: Math.abs(Theme.opacidad-indicadores - op.val) < 0.05 ? #FFFFFF : Theme.text-secondary;
+                                font-size: 10px; font-weight: 600;
+                                horizontal-alignment: center; vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Personalización de Colores por Campo
+    VerticalLayout {
+        spacing: 6px;
+        HorizontalLayout {
+            alignment: space-between;
+            Text { text: "Colores Asignados a Campos de Datos"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+            TouchArea {
+                width: 90px; height: 20px;
+                clicked => {
+                    Theme.color-ind-usuario = #38BDF8;
+                    Theme.color-ind-password = #FB923C;
+                    Theme.color-ind-url = #4ADE80;
+                    Theme.color-ind-totp = #C084FC;
+                    Theme.color-ind-notas = #94A3B8;
+                }
+                Text { text: "↺ Restaurar"; color: Theme.accent-primary; font-size: 11px; font-weight: 600; horizontal-alignment: right; }
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 8px;
+            for campo in [
+                { id: "usr", nombre: "Usuario", col: Theme.color-ind-usuario },
+                { id: "pwd", nombre: "Clave", col: Theme.color-ind-password },
+                { id: "url", nombre: "Web", col: Theme.color-ind-url },
+                { id: "totp", nombre: "TOTP", col: Theme.color-ind-totp },
+                { id: "not", nombre: "Notas", col: Theme.color-ind-notas }
+            ]: Rectangle {
+                horizontal-stretch: 1; height: 38px;
+                background: Theme.background;
+                border-radius: Theme.radius-sm;
+                border-width: 1px; border-color: Theme.border;
+
+                HorizontalLayout {
+                    padding: 6px; spacing: 6px; alignment: center;
+                    Rectangle {
+                        width: 14px; height: 14px; border-radius: 7px;
+                        background: campo.col;
+                    }
+                    AppIcon {
+                        source: campo.id == "usr" ? @image-url("../../assets/icons/person.svg") :
+                                campo.id == "pwd" ? @image-url("../../assets/icons/key.svg") :
+                                campo.id == "url" ? @image-url("../../assets/icons/language.svg") :
+                                campo.id == "totp" ? @image-url("../../assets/icons/timer.svg") :
+                                @image-url("../../assets/icons/note.svg");
+                        icon-size: 13px;
+                        icon-color: Theme.text-secondary;
+                        vertical-alignment: center;
+                    }
+                    Text {
+                        text: campo.nombre;
+                        color: Theme.text-primary;
+                        font-size: 10px; font-weight: 600;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

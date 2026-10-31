@@ -1,0 +1,45 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+
+export component SubBackupsMerge inherits VerticalLayout {
+    callback fusionar-boveda();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Fusión de Bóvedas";
+        descripcion: "Algoritmo de 3 vías para unificación de cambios sin pérdida de datos.";
+    }
+
+    SettingBlock {
+        titulo: "Motor de Fusión Soberana .bvda";
+        descripcion: "Combina otra base de datos de Bóveda Local resolviendo colisiones mediante marca de tiempo más reciente.";
+        mostrar-restaurar: false;
+
+        HorizontalLayout {
+            alignment: start;
+            TouchArea {
+                width: 190px; height: 34px;
+                clicked => { root.fusionar-boveda(); }
+
+                Rectangle {
+                    border-radius: Theme.radius-sm;
+                    background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                    border-width: 1px; border-color: Theme.border;
+
+                    HorizontalLayout {
+                        alignment: center; spacing: 6px;
+                        Text { text: "Seleccionar Bóveda a Fusionar"; font-size: 11px; font-weight: 600; color: Theme.accent-primary; vertical-alignment: center; }
+                    }
+                }
+            }
+        }
+    }
+}

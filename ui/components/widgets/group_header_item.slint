@@ -1,0 +1,87 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "app_icon.slint";
+
+export component GroupHeaderItem inherits Rectangle {
+    in property <string> titulo: "Servicio";
+    in property <int> conteo: 0;
+    in property <bool> expandido: false;
+    callback alternar();
+
+    height: 44px;
+    background: touch.has-hover ? Theme.surface-hover : Theme.surface;
+    border-radius: Theme.radio-tarjetas;
+    border-width: Theme.grosor-borde;
+    border-color: root.expandido ? Theme.accent-primary.transparentize(50%) : Theme.border;
+
+    touch := TouchArea {
+        clicked => { root.alternar(); }
+
+        HorizontalLayout {
+            padding-left: 14px;
+            padding-right: 14px;
+            spacing: 10px;
+            alignment: space-between;
+
+            // Izquierda: Icono representativo + Nombre de Servicio + Badge de conteo
+            HorizontalLayout {
+                spacing: 10px;
+                alignment: start;
+
+                AppIcon {
+                    source: @image-url("../../assets/icons/folder.svg");
+                    icon-size: 16px;
+                    icon-color: Theme.accent-primary;
+                    vertical-alignment: center;
+                }
+
+                Text {
+                    text: root.titulo;
+                    color: Theme.text-primary;
+                    font-size: 13px;
+                    font-weight: 700;
+                    vertical-alignment: center;
+                }
+
+                // Badge de cantidad de cuentas
+                VerticalLayout {
+                    alignment: center;
+                    Rectangle {
+                        background: Theme.accent-primary.transparentize(85%);
+                        border-radius: Theme.curvatura-esquinas > 4px ? Theme.curvatura-esquinas / 2 : 4px;
+                        border-width: Theme.grosor-borde;
+                        border-color: Theme.accent-primary.transparentize(70%);
+                        height: 20px;
+
+                        HorizontalLayout {
+                            padding-left: 6px;
+                            padding-right: 6px;
+                            alignment: center;
+
+                            Text {
+                                text: root.conteo == 1 ? "1 cuenta" : "\{root.conteo} cuentas";
+                                color: Theme.accent-primary;
+                                font-size: 10px;
+                                font-weight: 600;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Derecha: Chevron expandir / colapsar
+            AppIcon {
+                source: root.expandido ? @image-url("../../assets/icons/expand_more.svg") : @image-url("../../assets/icons/chevron_right.svg");
+                icon-size: 16px;
+                icon-color: root.expandido ? Theme.accent-primary : Theme.text-secondary;
+                vertical-alignment: center;
+            }
+        }
+    }
+}

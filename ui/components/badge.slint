@@ -1,0 +1,38 @@
+import { Theme } from "../theme.slint";
+
+export component EntryBadge inherits Rectangle {
+    in property <string> tipo: "LOGIN";
+    
+    // Configuración según el tipo
+    property <color> badge-color: 
+        tipo == "LOGIN" ? Theme.accent-blue :
+        tipo == "TARJETA" ? Theme.accent-amber :
+        tipo == "CUENTA_BANCARIA" ? Theme.accent-primary :
+        tipo == "IDENTIDAD" ? Theme.accent-rose :
+        tipo == "SERVIDOR" ? Theme.accent-purple :
+        tipo == "WIFI" ? Theme.accent-cyan :
+        tipo == "WALLET" ? Theme.accent-amber :
+        tipo == "CONTACTO" ? Theme.accent-blue :
+        tipo == "NOTA_SEGURA" ? Theme.text-secondary :
+        Theme.text-muted;
+
+    background: badge-color.transparentize(85%);
+    border-width: 1px;
+    border-color: badge-color.transparentize(50%);
+    border-radius: Theme.radius-sm;
+    height: 22px;
+    
+    HorizontalLayout {
+        padding-left: 6px;
+        padding-right: 6px;
+        alignment: center;
+        
+        Text {
+            text: tipo;
+            color: badge-color;
+            font-size: 10px;
+            font-weight: 700;
+            vertical-alignment: center;
+        }
+    }
+}

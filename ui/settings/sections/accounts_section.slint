@@ -1,0 +1,186 @@
+import { Theme } from "../../theme.slint";
+
+export component AccountsSection inherits VerticalLayout {
+    in-out property <string> criterio-ordenacion: "TITULO_AZ";
+    in-out property <bool> fijar-anclados-arriba: true;
+    in-out property <bool> agrupar-por-sitio: false;
+    in-out property <bool> mostrar-ola-niagara: true;
+    in-out property <bool> efecto-ola-niagara: true;
+    in-out property <int> amplitud-ola-niagara: 24;
+    in-out property <bool> incluir-enie-niagara: true;
+
+    in-out property <bool> ocultar-usuario: false;
+    in-out property <bool> ocultar-contrasena: true;
+    in-out property <bool> ocultar-notas: false;
+    in-out property <bool> ocultar-campos: true;
+
+    spacing: 12px;
+
+    // 1. Criterio de Ordenación
+    VerticalLayout {
+        spacing: 6px;
+        Text { text: "Criterio de Ordenación Predeterminado"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+        HorizontalLayout {
+            spacing: 8px;
+            for ord in [
+                { id: "TITULO_AZ", nombre: "Alfabético (A-Z)" },
+                { id: "MODIFICACION_DESC", nombre: "Más recientes" },
+                { id: "USO_FRECUENTE", nombre: "Más usados" }
+            ]: TouchArea {
+                horizontal-stretch: 1; height: 32px;
+                clicked => { root.criterio-ordenacion = ord.id; }
+                Rectangle {
+                    background: root.criterio-ordenacion == ord.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: 1px;
+                    border-color: root.criterio-ordenacion == ord.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+
+                    Text {
+                        text: ord.nombre;
+                        color: root.criterio-ordenacion == ord.id ? Theme.accent-primary : Theme.text-primary;
+                        font-size: 11px; font-weight: 600;
+                        horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Comportamiento de Lista (Switches)
+    VerticalLayout {
+        spacing: 8px;
+
+        // Fijar anclados
+        Rectangle {
+            background: Theme.background; border-radius: Theme.radius-sm;
+            border-width: 1px; border-color: Theme.border; height: 38px;
+            TouchArea {
+                clicked => { root.fijar-anclados-arriba = !root.fijar-anclados-arriba; }
+                HorizontalLayout {
+                    padding-left: 12px; padding-right: 12px; alignment: center;
+                    Text { text: "📌 Fijar favoritos y anclados en la parte superior"; color: Theme.text-primary; font-size: 12px; horizontal-stretch: 1; vertical-alignment: center; }
+                    Text { text: root.fijar-anclados-arriba ? "✓ Activado" : "Desactivado"; color: root.fijar-anclados-arriba ? Theme.accent-primary : Theme.text-muted; font-size: 11px; font-weight: 600; vertical-alignment: center; }
+                }
+            }
+        }
+
+        // Ola Niagara A-Z
+        Rectangle {
+            background: Theme.background; border-radius: Theme.radius-sm;
+            border-width: 1px; border-color: Theme.border; height: 38px;
+            TouchArea {
+                clicked => { root.mostrar-ola-niagara = !root.mostrar-ola-niagara; }
+                HorizontalLayout {
+                    padding-left: 12px; padding-right: 12px; alignment: center;
+                    Text { text: "🌊 Índice alfabético lateral rápido (Ola Niagara A-Z)"; color: Theme.text-primary; font-size: 12px; horizontal-stretch: 1; vertical-alignment: center; }
+                    Text { text: root.mostrar-ola-niagara ? "✓ Visible" : "Oculto"; color: root.mostrar-ola-niagara ? Theme.accent-primary : Theme.text-muted; font-size: 11px; font-weight: 600; vertical-alignment: center; }
+                }
+            }
+        }
+
+        // Calibración de Ola Niagara
+        if root.mostrar-ola-niagara : Rectangle {
+            background: Theme.background; border-radius: Theme.radius-sm;
+            border-width: 1px; border-color: Theme.border;
+            VerticalLayout {
+                padding: 10px; spacing: 8px;
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    Text { text: "   └ Efecto de Curvatura Dinámica"; color: Theme.text-secondary; font-size: 11px; vertical-alignment: center; }
+                    TouchArea {
+                        width: 70px; height: 26px;
+                        clicked => { root.efecto-ola-niagara = !root.efecto-ola-niagara; }
+                        Rectangle {
+                            background: root.efecto-ola-niagara ? Theme.accent-primary.transparentize(80%) : Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            Text { text: root.efecto-ola-niagara ? "✓ Activo" : "Inactivo"; color: root.efecto-ola-niagara ? Theme.accent-primary : Theme.text-muted; font-size: 10px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                if root.efecto-ola-niagara : HorizontalLayout {
+                    spacing: 6px;
+                    Text { text: "   └ Amplitud:"; color: Theme.text-muted; font-size: 11px; vertical-alignment: center; }
+                    for amp in [
+                        { val: 16, nombre: "16px (Suave)" },
+                        { val: 24, nombre: "24px (Normal)" },
+                        { val: 36, nombre: "36px (Amplia)" }
+                    ]: TouchArea {
+                        horizontal-stretch: 1; height: 26px;
+                        clicked => { root.amplitud-ola-niagara = amp.val; }
+                        Rectangle {
+                            background: root.amplitud-ola-niagara == amp.val ? Theme.accent-primary : Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            Text {
+                                text: amp.nombre;
+                                color: root.amplitud-ola-niagara == amp.val ? #FFFFFF : Theme.text-secondary;
+                                font-size: 10px; font-weight: 600;
+                                horizontal-alignment: center; vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    Text { text: "   └ Incluir letra 'Ñ' en la franja alfabética"; color: Theme.text-secondary; font-size: 11px; vertical-alignment: center; }
+                    TouchArea {
+                        width: 70px; height: 26px;
+                        clicked => { root.incluir-enie-niagara = !root.incluir-enie-niagara; }
+                        Rectangle {
+                            background: root.incluir-enie-niagara ? Theme.accent-primary.transparentize(80%) : Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            Text { text: root.incluir-enie-niagara ? "✓ Sí" : "No"; color: root.incluir-enie-niagara ? Theme.accent-primary : Theme.text-muted; font-size: 10px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Agrupar por Sitio
+        Rectangle {
+            background: Theme.background; border-radius: Theme.radius-sm;
+            border-width: 1px; border-color: Theme.border; height: 38px;
+            TouchArea {
+                clicked => { root.agrupar-por-sitio = !root.agrupar-por-sitio; }
+                HorizontalLayout {
+                    padding-left: 12px; padding-right: 12px; alignment: center;
+                    Text { text: "🌐 Agrupar credenciales por dominio o servicio web"; color: Theme.text-primary; font-size: 12px; horizontal-stretch: 1; vertical-alignment: center; }
+                    Text { text: root.agrupar-por-sitio ? "✓ Sí" : "No"; color: root.agrupar-por-sitio ? Theme.accent-primary : Theme.text-muted; font-size: 11px; font-weight: 600; vertical-alignment: center; }
+                }
+            }
+        }
+    }
+
+    // 3. Ocultamiento de Datos por Defecto
+    VerticalLayout {
+        spacing: 6px;
+        Text { text: "Privacidad y Ocultamiento por Defecto"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+        HorizontalLayout {
+            spacing: 8px;
+            for opt in [
+                { id: "pass", nombre: "Ocultar Claves", val: root.ocultar-contrasena },
+                { id: "user", nombre: "Ocultar Usuario", val: root.ocultar-usuario },
+                { id: "campos", nombre: "Ocultar Campos", val: root.ocultar-campos }
+            ]: TouchArea {
+                horizontal-stretch: 1; height: 32px;
+                clicked => {
+                    if opt.id == "pass" { root.ocultar-contrasena = !root.ocultar-contrasena; }
+                    if opt.id == "user" { root.ocultar-usuario = !root.ocultar-usuario; }
+                    if opt.id == "campos" { root.ocultar-campos = !root.ocultar-campos; }
+                }
+                Rectangle {
+                    background: opt.val ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: 1px; border-color: opt.val ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+                    Text {
+                        text: (opt.val ? "👁 " : "🚫 ") + opt.nombre;
+                        color: opt.val ? Theme.accent-primary : Theme.text-secondary;
+                        font-size: 10px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

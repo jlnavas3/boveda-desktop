@@ -1,0 +1,102 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { DropdownFilter, DropdownOption } from "dropdown_filter.slint";
+import { AppIcon } from "widgets/app_icon.slint";
+
+export component FilterBar inherits Rectangle {
+    in property <[DropdownOption]> opciones-tipos: [];
+    in property <[DropdownOption]> opciones-perfiles: [];
+    in property <[DropdownOption]> opciones-categorias: [];
+    in property <[DropdownOption]> opciones-etiquetas: [];
+
+    in property <string> filtro-tipo: "TODOS";
+    in property <string> filtro-perfil: "TODOS";
+    in property <string> filtro-categoria: "TODAS";
+    in property <string> filtro-etiqueta: "TODAS";
+
+    callback seleccionar-tipo(string);
+    callback seleccionar-perfil(string);
+    callback seleccionar-categoria(string);
+    callback seleccionar-etiqueta(string);
+
+    height: 32px;
+    background: transparent;
+
+    HorizontalLayout {
+        spacing: 6px;
+        alignment: start;
+
+        // 1. Filtro de Tipos de Entrada
+        DropdownFilter {
+            icon-source: root.filtro-tipo == "LOGIN" ? @image-url("../assets/icons/key.svg") :
+                         root.filtro-tipo == "TARJETA" ? @image-url("../assets/icons/credit_card.svg") :
+                         root.filtro-tipo == "WIFI" ? @image-url("../assets/icons/wifi.svg") :
+                         root.filtro-tipo == "SERVIDOR" ? @image-url("../assets/icons/computer.svg") :
+                         root.filtro-tipo == "CUENTA_BANCARIA" ? @image-url("../assets/icons/account_balance.svg") :
+                         root.filtro-tipo == "IDENTIDAD" ? @image-url("../assets/icons/badge.svg") :
+                         root.filtro-tipo == "WALLET" ? @image-url("../assets/icons/wallet.svg") :
+                         root.filtro-tipo == "CONTACTO" ? @image-url("../assets/icons/person.svg") :
+                         root.filtro-tipo == "NOTA" ? @image-url("../assets/icons/note.svg") :
+                         @image-url("../assets/icons/folder.svg");
+            titulo: "Filtrar por Tipo";
+            seleccion-id: root.filtro-tipo;
+            opciones: root.opciones-tipos;
+            seleccionar(id) => { root.seleccionar-tipo(id); }
+        }
+
+        // 2. Filtro de Perfiles / Identidades
+        DropdownFilter {
+            icon-source: @image-url("../assets/icons/person.svg");
+            titulo: "Filtrar por Perfil / Identidad";
+            seleccion-id: root.filtro-perfil;
+            opciones: root.opciones-perfiles;
+            seleccionar(id) => { root.seleccionar-perfil(id); }
+        }
+
+        // 3. Filtro de Categorías / Colecciones
+        DropdownFilter {
+            icon-source: @image-url("../assets/icons/folder.svg");
+            titulo: "Filtrar por Categoría";
+            seleccion-id: root.filtro-categoria;
+            opciones: root.opciones-categorias;
+            seleccionar(id) => { root.seleccionar-categoria(id); }
+        }
+
+        // 4. Filtro de Etiquetas
+        DropdownFilter {
+            icon-source: @image-url("../assets/icons/list.svg");
+            titulo: "Filtrar por Etiqueta";
+            seleccion-id: root.filtro-etiqueta;
+            opciones: root.opciones-etiquetas;
+            seleccionar(id) => { root.seleccionar-etiqueta(id); }
+        }
+
+        // Si hay algún filtro activo, botón rápido para limpiar filtros
+        if (root.filtro-tipo != "TODOS" || root.filtro-perfil != "TODOS" || root.filtro-categoria != "TODAS" || root.filtro-etiqueta != "TODAS") : TouchArea {
+            width: 24px; height: 28px;
+            clicked => {
+                root.seleccionar-tipo("TODOS");
+                root.seleccionar-perfil("TODOS");
+                root.seleccionar-categoria("TODAS");
+                root.seleccionar-etiqueta("TODAS");
+            }
+            Rectangle {
+                background: Theme.danger.transparentize(85%);
+                border-radius: Theme.radius-sm;
+                border-width: 1px; border-color: Theme.danger.transparentize(50%);
+                AppIcon {
+                    source: @image-url("../assets/icons/close.svg");
+                    icon-size: 11px;
+                    icon-color: Theme.danger;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}

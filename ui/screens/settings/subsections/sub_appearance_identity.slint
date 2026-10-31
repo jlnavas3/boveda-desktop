@@ -1,0 +1,50 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+
+export component SubAppearanceIdentity inherits VerticalLayout {
+    in-out property <string> nombre-boveda: "Mi Bóveda Principal";
+
+    callback restaurar-todo();
+    callback restaurar-nombre();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Identidad de Bóveda";
+        descripcion: "Nombre público y apariencia representativa de la base de datos local.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingBlock {
+        titulo: "Nombre Visible de la Bóveda";
+        descripcion: "Título presentado en la barra superior y encabezados de exportación.";
+        restaurar => { root.restaurar-nombre(); }
+
+        HorizontalLayout {
+            alignment: start;
+            Rectangle {
+                width: 320px; height: 36px;
+                background: Theme.background;
+                border-radius: Theme.radius-sm;
+                border-width: 1px; border-color: Theme.border;
+
+                HorizontalLayout {
+                    padding-left: 10px; padding-right: 10px;
+                    TextInput {
+                        text <=> root.nombre-boveda;
+                        color: Theme.text-primary;
+                        font-size: 12px;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,66 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+import { SettingRadioOption } from "../../../components/widgets/setting_radio_option.slint";
+import { SettingToggle } from "../../../components/widgets/setting_toggle.slint";
+
+export component SubListOrder inherits VerticalLayout {
+    in-out property <string> criterio-ordenacion: "NOMBRE_AZ";
+    in-out property <bool> fijar-anclados-arriba: true;
+
+    callback restaurar-todo();
+    callback restaurar-orden();
+    callback restaurar-anclados();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Ordenación y Fijado";
+        descripcion: "Secuencia predeterminada y prioridad de las tarjetas de entrada en el panel central.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingBlock {
+        titulo: "Criterio de Ordenación Predeterminado";
+        descripcion: "Algoritmo para organizar las entradas al desbloquear la bóveda o limpiar el buscador.";
+        restaurar => { root.restaurar-orden(); }
+
+        VerticalLayout {
+            spacing: 6px;
+            alignment: start;
+
+            for cr in [
+                { id: "NOMBRE_AZ", nombre: "Nombre alfabético (A - Z)", desc: "" },
+                { id: "NOMBRE_ZA", nombre: "Nombre inverso (Z - A)", desc: "" },
+                { id: "MODIFICACION_RECIENTE", nombre: "Fecha de modificación reciente", desc: "" },
+                { id: "FAVORITOS_PRIMERO", nombre: "Favoritos al inicio", desc: "" }
+            ]: SettingRadioOption {
+                id: cr.id;
+                titulo: cr.nombre;
+                descripcion: cr.desc;
+                seleccionado: root.criterio-ordenacion == cr.id;
+                clicked => { root.criterio-ordenacion = cr.id; }
+            }
+        }
+    }
+
+    SettingBlock {
+        titulo: "Fijar cuentas ancladas arriba";
+        descripcion: "Muestra las entradas ancladas en un grupo superior en la lista principal.";
+        restaurar => { root.restaurar-anclados(); }
+
+        HorizontalLayout {
+            alignment: start;
+            SettingToggle {
+                checked <=> root.fijar-anclados-arriba;
+                texto-activo: "✓ Fijado Activo";
+                texto-inactivo: "Fijado Desactivado";
+            }
+        }
+    }
+}

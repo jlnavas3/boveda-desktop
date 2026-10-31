@@ -1,0 +1,297 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+
+export struct HsvColorResult {
+    color: color,
+    hex: string,
+}
+
+export component ColorPickerModal inherits Rectangle {
+    in-out property <bool> abierto: false;
+    in property <string> clave-color: "usuario";
+    in property <string> titulo-modal: "Color de Usuario / Correo";
+    in property <string> nombre-campo: "Usuario / Correo";
+    
+    in-out property <float> tono: 215.0;      // 0..360
+    in-out property <float> saturacion: 0.84; // 0..1
+    in-out property <float> brillo: 0.92;     // 0..1
+    in-out property <color> color-actual: #2563EB;
+    in-out property <string> hex-actual: "#2563EB";
+
+    callback hsv-modificado(float, float, float);
+    callback aceptar(string, color, string);
+    callback cancelar();
+
+    visible: root.abierto;
+    background: #000000.transparentize(40%);
+
+    // Backdrop click: no cerrar por accidente, o cerrar si pulsa en el fondo
+    TouchArea {
+        clicked => { root.cancelar(); }
+    }
+
+    VerticalLayout {
+        alignment: center;
+
+        HorizontalLayout {
+            alignment: center;
+
+            // Tarjeta Modal Central (Fiel a la captura Android)
+            card := Rectangle {
+                width: 360px;
+                background: Theme.surface;
+                border-width: Theme.grosor-borde;
+                border-color: Theme.border;
+                border-radius: Theme.curvatura-esquinas;
+                clip: true;
+
+                // Evitar que clicks en la tarjeta se propaguen al fondo
+                TouchArea {}
+
+                VerticalLayout {
+                    padding: 20px;
+                    spacing: 16px;
+
+                    // 1. Título del Diálogo
+                    Text {
+                        text: root.titulo-modal;
+                        font-size: 16px;
+                        font-weight: 700;
+                        color: Theme.text-primary;
+                    }
+
+                    // 2. Previsualización en Vivo: Muestra + Nombre y Código HEX
+                    HorizontalLayout {
+                        spacing: 12px;
+                        alignment: start;
+
+                        Rectangle {
+                            width: 42px;
+                            height: 42px;
+                            background: root.color-actual;
+                            border-radius: Theme.radius-sm;
+                            border-width: Theme.grosor-borde;
+                            border-color: Theme.border;
+                        }
+
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 3px;
+
+                            Text {
+                                text: root.nombre-campo;
+                                font-size: 13px;
+                                font-weight: 600;
+                                color: Theme.text-primary;
+                            }
+
+                            Text {
+                                text: root.hex-actual;
+                                font-size: 12px;
+                                font-family: "monospace";
+                                font-weight: 600;
+                                color: Theme.text-secondary;
+                            }
+                        }
+                    }
+
+                    // 3. Control de TONO (Hue 0..360)
+                    VerticalLayout {
+                        spacing: 6px;
+
+                        Text {
+                            text: "Tono";
+                            font-size: 11px;
+                            color: Theme.text-secondary;
+                        }
+
+                        track-tono := Rectangle {
+                            height: 14px;
+                            border-radius: 7px;
+                            background: @linear-gradient(90deg, #FF0000 0%, #FFA500 17%, #FFFF00 33%, #00FF00 50%, #00FFFF 67%, #0000FF 83%, #FF00FF 100%);
+                            border-width: 1px;
+                            border-color: Theme.border;
+
+                            // Cursor vertical
+                            Rectangle {
+                                width: 3px;
+                                height: 22px;
+                                y: (parent.height - self.height) / 2;
+                                x: Math.max(0px, Math.min(parent.width - 3px, (root.tono / 360.0) * (parent.width - 3px)));
+                                background: #FFFFFF;
+                                border-radius: 1.5px;
+                                border-width: 1px;
+                                border-color: #000000.transparentize(50%);
+                            }
+
+                            TouchArea {
+                                mouse-cursor: pointer;
+                                moved => {
+                                    if self.pressed {
+                                        root.tono = Math.max(0.0, Math.min(360.0, (self.mouse-x / parent.width) * 360.0));
+                                        root.hsv-modificado(root.tono, root.saturacion, root.brillo);
+                                    }
+                                }
+                                clicked => {
+                                    root.tono = Math.max(0.0, Math.min(360.0, (self.mouse-x / parent.width) * 360.0));
+                                    root.hsv-modificado(root.tono, root.saturacion, root.brillo);
+                                }
+                            }
+                        }
+                    }
+
+                    // 4. Control de SATURACIÓN (0..1)
+                    VerticalLayout {
+                        spacing: 6px;
+
+                        Text {
+                            text: "Saturación";
+                            font-size: 11px;
+                            color: Theme.text-secondary;
+                        }
+
+                        track-sat := Rectangle {
+                            height: 14px;
+                            border-radius: 7px;
+                            background: Theme.border;
+                            clip: true;
+
+                            // Relleno activo
+                            Rectangle {
+                                x: 0px;
+                                y: 0px;
+                                width: Math.max(0px, Math.min(parent.width, root.saturacion * parent.width));
+                                height: parent.height;
+                                background: root.color-actual;
+                            }
+
+                            // Cursor vertical
+                            Rectangle {
+                                width: 3px;
+                                height: 22px;
+                                y: (parent.height - self.height) / 2;
+                                x: Math.max(0px, Math.min(parent.width - 3px, root.saturacion * (parent.width - 3px)));
+                                background: #FFFFFF;
+                                border-radius: 1.5px;
+                                border-width: 1px;
+                                border-color: #000000.transparentize(50%);
+                            }
+
+                            TouchArea {
+                                mouse-cursor: pointer;
+                                moved => {
+                                    if self.pressed {
+                                        root.saturacion = Math.max(0.05, Math.min(1.0, self.mouse-x / parent.width));
+                                        root.hsv-modificado(root.tono, root.saturacion, root.brillo);
+                                    }
+                                }
+                                clicked => {
+                                    root.saturacion = Math.max(0.05, Math.min(1.0, self.mouse-x / parent.width));
+                                    root.hsv-modificado(root.tono, root.saturacion, root.brillo);
+                                }
+                            }
+                        }
+                    }
+
+                    // 5. Control de BRILLO (0..1)
+                    VerticalLayout {
+                        spacing: 6px;
+
+                        Text {
+                            text: "Brillo";
+                            font-size: 11px;
+                            color: Theme.text-secondary;
+                        }
+
+                        track-val := Rectangle {
+                            height: 14px;
+                            border-radius: 7px;
+                            background: Theme.border;
+                            clip: true;
+
+                            // Relleno activo
+                            Rectangle {
+                                x: 0px;
+                                y: 0px;
+                                width: Math.max(0px, Math.min(parent.width, root.brillo * parent.width));
+                                height: parent.height;
+                                background: root.color-actual;
+                            }
+
+                            // Cursor vertical
+                            Rectangle {
+                                width: 3px;
+                                height: 22px;
+                                y: (parent.height - self.height) / 2;
+                                x: Math.max(0px, Math.min(parent.width - 3px, root.brillo * (parent.width - 3px)));
+                                background: #FFFFFF;
+                                border-radius: 1.5px;
+                                border-width: 1px;
+                                border-color: #000000.transparentize(50%);
+                            }
+
+                            TouchArea {
+                                mouse-cursor: pointer;
+                                moved => {
+                                    if self.pressed {
+                                        root.brillo = Math.max(0.10, Math.min(1.0, self.mouse-x / parent.width));
+                                        root.hsv-modificado(root.tono, root.saturacion, root.brillo);
+                                    }
+                                }
+                                clicked => {
+                                    root.brillo = Math.max(0.10, Math.min(1.0, self.mouse-x / parent.width));
+                                    root.hsv-modificado(root.tono, root.saturacion, root.brillo);
+                                }
+                            }
+                        }
+                    }
+
+                    // 6. Botones Inferiores: Cancelar y Aceptar
+                    HorizontalLayout {
+                        alignment: end;
+                        spacing: 12px;
+
+                        TouchArea {
+                            width: 70px;
+                            height: 32px;
+                            mouse-cursor: pointer;
+                            clicked => { root.cancelar(); }
+
+                            Text {
+                                text: "Cancelar";
+                                font-size: 13px;
+                                font-weight: 600;
+                                color: Theme.text-secondary;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+
+                        TouchArea {
+                            width: 70px;
+                            height: 32px;
+                            mouse-cursor: pointer;
+                            clicked => {
+                                root.aceptar(root.clave-color, root.color-actual, root.hex-actual);
+                            }
+
+                            Text {
+                                text: "Aceptar";
+                                font-size: 13px;
+                                font-weight: 700;
+                                color: Theme.accent-primary;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

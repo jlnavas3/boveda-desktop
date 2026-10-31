@@ -1,0 +1,465 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "app_icon.slint";
+
+export component ListOverflowMenu inherits PopupWindow {
+    in property <bool> solo-favoritos: false;
+    in property <string> orden-actual: "NOMBRE_AZ";
+    in property <string> filtro-tipo-actual: "";
+
+    callback crear-nuevo-tipo(string);
+    callback cambiar-orden(string);
+    callback cambiar-filtro-tipo(string);
+    callback alternar-solo-favoritos();
+    callback normalizar-titulos();
+    callback importar-bitwarden();
+    callback importar-csv();
+    callback fusionar-boveda();
+    callback exportar-bvda();
+    callback exportar-json();
+    callback exportar-csv();
+    callback navegar-apariencia();
+    callback navegar-ajustes();
+    callback abrir-ayuda();
+
+    property <string> sub-menu: "principal";
+
+    width: 240px;
+    close-policy: close-on-click-outside;
+
+    Rectangle {
+        background: Theme.surface;
+        border-radius: Theme.curvatura-esquinas > 0px ? Theme.curvatura-esquinas : 8px;
+        border-width: Theme.grosor-borde;
+        border-color: Theme.border;
+        drop-shadow-blur: 16px;
+        drop-shadow-color: #000000.transparentize(60%);
+        clip: true;
+
+        VerticalLayout {
+            padding: 6px;
+            spacing: 2px;
+
+            // ==========================================
+            // SUB-MENÚ: BOTÓN DE REGRESO
+            // ==========================================
+            if root.sub-menu != "principal" : TouchArea {
+                height: 30px;
+                clicked => { root.sub-menu = "principal"; }
+
+                Rectangle {
+                    background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                    border-radius: Theme.curvatura-esquinas > 0px ? Theme.curvatura-esquinas / 2 : 4px;
+
+                    HorizontalLayout {
+                        padding-left: 10px;
+                        padding-right: 10px;
+                        spacing: 8px;
+                        alignment: start;
+
+                        AppIcon {
+                            source: @image-url("../../assets/icons/arrow_back.svg");
+                            icon-size: 14px;
+                            icon-color: Theme.accent-primary;
+                            vertical-alignment: center;
+                        }
+
+                        Text {
+                            text: "Volver";
+                            color: Theme.accent-primary;
+                            font-size: 11px;
+                            font-weight: 700;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            if root.sub-menu != "principal" : Rectangle {
+                height: 1px;
+                background: Theme.border;
+            }
+
+            // ==========================================
+            // VISTA 1: PRINCIPAL
+            // ==========================================
+            if root.sub-menu == "principal" : VerticalLayout {
+                spacing: 2px;
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.sub-menu = "crear"; }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: space-between;
+                            HorizontalLayout {
+                                spacing: 8px;
+                                AppIcon { source: @image-url("../../assets/icons/add.svg"); icon-size: 14px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                                Text { text: "Crear nuevo..."; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                            }
+                            AppIcon { source: @image-url("../../assets/icons/chevron_right.svg"); icon-size: 12px; icon-color: Theme.text-muted; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.sub-menu = "ordenar"; }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: space-between;
+                            HorizontalLayout {
+                                spacing: 8px;
+                                AppIcon { source: @image-url("../../assets/icons/sort.svg"); icon-size: 14px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                                Text { text: "Ordenar por..."; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                            }
+                            AppIcon { source: @image-url("../../assets/icons/chevron_right.svg"); icon-size: 12px; icon-color: Theme.text-muted; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.sub-menu = "filtrar"; }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: space-between;
+                            HorizontalLayout {
+                                spacing: 8px;
+                                AppIcon { source: @image-url("../../assets/icons/filter_list.svg"); icon-size: 14px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                                Text { text: "Filtrar por tipo..."; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                            }
+                            AppIcon { source: @image-url("../../assets/icons/chevron_right.svg"); icon-size: 12px; icon-color: Theme.text-muted; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.alternar-solo-favoritos(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: space-between;
+                            HorizontalLayout {
+                                spacing: 8px;
+                                AppIcon { source: @image-url("../../assets/icons/star.svg"); icon-size: 14px; icon-color: #F59E0B; vertical-alignment: center; }
+                                Text { text: "Solo favoritos"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                            }
+                            if root.solo-favoritos : AppIcon {
+                                source: @image-url("../../assets/icons/check.svg");
+                                icon-size: 13px;
+                                icon-color: Theme.accent-primary;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+
+                Rectangle { height: 1px; background: Theme.border; }
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.normalizar-titulos(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                            AppIcon { source: @image-url("../../assets/icons/edit.svg"); icon-size: 14px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                            Text { text: "Normalizar títulos..."; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.sub-menu = "importar"; }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: space-between;
+                            HorizontalLayout {
+                                spacing: 8px;
+                                AppIcon { source: @image-url("../../assets/icons/file_download.svg"); icon-size: 14px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                                Text { text: "Importar..."; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                            }
+                            AppIcon { source: @image-url("../../assets/icons/chevron_right.svg"); icon-size: 12px; icon-color: Theme.text-muted; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.sub-menu = "exportar"; }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: space-between;
+                            HorizontalLayout {
+                                spacing: 8px;
+                                AppIcon { source: @image-url("../../assets/icons/file_upload.svg"); icon-size: 14px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                                Text { text: "Exportar..."; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                            }
+                            AppIcon { source: @image-url("../../assets/icons/chevron_right.svg"); icon-size: 12px; icon-color: Theme.text-muted; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                Rectangle { height: 1px; background: Theme.border; }
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.navegar-apariencia(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                            AppIcon { source: @image-url("../../assets/icons/palette.svg"); icon-size: 14px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                            Text { text: "Apariencia y diseño..."; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.navegar-ajustes(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                            AppIcon { source: @image-url("../../assets/icons/settings.svg"); icon-size: 14px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                            Text { text: "Ajustes generales"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.abrir-ayuda(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                            AppIcon { source: @image-url("../../assets/icons/help.svg"); icon-size: 14px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                            Text { text: "Ayuda y manual"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                        }
+                    }
+                }
+            }
+
+            // ==========================================
+            // SUB-MENÚ: CREAR NUEVO
+            // ==========================================
+            if root.sub-menu == "crear" : VerticalLayout {
+                spacing: 2px;
+
+                for item in [
+                    { tipo: "LOGIN", nombre: "Inicio de sesión", icon: @image-url("../../assets/icons/key.svg") },
+                    { tipo: "TARJETA", nombre: "Tarjeta de crédito/débito", icon: @image-url("../../assets/icons/credit_card.svg") },
+                    { tipo: "NOTA", nombre: "Nota segura", icon: @image-url("../../assets/icons/note.svg") },
+                    { tipo: "IDENTIDAD", nombre: "Identidad / Persona", icon: @image-url("../../assets/icons/badge.svg") },
+                    { tipo: "BANCO", nombre: "Cuenta bancaria", icon: @image-url("../../assets/icons/account_balance.svg") },
+                    { tipo: "WIFI", nombre: "Red Wi-Fi", icon: @image-url("../../assets/icons/wifi.svg") },
+                    { tipo: "SSH", nombre: "Llave SSH / Cripto", icon: @image-url("../../assets/icons/lock.svg") },
+                    { tipo: "LICENCIA", nombre: "Licencia de software", icon: @image-url("../../assets/icons/build.svg") },
+                    { tipo: "SERVIDOR", nombre: "Servidor / Host", icon: @image-url("../../assets/icons/dns.svg") },
+                    { tipo: "BILLETERA_CRIPTO", nombre: "Billetera Cripto", icon: @image-url("../../assets/icons/wallet.svg") }
+                ]: TouchArea {
+                    height: 26px;
+                    clicked => { root.crear-nuevo-tipo(item.tipo); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                            AppIcon { source: item.icon; icon-size: 13px; icon-color: Theme.accent-primary; vertical-alignment: center; }
+                            Text { text: item.nombre; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                        }
+                    }
+                }
+            }
+
+            // ==========================================
+            // SUB-MENÚ: ORDENAR POR
+            // ==========================================
+            if root.sub-menu == "ordenar" : VerticalLayout {
+                spacing: 2px;
+
+                for item in [
+                    { id: "NOMBRE_AZ", nombre: "Nombre (A - Z)" },
+                    { id: "NOMBRE_ZA", nombre: "Nombre (Z - A)" },
+                    { id: "RECIENTES", nombre: "Más recientes" },
+                    { id: "MAS_USADAS", nombre: "Más usadas" }
+                ]: TouchArea {
+                    height: 28px;
+                    clicked => { root.cambiar-orden(item.id); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: space-between;
+                            Text { text: item.nombre; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                            if root.orden-actual == item.id : AppIcon {
+                                source: @image-url("../../assets/icons/check.svg");
+                                icon-size: 13px;
+                                icon-color: Theme.accent-primary;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ==========================================
+            // SUB-MENÚ: FILTRAR POR TIPO
+            // ==========================================
+            if root.sub-menu == "filtrar" : VerticalLayout {
+                spacing: 2px;
+
+                for item in [
+                    { id: "", nombre: "Todos los tipos" },
+                    { id: "LOGIN", nombre: "Inicios de sesión" },
+                    { id: "TARJETA", nombre: "Tarjetas bancarias" },
+                    { id: "NOTA", nombre: "Notas seguras" },
+                    { id: "IDENTIDAD", nombre: "Identidades" },
+                    { id: "BANCO", nombre: "Cuentas bancarias" },
+                    { id: "WIFI", nombre: "Redes Wi-Fi" },
+                    { id: "SERVIDOR", nombre: "Servidores y Hosts" }
+                ]: TouchArea {
+                    height: 26px;
+                    clicked => { root.cambiar-filtro-tipo(item.id); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: space-between;
+                            Text { text: item.nombre; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                            if root.filtro-tipo-actual == item.id : AppIcon {
+                                source: @image-url("../../assets/icons/check.svg");
+                                icon-size: 13px;
+                                icon-color: Theme.accent-primary;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ==========================================
+            // SUB-MENÚ: IMPORTAR
+            // ==========================================
+            if root.sub-menu == "importar" : VerticalLayout {
+                spacing: 2px;
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.importar-bitwarden(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                            AppIcon { source: @image-url("../../assets/icons/file_download.svg"); icon-size: 13px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                            Text { text: "Bitwarden (JSON / CSV)"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.importar-csv(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                            AppIcon { source: @image-url("../../assets/icons/file_download.svg"); icon-size: 13px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                            Text { text: "CSV genérico"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.fusionar-boveda(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                            AppIcon { source: @image-url("../../assets/icons/folder.svg"); icon-size: 13px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                            Text { text: "Fusionar bóveda (.bvda)"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                        }
+                    }
+                }
+            }
+
+            // ==========================================
+            // SUB-MENÚ: EXPORTAR
+            // ==========================================
+            if root.sub-menu == "exportar" : VerticalLayout {
+                spacing: 2px;
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.exportar-bvda(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                            AppIcon { source: @image-url("../../assets/icons/save.svg"); icon-size: 13px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                            Text { text: "Bóveda cifrada (.bvda)"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.exportar-json(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                            AppIcon { source: @image-url("../../assets/icons/file_upload.svg"); icon-size: 13px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                            Text { text: "Exportar JSON (Sin cifrar)"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.exportar-csv(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                            AppIcon { source: @image-url("../../assets/icons/file_upload.svg"); icon-size: 13px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                            Text { text: "Exportar CSV (Sin cifrar)"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,64 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+import { SettingSlider } from "../../../components/widgets/setting_slider.slint";
+
+export component SubAppearanceGeometry inherits VerticalLayout {
+    callback restaurar-todo();
+    callback restaurar-curvatura();
+    callback restaurar-grosor();
+    callback restaurar-espaciado();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Formas y Bordes";
+        descripcion: "Curvatura de esquinas, calibre de trazos y separación de componentes del esqueleto global.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingSlider {
+        titulo: "Curvatura de Esquinas";
+        subtitulo: "Radio de redondeo dinámico aplicado a tarjetas, cuadros, chips y modales.";
+        sufijo: "px";
+        minimum: 0.0;
+        maximum: 24.0;
+        step: 1.0;
+        value: Theme.curvatura-esquinas / 1px;
+        changed(val) => {
+            Theme.curvatura-esquinas = val * 1px;
+        }
+    }
+
+    SettingSlider {
+        titulo: "Grosor de Bordes";
+        subtitulo: "Grosor de contorno en tarjetas, separadores y elementos estructurados.";
+        sufijo: "px";
+        minimum: 1.0;
+        maximum: 4.0;
+        step: 1.0;
+        value: Math.round(Theme.grosor-borde / 1px);
+        changed(val) => {
+            Theme.grosor-borde = Math.round(val) * 1px;
+        }
+    }
+
+    SettingSlider {
+        titulo: "Espaciado de Componentes";
+        subtitulo: "Separación y aireado interno entre bloques de datos y controles.";
+        sufijo: "px";
+        minimum: 4.0;
+        maximum: 16.0;
+        step: 1.0;
+        value: Theme.espaciado-componentes / 1px;
+        changed(val) => {
+            Theme.espaciado-componentes = val * 1px;
+        }
+    }
+}

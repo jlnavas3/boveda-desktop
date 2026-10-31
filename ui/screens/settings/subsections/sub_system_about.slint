@@ -1,0 +1,84 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+
+export component SubSystemAbout inherits VerticalLayout {
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Acerca de Bóveda Local";
+        descripcion: "Identidad, arquitectura criptográfica, autoría y licencia de software libre.";
+    }
+
+    SettingBlock {
+        titulo: "Bóveda Local Desktop v0.1.0";
+        descripcion: "Gestor de credenciales y secretos soberano 100% offline y local.";
+        mostrar-restaurar: false;
+
+        VerticalLayout {
+            spacing: 8px;
+
+            Rectangle {
+                height: 52px;
+                background: Theme.background;
+                border-radius: Theme.radius-sm;
+                border-width: Theme.grosor-borde;
+                border-color: Theme.border;
+
+                HorizontalLayout {
+                    padding-left: 12px; padding-right: 12px; spacing: 10px; alignment: space-between;
+                    VerticalLayout {
+                        alignment: center; spacing: 2px;
+                        Text { text: "Licencia de Software"; font-size: 12px; font-weight: 600; color: Theme.text-primary; }
+                        Text { text: "GNU General Public License v3.0 (GPLv3)"; font-size: 11px; color: Theme.text-muted; }
+                    }
+                    Rectangle {
+                        height: 24px;
+                        background: Theme.surface-hover;
+                        border-radius: Theme.radius-sm;
+                        border-width: Theme.grosor-borde;
+                        border-color: Theme.border;
+                        HorizontalLayout {
+                            padding-left: 8px; padding-right: 8px; alignment: center;
+                            Text { text: "GPL-3.0"; color: Theme.accent-primary; font-size: 11px; font-weight: 700; vertical-alignment: center; }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 52px;
+                background: Theme.background;
+                border-radius: Theme.radius-sm;
+                border-width: Theme.grosor-borde;
+                border-color: Theme.border;
+
+                HorizontalLayout {
+                    padding-left: 12px; padding-right: 12px; spacing: 10px; alignment: space-between;
+                    VerticalLayout {
+                        alignment: center; spacing: 2px;
+                        Text { text: "Autor y Desarrollador"; font-size: 12px; font-weight: 600; color: Theme.text-primary; }
+                        Text { text: "Jose Luis Navas (@jlnavas3)"; font-size: 11px; color: Theme.text-muted; }
+                    }
+                    Rectangle {
+                        height: 24px;
+                        background: Theme.surface-hover;
+                        border-radius: Theme.radius-sm;
+                        border-width: Theme.grosor-borde;
+                        border-color: Theme.border;
+                        HorizontalLayout {
+                            padding-left: 8px; padding-right: 8px; alignment: center;
+                            Text { text: "2026"; color: Theme.text-secondary; font-size: 11px; font-weight: 700; vertical-alignment: center; }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

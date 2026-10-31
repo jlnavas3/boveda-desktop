@@ -1,0 +1,70 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+
+export component SettingRadioOption inherits Rectangle {
+    in property <string> id: "";
+    in property <string> titulo: "";
+    in property <string> descripcion: "";
+    in property <bool> seleccionado: false;
+    callback clicked();
+
+    width: 360px;
+    min-height: 48px;
+    border-radius: Theme.radius-sm;
+    background: root.seleccionado ? Theme.accent-primary.transparentize(85%) : Theme.background;
+    border-width: 1px;
+    border-color: root.seleccionado ? Theme.accent-primary : Theme.border;
+
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+
+        HorizontalLayout {
+            padding-left: 12px;
+            padding-right: 12px;
+            padding-top: 8px;
+            padding-bottom: 8px;
+            spacing: 12px;
+
+            // Círculo del radio estrictamente centrado verticalmente
+            VerticalLayout {
+                alignment: center;
+                Rectangle {
+                    width: 14px;
+                    height: 14px;
+                    border-radius: 7px;
+                    border-width: 1px;
+                    border-color: root.seleccionado ? Theme.accent-primary : Theme.border;
+                    background: root.seleccionado ? Theme.accent-primary : transparent;
+                }
+            }
+
+            // Textos: Título y descripción
+            VerticalLayout {
+                horizontal-stretch: 1;
+                alignment: center;
+                spacing: 2px;
+
+                Text {
+                    text: root.titulo;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: root.seleccionado ? Theme.accent-primary : Theme.text-primary;
+                    horizontal-alignment: left;
+                }
+
+                if root.descripcion != "" : Text {
+                    text: root.descripcion;
+                    font-size: 10px;
+                    color: Theme.text-secondary;
+                    wrap: word-wrap;
+                    horizontal-alignment: left;
+                }
+            }
+        }
+    }
+}

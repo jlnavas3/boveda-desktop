@@ -1,0 +1,132 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "../../components/widgets/app_icon.slint";
+
+export struct MainCategory {
+    id: int,
+    titulo: string,
+    icono: string,
+    badge: string,
+}
+
+export component SettingsColCategories inherits Rectangle {
+    in property <[MainCategory]> categorias: [];
+    in-out property <int> categoria-activa: 1;
+    callback seleccionada(int);
+
+    width: 230px;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    Flickable {
+        width: 100%;
+        height: 100%;
+        content-height: col1-layout.min-height;
+
+        col1-layout := VerticalLayout {
+            padding: 12px;
+            spacing: 4px;
+            alignment: start;
+
+            for cat in root.categorias : cat-touch := TouchArea {
+                height: 44px;
+                clicked => {
+                    root.categoria-activa = cat.id;
+                    root.seleccionada(cat.id);
+                }
+
+                Rectangle {
+                    background: root.categoria-activa == cat.id ?
+                        Theme.accent-primary.transparentize(85%) :
+                        (cat-touch.has-hover ? Theme.surface-hover : transparent);
+                    border-radius: Theme.radius-sm;
+                    border-width: root.categoria-activa == cat.id ? 1px : 0px;
+                    border-color: Theme.accent-primary.transparentize(50%);
+
+                    HorizontalLayout {
+                        padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: space-between;
+
+                        HorizontalLayout {
+                            spacing: 8px; alignment: start;
+                            if cat.id == 1 : AppIcon {
+                                source: @image-url("../../assets/icons/shield.svg");
+                                icon-size: 16px;
+                                icon-color: root.categoria-activa == cat.id ? Theme.accent-primary : Theme.text-secondary;
+                                vertical-alignment: center;
+                            }
+                            if cat.id == 2 : AppIcon {
+                                source: @image-url("../../assets/icons/palette.svg");
+                                icon-size: 16px;
+                                icon-color: root.categoria-activa == cat.id ? Theme.accent-primary : Theme.text-secondary;
+                                vertical-alignment: center;
+                            }
+                            if cat.id == 3 : AppIcon {
+                                source: @image-url("../../assets/icons/list.svg");
+                                icon-size: 16px;
+                                icon-color: root.categoria-activa == cat.id ? Theme.accent-primary : Theme.text-secondary;
+                                vertical-alignment: center;
+                            }
+                            if cat.id == 4 : AppIcon {
+                                source: @image-url("../../assets/icons/build.svg");
+                                icon-size: 16px;
+                                icon-color: root.categoria-activa == cat.id ? Theme.accent-primary : Theme.text-secondary;
+                                vertical-alignment: center;
+                            }
+                            if cat.id == 5 : AppIcon {
+                                source: @image-url("../../assets/icons/save.svg");
+                                icon-size: 16px;
+                                icon-color: root.categoria-activa == cat.id ? Theme.accent-primary : Theme.text-secondary;
+                                vertical-alignment: center;
+                            }
+                            if cat.id == 6 : AppIcon {
+                                source: @image-url("../../assets/icons/settings.svg");
+                                icon-size: 16px;
+                                icon-color: root.categoria-activa == cat.id ? Theme.accent-primary : Theme.text-secondary;
+                                vertical-alignment: center;
+                            }
+                            Text {
+                                text: cat.titulo;
+                                color: root.categoria-activa == cat.id ? Theme.accent-primary : Theme.text-primary;
+                                font-size: 12px;
+                                font-weight: root.categoria-activa == cat.id ? 700 : 500;
+                                vertical-alignment: center;
+                            }
+                        }
+
+                        if cat.badge != "" : VerticalLayout {
+                            alignment: center;
+                            Rectangle {
+                                height: 20px;
+                                min-width: 20px;
+                                background: root.categoria-activa == cat.id ?
+                                    Theme.accent-primary.transparentize(80%) :
+                                    Theme.surface-hover;
+                                border-radius: Theme.radius-sm;
+                                border-width: Theme.grosor-borde;
+                                border-color: root.categoria-activa == cat.id ?
+                                    Theme.accent-primary.transparentize(50%) :
+                                    Theme.border;
+                                HorizontalLayout {
+                                    padding-left: 6px; padding-right: 6px; alignment: center;
+                                    Text {
+                                        text: cat.badge;
+                                        color: root.categoria-activa == cat.id ? Theme.accent-primary : Theme.text-secondary;
+                                        font-size: 11px;
+                                        font-weight: 700;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

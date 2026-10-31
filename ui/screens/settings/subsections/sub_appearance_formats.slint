@@ -1,0 +1,151 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+
+export component SubAppearanceFormats inherits VerticalLayout {
+    in-out property <string> formato-tarjeta: "4x4";
+    in-out property <string> formato-expiracion-tarjeta: "MM/AA";
+    in-out property <string> formato-iban: "bloques_4";
+    in-out property <string> formato-fecha: "DD/MM/AAAA";
+    in-out property <string> formato-hora: "24h";
+    in-out property <string> formato-telefono: "### ### ####";
+    in-out property <string> separador-decimal: ".";
+
+    callback restaurar-todo();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Formatos";
+        descripcion: "Reglas de formateo visual para números de tarjetas, IBAN, fechas, horas y teléfonos.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingBlock {
+        titulo: "Formato de Número de Tarjeta Bancaria";
+        descripcion: "Segmentación de los dígitos del PAN al visualizar o editar tarjetas.";
+        restaurar => {}
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            for f in [
+                { id: "4x4", nombre: "Bloques 4x4 (•••• •••• •••• ••••)" },
+                { id: "continuo", nombre: "Continuo (••••••••••••••••)" }
+            ]: TouchArea {
+                width: 220px; height: 32px;
+                clicked => { root.formato-tarjeta = f.id; }
+                Rectangle {
+                    background: root.formato-tarjeta == f.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: Theme.grosor-borde;
+                    border-color: root.formato-tarjeta == f.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+                    Text { text: f.nombre; color: root.formato-tarjeta == f.id ? Theme.accent-primary : Theme.text-primary; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                }
+            }
+        }
+    }
+
+    SettingBlock {
+        titulo: "Formato de Cuenta Bancaria (IBAN)";
+        descripcion: "Espaciado de la clave bancaria internacional.";
+        restaurar => {}
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            for f in [
+                { id: "bloques_4", nombre: "Bloques de 4 (ES00 0000 ...)" },
+                { id: "continuo", nombre: "Continuo (ES000000...)" }
+            ]: TouchArea {
+                width: 200px; height: 32px;
+                clicked => { root.formato-iban = f.id; }
+                Rectangle {
+                    background: root.formato-iban == f.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: Theme.grosor-borde;
+                    border-color: root.formato-iban == f.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+                    Text { text: f.nombre; color: root.formato-iban == f.id ? Theme.accent-primary : Theme.text-primary; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                }
+            }
+        }
+    }
+
+    SettingBlock {
+        titulo: "Formato de Fecha y Hora";
+        descripcion: "Visualización cronológica de fechas de registro y vencimiento.";
+        restaurar => {}
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            for f in [
+                { id: "DD/MM/AAAA", nombre: "DD/MM/AAAA" },
+                { id: "AAAA-MM-DD", nombre: "AAAA-MM-DD" },
+                { id: "MM/DD/AAAA", nombre: "MM/DD/AAAA" }
+            ]: TouchArea {
+                width: 110px; height: 32px;
+                clicked => { root.formato-fecha = f.id; }
+                Rectangle {
+                    background: root.formato-fecha == f.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: Theme.grosor-borde;
+                    border-color: root.formato-fecha == f.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+                    Text { text: f.nombre; color: root.formato-fecha == f.id ? Theme.accent-primary : Theme.text-primary; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                }
+            }
+
+            Rectangle { width: 1px; height: 28px; background: Theme.border; }
+
+            for h in [
+                { id: "24h", nombre: "24h" },
+                { id: "12h", nombre: "12h (AM/PM)" }
+            ]: TouchArea {
+                width: 90px; height: 32px;
+                clicked => { root.formato-hora = h.id; }
+                Rectangle {
+                    background: root.formato-hora == h.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: Theme.grosor-borde;
+                    border-color: root.formato-hora == h.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+                    Text { text: h.nombre; color: root.formato-hora == h.id ? Theme.accent-primary : Theme.text-primary; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                }
+            }
+        }
+    }
+
+    SettingBlock {
+        titulo: "Separador Decimal";
+        descripcion: "Símbolo de coma o punto para importes monetarios y valores numéricos.";
+        restaurar => {}
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            for s in [
+                { id: ".", nombre: "Punto (.)" },
+                { id: ",", nombre: "Coma (,)" }
+            ]: TouchArea {
+                width: 90px; height: 32px;
+                clicked => { root.separador-decimal = s.id; }
+                Rectangle {
+                    background: root.separador-decimal == s.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: Theme.grosor-borde;
+                    border-color: root.separador-decimal == s.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+                    Text { text: s.nombre; color: root.separador-decimal == s.id ? Theme.accent-primary : Theme.text-primary; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,74 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+
+export struct TabItemData {
+    id: int,
+    titulo: string,
+    icono: string,
+}
+
+export component SubTabBar inherits Rectangle {
+    in property <[TabItemData]> pestañas: [];
+    in-out property <int> pestaña-activa: 0;
+    callback seleccionada(int);
+
+    height: 42px;
+    background: Theme.background;
+    border-radius: Theme.radius-sm;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    HorizontalLayout {
+        padding: 4px;
+        spacing: 4px;
+
+        for tab in root.pestañas: tab-btn := Rectangle {
+            horizontal-stretch: 1;
+            border-radius: Theme.radius-sm;
+            background: root.pestaña-activa == tab.id ? Theme.surface : (tab-touch.has-hover ? Theme.surface-hover : transparent);
+            border-width: root.pestaña-activa == tab.id ? 1px : 0px;
+            border-color: Theme.border;
+
+            tab-touch := TouchArea {
+                clicked => {
+                    root.pestaña-activa = tab.id;
+                    root.seleccionada(tab.id);
+                }
+
+                HorizontalLayout {
+                    alignment: center;
+                    spacing: 6px;
+
+                    if tab.icono != "" : Text {
+                        text: tab.icono;
+                        font-size: 13px;
+                        vertical-alignment: center;
+                    }
+
+                    Text {
+                        text: tab.titulo;
+                        color: root.pestaña-activa == tab.id ? Theme.text-primary : Theme.text-secondary;
+                        font-size: 12px;
+                        font-weight: root.pestaña-activa == tab.id ? 700 : 500;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+
+            // Indicador inferior activo
+            if root.pestaña-activa == tab.id : Rectangle {
+                y: parent.height - 2px;
+                height: 2px;
+                width: parent.width * 70%;
+                x: (parent.width - self.width) / 2;
+                background: Theme.accent-primary;
+                border-radius: 1px;
+            }
+        }
+    }
+}

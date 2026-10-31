@@ -1,0 +1,295 @@
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "../../components/widgets/app_icon.slint";
+
+export component SecuritySection inherits VerticalLayout {
+    in-out property <int> portapapeles-segundos: 30;
+    in-out property <int> autobloqueo-segundos: 60;
+    in-out property <int> autodestruccion-intentos: 0;
+    in-out property <string> perfil-argon2: "ESTANDAR";
+    in-out property <bool> biometria-disponible: true;
+    in-out property <bool> biometria-activa: false;
+
+    callback cambiar-clave(string, string, string);
+    callback alternar-biometria(bool);
+
+    spacing: 12px;
+
+    // 1. Biometría / Huella Digital
+    Rectangle {
+        background: Theme.background;
+        border-radius: Theme.radius-md;
+        border-width: 1px;
+        border-color: Theme.border;
+
+        HorizontalLayout {
+            padding: 12px;
+            spacing: 12px;
+            alignment: center;
+
+            Rectangle {
+                width: 32px; height: 32px;
+                border-radius: Theme.radius-sm;
+                background: Theme.accent-primary.transparentize(85%);
+                AppIcon {
+                    source: @image-url("../../assets/icons/fingerprint.svg");
+                    icon-size: 16px;
+                    icon-color: Theme.accent-primary;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+
+            VerticalLayout {
+                horizontal-stretch: 1;
+                spacing: 2px;
+                Text { text: "Desbloqueo Biométrico / Llavero del SO"; color: Theme.text-primary; font-size: 13px; font-weight: 600; }
+                Text { text: "Permite abrir la bóveda usando la huella o el llavero protegido del SO"; color: Theme.text-secondary; font-size: 11px; }
+            }
+
+            TouchArea {
+                width: 44px; height: 24px;
+                clicked => {
+                    root.biometria-activa = !root.biometria-activa;
+                    root.alternar-biometria(root.biometria-activa);
+                }
+
+                Rectangle {
+                    border-radius: 12px;
+                    background: root.biometria-activa ? Theme.accent-primary : Theme.surface-hover;
+                    border-width: 1px;
+                    border-color: Theme.border;
+
+                    Rectangle {
+                        x: root.biometria-activa ? 22px : 2px;
+                        y: 2px;
+                        width: 18px; height: 18px;
+                        border-radius: 9px;
+                        background: #FFFFFF;
+                        animate x { duration: 150ms; }
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Temporizadores de Autocierre y Portapapeles
+    HorizontalLayout {
+        spacing: 12px;
+
+        // Portapapeles
+        Rectangle {
+            horizontal-stretch: 1;
+            background: Theme.background;
+            border-radius: Theme.radius-md;
+            border-width: 1px;
+            border-color: Theme.border;
+
+            VerticalLayout {
+                padding: 10px;
+                spacing: 6px;
+                HorizontalLayout {
+                    alignment: space-between;
+                    Text { text: "Limpieza Portapapeles"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+                    Text { text: root.portapapeles-segundos + "s"; color: Theme.accent-primary; font-size: 11px; font-weight: 700; }
+                }
+                HorizontalLayout {
+                    spacing: 6px;
+                    for seg in [15, 30, 45, 60]: TouchArea {
+                        horizontal-stretch: 1; height: 26px;
+                        clicked => { root.portapapeles-segundos = seg; }
+                        Rectangle {
+                            background: root.portapapeles-segundos == seg ? Theme.accent-primary : Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            Text {
+                                text: seg + "s";
+                                color: root.portapapeles-segundos == seg ? #FFFFFF : Theme.text-secondary;
+                                font-size: 11px; font-weight: 600;
+                                horizontal-alignment: center; vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Autobloqueo
+        Rectangle {
+            horizontal-stretch: 1;
+            background: Theme.background;
+            border-radius: Theme.radius-md;
+            border-width: 1px;
+            border-color: Theme.border;
+
+            VerticalLayout {
+                padding: 10px;
+                spacing: 6px;
+                HorizontalLayout {
+                    alignment: space-between;
+                    Text { text: "Autobloqueo de Sesión"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+                    Text { text: root.autobloqueo-segundos + "s"; color: Theme.accent-primary; font-size: 11px; font-weight: 700; }
+                }
+                HorizontalLayout {
+                    spacing: 6px;
+                    for seg in [30, 60, 180, 300]: TouchArea {
+                        horizontal-stretch: 1; height: 26px;
+                        clicked => { root.autobloqueo-segundos = seg; }
+                        Rectangle {
+                            background: root.autobloqueo-segundos == seg ? Theme.accent-primary : Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            Text {
+                                text: seg >= 60 ? (seg / 60) + "m" : seg + "s";
+                                color: root.autobloqueo-segundos == seg ? #FFFFFF : Theme.text-secondary;
+                                font-size: 11px; font-weight: 600;
+                                horizontal-alignment: center; vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 2.1 Autodestrucción por intentos fallidos
+    Rectangle {
+        background: Theme.background;
+        border-radius: Theme.radius-md;
+        border-width: 1px;
+        border-color: root.autodestruccion-intentos > 0 ? Theme.danger.transparentize(50%) : Theme.border;
+
+        VerticalLayout {
+            padding: 10px;
+            spacing: 6px;
+            HorizontalLayout {
+                alignment: space-between;
+                Text { text: "💥 Autodestrucción tras intentos fallidos"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+                Text {
+                    text: root.autodestruccion-intentos == 0 ? "Desactivada" : (root.autodestruccion-intentos + " intentos");
+                    color: root.autodestruccion-intentos > 0 ? Theme.danger : Theme.text-muted;
+                    font-size: 11px; font-weight: 700;
+                }
+            }
+            HorizontalLayout {
+                spacing: 6px;
+                for it in [
+                    { val: 0, label: "Desactivado" },
+                    { val: 3, label: "3 intentos" },
+                    { val: 5, label: "5 intentos" },
+                    { val: 10, label: "10 intentos" }
+                ]: TouchArea {
+                    horizontal-stretch: 1; height: 26px;
+                    clicked => { root.autodestruccion-intentos = it.val; }
+                    Rectangle {
+                        background: root.autodestruccion-intentos == it.val ?
+                            (it.val == 0 ? Theme.accent-primary : Theme.danger) : Theme.surface;
+                        border-radius: Theme.radius-sm;
+                        Text {
+                            text: it.label;
+                            color: root.autodestruccion-intentos == it.val ? #FFFFFF : Theme.text-secondary;
+                            font-size: 10px; font-weight: 600;
+                            horizontal-alignment: center; vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Perfil de Derivación KDF Argon2id
+    VerticalLayout {
+        spacing: 6px;
+        Text { text: "Perfil Criptográfico Argon2id"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+        HorizontalLayout {
+            spacing: 8px;
+            for p in [
+                { id: "ESTANDAR", nombre: "Estándar", desc: "64MB • Rápido" },
+                { id: "REFORZADO", nombre: "Reforzado", desc: "128MB • Seguro" },
+                { id: "ULTRASEGURO", nombre: "Ultra-Seguro", desc: "256MB • Máximo" }
+            ]: TouchArea {
+                horizontal-stretch: 1; min-height: 44px;
+                clicked => { root.perfil-argon2 = p.id; }
+                Rectangle {
+                    background: root.perfil-argon2 == p.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: 1px;
+                    border-color: root.perfil-argon2 == p.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-md;
+                    VerticalLayout {
+                        alignment: center; padding: 6px; spacing: 2px;
+                        Text {
+                            text: p.nombre;
+                            color: root.perfil-argon2 == p.id ? Theme.accent-primary : Theme.text-primary;
+                            font-size: 12px; font-weight: 700; horizontal-alignment: center;
+                        }
+                        Text { text: p.desc; color: Theme.text-muted; font-size: 10px; horizontal-alignment: center; }
+                    }
+                }
+            }
+        }
+    }
+
+    // 4. Cambio de Contraseña Maestra
+    VerticalLayout {
+        spacing: 8px;
+        Text { text: "Cambio de Contraseña Maestra (Re-cifrado en Disco)"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+
+        HorizontalLayout {
+            spacing: 8px;
+            Rectangle {
+                horizontal-stretch: 1; height: 34px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    in-actual := TextInput {
+                        text: ""; input-type: InputType.password; color: Theme.text-primary; font-size: 12px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+                if in-actual.text == "" : Text {
+                    x: 8px; text: "Clave actual..."; color: Theme.text-muted; font-size: 11px; vertical-alignment: center;
+                }
+            }
+
+            Rectangle {
+                horizontal-stretch: 1; height: 34px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    in-nueva := TextInput {
+                        text: ""; input-type: InputType.password; color: Theme.text-primary; font-size: 12px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+                if in-nueva.text == "" : Text {
+                    x: 8px; text: "Nueva clave..."; color: Theme.text-muted; font-size: 11px; vertical-alignment: center;
+                }
+            }
+
+            Rectangle {
+                horizontal-stretch: 1; height: 34px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    in-conf := TextInput {
+                        text: ""; input-type: InputType.password; color: Theme.text-primary; font-size: 12px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+                if in-conf.text == "" : Text {
+                    x: 8px; text: "Confirmar..."; color: Theme.text-muted; font-size: 11px; vertical-alignment: center;
+                }
+            }
+
+            TouchArea {
+                width: 90px; height: 34px;
+                clicked => {
+                    root.cambiar-clave(in-actual.text, in-nueva.text, in-conf.text);
+                    in-actual.text = ""; in-nueva.text = ""; in-conf.text = "";
+                }
+                Rectangle {
+                    background: parent.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                    border-radius: Theme.radius-sm;
+                    Text { text: "Re-cifrar"; color: #FFFFFF; font-size: 12px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+                }
+            }
+        }
+    }
+}

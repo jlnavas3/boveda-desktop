@@ -1,0 +1,196 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+import { RuleChip } from "../../../components/widgets/rule_chip.slint";
+
+export struct PortRuleItem {
+    id: string,
+    texto: string,
+}
+
+export struct PortRuleRow {
+    items: [PortRuleItem],
+}
+
+export component SubSystemServices inherits VerticalLayout {
+    in-out property <string> puertos-homelab: "";
+
+    callback restaurar-todo();
+    callback restaurar-puertos();
+    callback agregar-puerto(string, string);
+    callback eliminar-puerto(string);
+
+    in property <[PortRuleRow]> filas-puertos: [];
+
+    property <bool> mostrando-agregar: false;
+    property <string> nuevo-puerto: "";
+    property <string> nuevo-nombre: "";
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Servicios y Puertos Locales";
+        descripcion: "Mapeo inteligente de puertos homelab a nombres amigables de servidor.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingBlock {
+        titulo: "Puertos de Servicios Homelab / Locales";
+        descripcion: "Etiquetas interactivas de puertos conocidos (ej: 8006: Proxmox, 8123: Home Assistant).";
+        restaurar => { root.restaurar-puertos(); }
+
+        VerticalLayout {
+            spacing: 12px;
+            alignment: start;
+
+            // Botón + Agregar
+            HorizontalLayout {
+                alignment: start;
+                TouchArea {
+                    width: 100px;
+                    height: 30px;
+                    clicked => {
+                        root.mostrando-agregar = !root.mostrando-agregar;
+                    }
+
+                    Rectangle {
+                        border-radius: 15px;
+                        background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                        border-width: 1px;
+                        border-color: Theme.accent-primary;
+
+                        HorizontalLayout {
+                            alignment: center;
+                            spacing: 4px;
+                            Text {
+                                text: "+ Agregar";
+                                font-size: 11px;
+                                font-weight: 600;
+                                color: Theme.accent-primary;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Lista de Chips de puertos organizados en filas horizontales dinámicas
+            VerticalLayout {
+                spacing: 8px;
+                alignment: start;
+
+                for row in root.filas-puertos : HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+
+                    for item in row.items : RuleChip {
+                        texto: item.texto;
+                        eliminar => { root.eliminar-puerto(item.id); }
+                    }
+                }
+            }
+
+            // Formulario inline para nuevo puerto
+            if root.mostrando-agregar : Rectangle {
+                width: 380px;
+                background: Theme.background;
+                border-radius: Theme.radius-sm;
+                border-width: 1px;
+                border-color: Theme.border;
+
+                VerticalLayout {
+                    padding: 10px;
+                    spacing: 8px;
+
+                    HorizontalLayout {
+                        spacing: 8px;
+
+                        VerticalLayout {
+                            width: 110px;
+                            spacing: 2px;
+                            Text { text: "Puerto (ej: 8080):"; font-size: 10px; color: Theme.text-secondary; }
+                            Rectangle {
+                                height: 32px;
+                                background: Theme.surface;
+                                border-radius: Theme.radius-sm;
+                                border-width: 1px; border-color: Theme.border;
+                                HorizontalLayout {
+                                    padding-left: 6px; padding-right: 6px;
+                                    TextInput {
+                                        text <=> root.nuevo-puerto;
+                                        color: Theme.text-primary;
+                                        font-size: 11px;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                            }
+                        }
+
+                        VerticalLayout {
+                            horizontal-stretch: 1;
+                            spacing: 2px;
+                            Text { text: "Nombre de Servicio:"; font-size: 10px; color: Theme.text-secondary; }
+                            Rectangle {
+                                height: 32px;
+                                background: Theme.surface;
+                                border-radius: Theme.radius-sm;
+                                border-width: 1px; border-color: Theme.border;
+                                HorizontalLayout {
+                                    padding-left: 6px; padding-right: 6px;
+                                    TextInput {
+                                        text <=> root.nuevo-nombre;
+                                        color: Theme.text-primary;
+                                        font-size: 11px;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: end;
+
+                        TouchArea {
+                            width: 80px; height: 28px;
+                            clicked => {
+                                root.nuevo-puerto = "";
+                                root.nuevo-nombre = "";
+                                root.mostrando-agregar = false;
+                            }
+                            Rectangle {
+                                border-radius: Theme.radius-sm;
+                                background: parent.has-hover ? Theme.surface-hover : transparent;
+                                Text { text: "Cancelar"; font-size: 11px; color: Theme.text-secondary; horizontal-alignment: center; vertical-alignment: center; }
+                            }
+                        }
+
+                        TouchArea {
+                            width: 80px; height: 28px;
+                            clicked => {
+                                if root.nuevo-puerto != "" && root.nuevo-nombre != "" {
+                                    root.agregar-puerto(root.nuevo-puerto, root.nuevo-nombre);
+                                    root.nuevo-puerto = "";
+                                    root.nuevo-nombre = "";
+                                    root.mostrando-agregar = false;
+                                }
+                            }
+                            Rectangle {
+                                border-radius: Theme.radius-sm;
+                                background: parent.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                                Text { text: "Guardar"; font-size: 11px; font-weight: 700; color: #000000; horizontal-alignment: center; vertical-alignment: center; }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

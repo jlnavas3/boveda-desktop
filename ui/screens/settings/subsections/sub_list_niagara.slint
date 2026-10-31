@@ -1,0 +1,72 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+
+export component SubListNiagara inherits VerticalLayout {
+    in-out property <bool> mostrar-ola-niagara: true;
+    in-out property <bool> incluir-enie-niagara: true;
+
+    callback restaurar-todo();
+    callback restaurar-niagara();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Abecedario Niagara (A-Z)";
+        descripcion: "Índice lateral táctil con efecto de ola y globo de letra ampliada.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingBlock {
+        titulo: "Física y Activación de la Ola Niagara";
+        descripcion: "Permite saltos instantáneos deslizando el cursor o dedo a lo largo del margen derecho.";
+        restaurar => { root.restaurar-niagara(); }
+
+        VerticalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            // Activar Ola
+            TouchArea {
+                width: 280px; height: 32px;
+                clicked => { root.mostrar-ola-niagara = !root.mostrar-ola-niagara; }
+                Rectangle {
+                    border-radius: Theme.radius-sm;
+                    background: root.mostrar-ola-niagara ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: 1px;
+                    border-color: root.mostrar-ola-niagara ? Theme.accent-primary : Theme.border;
+
+                    HorizontalLayout {
+                        padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                        Text { text: root.mostrar-ola-niagara ? "☑" : "☐"; color: Theme.accent-primary; font-size: 13px; vertical-alignment: center; }
+                        Text { text: "Mostrar Franja Alfabética Lateral"; font-size: 11px; font-weight: 500; color: Theme.text-primary; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            // Letra Ñ
+            TouchArea {
+                width: 280px; height: 32px;
+                clicked => { root.incluir-enie-niagara = !root.incluir-enie-niagara; }
+                Rectangle {
+                    border-radius: Theme.radius-sm;
+                    background: root.incluir-enie-niagara ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: 1px;
+                    border-color: root.incluir-enie-niagara ? Theme.accent-primary : Theme.border;
+
+                    HorizontalLayout {
+                        padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                        Text { text: root.incluir-enie-niagara ? "☑" : "☐"; color: Theme.accent-primary; font-size: 13px; vertical-alignment: center; }
+                        Text { text: "Incluir Letra 'Ñ' en el Alfabeto"; font-size: 11px; font-weight: 500; color: Theme.text-primary; vertical-alignment: center; }
+                    }
+                }
+            }
+        }
+    }
+}

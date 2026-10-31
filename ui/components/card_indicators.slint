@@ -1,0 +1,64 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { IndicatorLines } from "indicators/indicator_lines.slint";
+import { IndicatorDots } from "indicators/indicator_dots.slint";
+import { IndicatorIcons } from "indicators/indicator_icons.slint";
+import { IndicatorStrip } from "indicators/indicator_strip.slint";
+
+export component CardIndicators inherits Rectangle {
+    in property <string> estilo: "lineas"; // "lineas", "puntos", "iconos", "lateral", "ninguno"
+    in property <bool> tiene-usuario: false;
+    in property <bool> tiene-password: false;
+    in property <bool> tiene-totp: false;
+    in property <bool> tiene-passkey: false;
+    in property <bool> tiene-url: false;
+    in property <bool> tiene-app: false;
+    in property <bool> tiene-notas: false;
+
+    background: transparent;
+
+    if root.estilo == "lineas" : IndicatorLines {
+        tiene-usuario: root.tiene-usuario;
+        tiene-password: root.tiene-password;
+        tiene-totp: root.tiene-totp;
+        tiene-passkey: root.tiene-passkey;
+        tiene-url: root.tiene-url;
+        tiene-app: root.tiene-app;
+        tiene-notas: root.tiene-notas;
+    }
+
+    if root.estilo == "puntos" : IndicatorDots {
+        tiene-usuario: root.tiene-usuario;
+        tiene-password: root.tiene-password;
+        tiene-totp: root.tiene-totp;
+        tiene-passkey: root.tiene-passkey;
+        tiene-url: root.tiene-url;
+        tiene-app: root.tiene-app;
+        tiene-notas: root.tiene-notas;
+    }
+
+    if root.estilo == "iconos" : IndicatorIcons {
+        tiene-usuario: root.tiene-usuario;
+        tiene-password: root.tiene-password;
+        tiene-totp: root.tiene-totp;
+        tiene-passkey: root.tiene-passkey;
+        tiene-url: root.tiene-url;
+        tiene-app: root.tiene-app;
+        tiene-notas: root.tiene-notas;
+    }
+
+    if root.estilo == "lateral" : IndicatorStrip {
+        tiene-usuario: root.tiene-usuario;
+        tiene-password: root.tiene-password;
+        tiene-totp: root.tiene-totp;
+        tiene-passkey: root.tiene-passkey;
+        tiene-url: root.tiene-url;
+        tiene-app: root.tiene-app;
+        tiene-notas: root.tiene-notas;
+    }
+}

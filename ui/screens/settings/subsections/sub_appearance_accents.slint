@@ -1,0 +1,88 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+
+export component SubAppearanceAccents inherits VerticalLayout {
+    in-out property <string> color-acento: "menta";
+
+    callback restaurar-todo();
+    callback restaurar-acento();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Paleta de Acentos (19)";
+        descripcion: "Colores de realce canónicos idénticos a Bóveda Local para Android.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingBlock {
+        titulo: "Color de Acento Canónico";
+        descripcion: "Selecciona el matiz primario para botones, selección y resaltados en vivo.";
+        restaurar => { root.restaurar-acento(); }
+
+        VerticalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            // Fila 1 de 10 colores
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: start;
+                for a in [
+                    { clave: "menta", hex: #57E6B4 },
+                    { clave: "azul", hex: #6FA8FF },
+                    { clave: "rosa", hex: #FF8FCB },
+                    { clave: "violeta", hex: #B98BFF },
+                    { clave: "rojo", hex: #F44336 },
+                    { clave: "purpura", hex: #9C27B0 },
+                    { clave: "purpura_oscuro", hex: #673AB7 },
+                    { clave: "indigo", hex: #3F51B5 },
+                    { clave: "celeste", hex: #03A9F4 },
+                    { clave: "cian", hex: #00BCD4 }
+                ]: TouchArea {
+                    width: 28px; height: 28px;
+                    clicked => { root.color-acento = a.clave; }
+                    Rectangle {
+                        border-radius: 14px;
+                        background: a.hex;
+                        border-width: root.color-acento == a.clave ? 3px : 1px;
+                        border-color: root.color-acento == a.clave ? #FFFFFF : Theme.border;
+                    }
+                }
+            }
+
+            // Fila 2 de 9 colores
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: start;
+                for a in [
+                    { clave: "verde", hex: #4CAF50 },
+                    { clave: "verde_claro", hex: #8BC34A },
+                    { clave: "lima", hex: #CDDC39 },
+                    { clave: "amarillo", hex: #FFEB3B },
+                    { clave: "naranja", hex: #FF9800 },
+                    { clave: "naranja_oscuro", hex: #FF5722 },
+                    { clave: "marron", hex: #8D6E63 },
+                    { clave: "gris", hex: #B0BEC5 },
+                    { clave: "gris_azulado", hex: #90A4AE }
+                ]: TouchArea {
+                    width: 28px; height: 28px;
+                    clicked => { root.color-acento = a.clave; }
+                    Rectangle {
+                        border-radius: 14px;
+                        background: a.hex;
+                        border-width: root.color-acento == a.clave ? 3px : 1px;
+                        border-color: root.color-acento == a.clave ? #FFFFFF : Theme.border;
+                    }
+                }
+            }
+        }
+    }
+}

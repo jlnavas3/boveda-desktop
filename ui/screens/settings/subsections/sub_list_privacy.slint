@@ -1,0 +1,51 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingSwitch } from "../../../components/widgets/setting_switch.slint";
+
+export component SubListPrivacy inherits VerticalLayout {
+    in-out property <bool> ocultar-usuario: false;
+    in-out property <bool> ocultar-contrasena: true;
+    in-out property <bool> ocultar-notas: false;
+    in-out property <bool> ocultar-campos: true;
+
+    callback restaurar-todo();
+    callback restaurar-privacidad();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Privacidad y Seguridad Visual";
+        descripcion: "Protección contra miradas indiscretas ocultando valores sensibles por defecto.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingSwitch {
+        titulo: "Ocultar Contraseñas por Defecto";
+        subtitulo: "Enmascara las contraseñas tras caracteres de bala hasta pulsar el botón de revelar.";
+        checked <=> root.ocultar-contrasena;
+    }
+
+    SettingSwitch {
+        titulo: "Ocultar Nombres de Usuario";
+        subtitulo: "Oculta el nombre de cuenta y correos electrónicos hasta interacción explícita.";
+        checked <=> root.ocultar-usuario;
+    }
+
+    SettingSwitch {
+        titulo: "Ocultar Notas Confidenciales";
+        subtitulo: "Enmascara el contenido de las anotaciones de texto en la ficha de detalle.";
+        checked <=> root.ocultar-notas;
+    }
+
+    SettingSwitch {
+        titulo: "Ocultar Campos Personalizados";
+        subtitulo: "Protege las claves de API, respuestas de seguridad y pines adicionales.";
+        checked <=> root.ocultar-campos;
+    }
+}

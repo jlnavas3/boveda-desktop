@@ -1,0 +1,134 @@
+import { Theme } from "../theme.slint";
+
+export component AccordionItem inherits Rectangle {
+    in-out property <bool> expandido: false;
+    in property <string> icono: "📁";
+    in property <string> titulo: "";
+    in property <string> subtitulo: "";
+    in property <string> badge: "";
+    callback toggle();
+
+    background: Theme.surface;
+    border-radius: Theme.radius-lg;
+    border-width: 1px;
+    border-color: root.expandido ? Theme.accent-primary : Theme.border;
+
+    VerticalLayout {
+        padding: 12px;
+        spacing: 10px;
+
+        // Cabecera interactiva
+        Rectangle {
+            height: 44px;
+            background: transparent;
+
+            HorizontalLayout {
+                spacing: 12px;
+                alignment: center;
+
+                // Icono del grupo
+                Rectangle {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: Theme.radius-md;
+                    background: root.expandido ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: 1px;
+                    border-color: root.expandido ? Theme.accent-primary : Theme.border;
+
+                    Text {
+                        text: root.icono;
+                        font-size: 16px;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+
+                // Títulos
+                VerticalLayout {
+                    horizontal-stretch: 1;
+                    spacing: 2px;
+                    alignment: center;
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: start;
+
+                        Text {
+                            text: root.titulo;
+                            color: Theme.text-primary;
+                            font-size: 14px;
+                            font-weight: 700;
+                            vertical-alignment: center;
+                            horizontal-alignment: left;
+                        }
+
+                        if root.badge != "" : Rectangle {
+                            background: Theme.accent-primary.transparentize(80%);
+                            border-radius: Theme.radius-sm;
+                            height: 18px;
+
+                            HorizontalLayout {
+                                padding-left: 6px; padding-right: 6px;
+                                Text {
+                                    text: root.badge;
+                                    color: Theme.accent-primary;
+                                    font-size: 10px;
+                                    font-weight: 700;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+
+                    if root.subtitulo != "" : Text {
+                        text: root.subtitulo;
+                        color: Theme.text-secondary;
+                        font-size: 11px;
+                        horizontal-alignment: left;
+                    }
+                }
+
+                // Chevron animado/indicador de expansión
+                Rectangle {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: Theme.radius-sm;
+                    background: Theme.background;
+
+                    Text {
+                        text: root.expandido ? "▲" : "▼";
+                        color: root.expandido ? Theme.accent-primary : Theme.text-muted;
+                        font-size: 10px;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+
+            TouchArea {
+                mouse-cursor: pointer;
+                clicked => {
+                    root.expandido = !root.expandido;
+                    root.toggle();
+                }
+            }
+        }
+
+        // Contenido desplegable (slot renderizado cuando está expandido)
+        Rectangle {
+            clip: true;
+            height: root.expandido ? content.preferred-height : 0px;
+            content := VerticalLayout {
+                spacing: 8px;
+                padding-top: 6px;
+
+                if root.expandido : Rectangle {
+                    height: 1px;
+                    background: Theme.border;
+                }
+
+                @children
+            }
+        }
+    }
+}

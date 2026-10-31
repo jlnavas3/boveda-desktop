@@ -1,0 +1,335 @@
+import { Theme } from "../theme.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
+
+export component UnlockScreen inherits Rectangle {
+    in-out property <string> ruta-boveda: "";
+    in-out property <string> password: "";
+    in property <string> error-mensaje: "";
+    in property <bool> cargando: false;
+    in-out property <bool> auto-cargar-ultima: true;
+    in property <bool> biometria-disponible: false;
+
+    callback intentar-desbloquear(string, string);
+    callback examinar-archivo();
+    callback desbloquear-biometria();
+
+    background: Theme.background;
+
+    // Centrado geométrico absoluto en ambos ejes
+    VerticalLayout {
+        alignment: center;
+
+        HorizontalLayout {
+            alignment: center;
+
+            VerticalLayout {
+                spacing: 20px;
+                alignment: center;
+
+                // Cabecera / Marca
+                VerticalLayout {
+                    spacing: 8px;
+                    alignment: center;
+
+                    HorizontalLayout {
+                        alignment: center;
+                        spacing: 10px;
+
+                        Rectangle {
+                            width: 44px;
+                            height: 44px;
+                            border-radius: Theme.radius-md;
+                            background: Theme.accent-primary.transparentize(85%);
+                            border-width: 1px;
+                            border-color: Theme.accent-primary;
+
+                            AppIcon {
+                                source: @image-url("../assets/icons/shield.svg");
+                                icon-size: 24px;
+                                icon-color: Theme.accent-primary;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+
+                        Text {
+                            text: "Bóveda Local";
+                            color: Theme.text-primary;
+                            font-size: 26px;
+                            font-weight: 800;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    Text {
+                        text: "Cliente Soberano Multiplataforma • 100% Sin Nube";
+                        color: Theme.text-secondary;
+                        font-size: 13px;
+                        horizontal-alignment: center;
+                    }
+                }
+
+                // Tarjeta de Desbloqueo (Autoajustada)
+                Rectangle {
+                    width: 480px;
+                    background: Theme.surface;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    border-radius: Theme.radius-lg;
+
+                    VerticalLayout {
+                        padding: 24px;
+                        spacing: 16px;
+
+                        // Selección de Archivo .bvda
+                        VerticalLayout {
+                            spacing: 6px;
+
+                            Text {
+                                text: "Archivo de Bóveda (.bvda)";
+                                color: Theme.text-secondary;
+                                font-size: 12px;
+                                font-weight: 600;
+                            }
+
+                            HorizontalLayout {
+                                spacing: 8px;
+
+                                Rectangle {
+                                    horizontal-stretch: 1;
+                                    height: 38px;
+                                    background: Theme.background;
+                                    border-width: 1px;
+                                    border-color: Theme.border;
+                                    border-radius: Theme.radius-md;
+
+                                    HorizontalLayout {
+                                        padding-left: 10px;
+                                        padding-right: 10px;
+
+                                        TextInput {
+                                            text <=> root.ruta-boveda;
+                                            color: Theme.text-primary;
+                                            font-size: 12px;
+                                            vertical-alignment: center;
+                                            single-line: true;
+                                        }
+                                    }
+                                }
+
+                                TouchArea {
+                                    width: 100px;
+                                    height: 38px;
+                                    clicked => { root.examinar-archivo(); }
+
+                                    Rectangle {
+                                        background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                                        border-width: 1px;
+                                        border-color: Theme.border;
+                                        border-radius: Theme.radius-md;
+
+                                        Text {
+                                            text: "Examinar...";
+                                            color: Theme.text-primary;
+                                            font-size: 12px;
+                                            font-weight: 600;
+                                            horizontal-alignment: center;
+                                            vertical-alignment: center;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Campo de Contraseña Maestra
+                        VerticalLayout {
+                            spacing: 6px;
+
+                            Text {
+                                text: "Contraseña Maestra";
+                                color: Theme.text-secondary;
+                                font-size: 12px;
+                                font-weight: 600;
+                            }
+
+                            Rectangle {
+                                height: 40px;
+                                background: Theme.background;
+                                border-width: 1px;
+                                border-color: input-pass.has-focus ? Theme.border-focus : Theme.border;
+                                border-radius: Theme.radius-md;
+
+                                HorizontalLayout {
+                                    padding-left: 10px;
+                                    padding-right: 10px;
+
+                                    input-pass := TextInput {
+                                        text <=> root.password;
+                                        input-type: InputType.password;
+                                        color: Theme.text-primary;
+                                        font-size: 14px;
+                                        vertical-alignment: center;
+                                        single-line: true;
+
+                                        accepted => {
+                                            if root.password != "" && !root.cargando {
+                                                root.intentar-desbloquear(root.ruta-boveda, root.password);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Checkbox: Cargar automáticamente la última bóveda abierta
+                        TouchArea {
+                            height: 24px;
+                            clicked => { root.auto-cargar-ultima = !root.auto-cargar-ultima; }
+
+                            HorizontalLayout {
+                                spacing: 8px;
+                                alignment: start;
+
+                                Rectangle {
+                                    width: 16px;
+                                    height: 16px;
+                                    border-radius: Theme.radius-sm;
+                                    background: root.auto-cargar-ultima ? Theme.accent-primary : Theme.background;
+                                    border-width: 1px;
+                                    border-color: root.auto-cargar-ultima ? Theme.accent-primary : Theme.border;
+
+                                    if root.auto-cargar-ultima : AppIcon {
+                                        source: @image-url("../assets/icons/check.svg");
+                                        icon-size: 12px;
+                                        icon-color: #FFFFFF;
+                                        horizontal-alignment: center;
+                                        vertical-alignment: center;
+                                    }
+                                }
+
+                                Text {
+                                    text: "Cargar automáticamente la última bóveda abierta";
+                                    color: Theme.text-secondary;
+                                    font-size: 11px;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        // Banner de Error
+                        if error-mensaje != "" : Rectangle {
+                            background: Theme.danger.transparentize(85%);
+                            border-width: 1px;
+                            border-color: Theme.danger;
+                            border-radius: Theme.radius-md;
+
+                            HorizontalLayout {
+                                padding: 10px;
+                                spacing: 8px;
+                                alignment: center;
+
+                                Text {
+                                    text: "⚠";
+                                    color: Theme.danger;
+                                    font-size: 14px;
+                                    vertical-alignment: center;
+                                }
+
+                                Text {
+                                    text: error-mensaje;
+                                    color: Theme.danger;
+                                    font-size: 12px;
+                                    wrap: word-wrap;
+                                    horizontal-stretch: 1;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        // Botones de Desbloqueo
+                        VerticalLayout {
+                            spacing: 8px;
+
+                            // Botón Desbloquear con Contraseña
+                            TouchArea {
+                                height: 42px;
+                                enabled: !root.cargando && root.password != "";
+                                clicked => {
+                                    root.intentar-desbloquear(root.ruta-boveda, root.password);
+                                }
+
+                                Rectangle {
+                                    background: root.cargando ? Theme.text-muted :
+                                               parent.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                                    border-radius: Theme.radius-md;
+
+                                    HorizontalLayout {
+                                        alignment: center;
+                                        spacing: 8px;
+
+                                        if !root.cargando : AppIcon {
+                                            source: @image-url("../assets/icons/lock_open.svg");
+                                            icon-size: 16px;
+                                            icon-color: #000000;
+                                            vertical-alignment: center;
+                                        }
+
+                                        Text {
+                                            text: root.cargando ? "Desbloqueando (Argon2id)..." : "Desbloquear Bóveda";
+                                            color: #000000;
+                                            font-size: 14px;
+                                            font-weight: 700;
+                                            vertical-alignment: center;
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Botón Desbloquear con Huella / Biometría
+                            if root.biometria-disponible : TouchArea {
+                                height: 38px;
+                                enabled: !root.cargando;
+                                clicked => { root.desbloquear-biometria(); }
+
+                                Rectangle {
+                                    background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                                    border-width: 1px;
+                                    border-color: Theme.accent-primary;
+                                    border-radius: Theme.radius-md;
+
+                                    HorizontalLayout {
+                                        alignment: center;
+                                        spacing: 8px;
+
+                                        AppIcon {
+                                            source: @image-url("../assets/icons/fingerprint.svg");
+                                            icon-size: 18px;
+                                            icon-color: Theme.accent-primary;
+                                            vertical-alignment: center;
+                                        }
+
+                                        Text {
+                                            text: "Desbloquear con Huella Digital / Llavero del SO";
+                                            color: Theme.accent-primary;
+                                            font-size: 12px;
+                                            font-weight: 600;
+                                            vertical-alignment: center;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Pie de Seguridad
+                Text {
+                    text: "Cifrado AES-256-GCM • KDF Argon2id v0x13 • Zeroización de RAM";
+                    color: Theme.text-muted;
+                    font-size: 11px;
+                    horizontal-alignment: center;
+                }
+            }
+        }
+    }
+}

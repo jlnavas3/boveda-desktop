@@ -1,0 +1,112 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+import { SettingSwitch } from "../../../components/widgets/setting_switch.slint";
+
+export component SubAppearanceListDesign inherits VerticalLayout {
+    in-out property <string> criterio-ordenacion: "NOMBRE_AZ";
+    in-out property <bool> fijar-anclados-arriba: true;
+    in-out property <string> densidad-lista: "predeterminada";
+    in-out property <bool> agrupar-por-sitio: true;
+
+    callback restaurar-todo();
+    callback restaurar-orden();
+    callback restaurar-densidad();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Diseño de la Lista";
+        descripcion: "Densidad de tarjetas, criterio de ordenación y reglas de agrupación de cuentas.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingBlock {
+        titulo: "Densidad de Tarjetas";
+        descripcion: "Compactación vertical para visualizar mayor o menor número de entradas en pantalla.";
+        restaurar => { root.restaurar-densidad(); }
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            for d in [
+                { id: "compacta", nombre: "Compacta" },
+                { id: "predeterminada", nombre: "Predeterminada" },
+                { id: "comoda", nombre: "Cómoda" }
+            ]: TouchArea {
+                width: 110px; height: 32px;
+                clicked => { root.densidad-lista = d.id; }
+                Rectangle {
+                    background: root.densidad-lista == d.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: Theme.grosor-borde;
+                    border-color: root.densidad-lista == d.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+
+                    Text {
+                        text: d.nombre;
+                        color: root.densidad-lista == d.id ? Theme.accent-primary : Theme.text-primary;
+                        font-size: 11px;
+                        font-weight: 600;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+
+    SettingBlock {
+        titulo: "Criterio de Ordenación";
+        descripcion: "Regla para organizar la lista de cuentas.";
+        restaurar => { root.restaurar-orden(); }
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            for o in [
+                { id: "NOMBRE_AZ", nombre: "Nombre A-Z" },
+                { id: "NOMBRE_ZA", nombre: "Nombre Z-A" },
+                { id: "RECIENTES", nombre: "Más recientes" },
+                { id: "MAS_USADAS", nombre: "Más usadas" }
+            ]: TouchArea {
+                width: 105px; height: 32px;
+                clicked => { root.criterio-ordenacion = o.id; }
+                Rectangle {
+                    background: root.criterio-ordenacion == o.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: Theme.grosor-borde;
+                    border-color: root.criterio-ordenacion == o.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+
+                    Text {
+                        text: o.nombre;
+                        color: root.criterio-ordenacion == o.id ? Theme.accent-primary : Theme.text-primary;
+                        font-size: 11px;
+                        font-weight: 600;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+
+    SettingSwitch {
+        titulo: "Fijar cuentas ancladas arriba";
+        subtitulo: "Muestra las entradas ancladas en un grupo superior en la lista principal";
+        checked <=> root.fijar-anclados-arriba;
+    }
+
+    SettingSwitch {
+        titulo: "Agrupar cuentas por servicio";
+        subtitulo: "Agrupa cuentas del mismo sitio o dominio en contenedores desplegables en la lista principal";
+        checked <=> root.agrupar-por-sitio;
+    }
+}

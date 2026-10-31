@@ -1,0 +1,55 @@
+[package]
+name = "boveda-local-desktop"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jose Luis Navas"]
+description = "Cliente de escritorio soberano en Rust para Bóveda Local (Windows y Linux)"
+license = "GPL-3.0"
+
+[dependencies]
+# Criptografía auditada
+argon2 = { version = "0.5", default-features = false, features = ["alloc", "password-hash"] }
+aes-gcm = "0.10"
+zeroize = { version = "1.8", features = ["derive"] }
+rand = "0.8"
+hmac = "0.12"
+sha1 = "0.10"
+
+# Compresión BLZ1 (Deflate / zlib)
+flate2 = "1.0"
+
+# Serialización fuertemente tipada
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+
+# Configuración local de escritorio y CLI seguro
+dirs = "5.0"
+rpassword = "7.3"
+
+# Gestión de errores y utilidades binarias
+thiserror = "1.0"
+byteorder = "1.5"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.10", features = ["v4"] }
+
+# Interfaz Gráfica Nativa (Slint) y utilidades de escritorio
+slint = "1.8"
+arboard = "3.4"
+rfd = "0.15"
+keyring = "2"
+
+[build-dependencies]
+slint-build = "1.8"
+
+[lib]
+name = "boveda_core"
+path = "src/lib.rs"
+
+[[bin]]
+name = "boveda-cli"
+path = "src/main.rs"
+
+[[bin]]
+name = "boveda-gui"
+path = "src/gui_main.rs"

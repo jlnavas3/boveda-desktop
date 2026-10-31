@@ -1,0 +1,96 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+import { AppIcon } from "../../../components/widgets/app_icon.slint";
+
+export component SubAccountsOverview inherits VerticalLayout {
+    in property <int> num-login: 0;
+    in property <int> num-tarjetas: 0;
+    in property <int> num-bancos: 0;
+    in property <int> num-notas: 0;
+    in property <int> num-servidores: 0;
+    in property <int> num-wifi: 0;
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Gestión de Credenciales";
+        descripcion: "Distribución de credenciales y registros clasificados en la base de datos de la bóveda.";
+    }
+
+    SettingBlock {
+        titulo: "Inventario de Cuentas Activas";
+        descripcion: "Recuento por tipo de contenido almacenado.";
+        mostrar-restaurar: false;
+
+        VerticalLayout {
+            spacing: 8px;
+
+            Rectangle {
+                height: 48px;
+                background: Theme.background;
+                border-radius: Theme.radius-sm;
+                border-width: Theme.grosor-borde;
+                border-color: Theme.border;
+
+                HorizontalLayout {
+                    padding-left: 12px; padding-right: 12px; spacing: 10px; alignment: space-between;
+
+                    HorizontalLayout {
+                        spacing: 8px; alignment: start;
+                        AppIcon { source: @image-url("../../../assets/icons/lock.svg"); icon-size: 16px; icon-color: Theme.accent-primary; vertical-alignment: center; }
+                        Text { text: "Inicios de Sesión y Claves Web"; font-size: 12px; font-weight: 600; color: Theme.text-primary; vertical-alignment: center; }
+                    }
+
+                    Rectangle {
+                        height: 24px; min-width: 28px;
+                        background: Theme.surface-hover;
+                        border-radius: Theme.radius-sm;
+                        border-width: Theme.grosor-borde;
+                        border-color: Theme.border;
+                        HorizontalLayout {
+                            padding-left: 8px; padding-right: 8px; alignment: center;
+                            Text { text: "\{root.num-login}"; color: Theme.accent-primary; font-size: 11px; font-weight: 700; vertical-alignment: center; }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 48px;
+                background: Theme.background;
+                border-radius: Theme.radius-sm;
+                border-width: Theme.grosor-borde;
+                border-color: Theme.border;
+
+                HorizontalLayout {
+                    padding-left: 12px; padding-right: 12px; spacing: 10px; alignment: space-between;
+
+                    HorizontalLayout {
+                        spacing: 8px; alignment: start;
+                        AppIcon { source: @image-url("../../../assets/icons/credit_card.svg"); icon-size: 16px; icon-color: Theme.accent-primary; vertical-alignment: center; }
+                        Text { text: "Tarjetas Bancarias"; font-size: 12px; font-weight: 600; color: Theme.text-primary; vertical-alignment: center; }
+                    }
+
+                    Rectangle {
+                        height: 24px; min-width: 28px;
+                        background: Theme.surface-hover;
+                        border-radius: Theme.radius-sm;
+                        border-width: Theme.grosor-borde;
+                        border-color: Theme.border;
+                        HorizontalLayout {
+                            padding-left: 8px; padding-right: 8px; alignment: center;
+                            Text { text: "\{root.num-tarjetas}"; color: Theme.accent-primary; font-size: 11px; font-weight: 700; vertical-alignment: center; }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

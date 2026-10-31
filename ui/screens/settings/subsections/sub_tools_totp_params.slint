@@ -1,0 +1,74 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingSlider } from "../../../components/widgets/setting_slider.slint";
+import { SettingSwitch } from "../../../components/widgets/setting_switch.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+
+export component SubToolsTotpParams inherits VerticalLayout {
+    in-out property <float> periodo-segundos: 30.0;
+    in-out property <float> digitos: 6.0;
+    in-out property <string> algoritmo: "HmacSHA1";
+
+    callback restaurar-todo();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Verificación en Dos Pasos (2FA TOTP)";
+        descripcion: "Parámetros predeterminados para la generación y cálculo de códigos temporales de un solo uso (RFC 6238).";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingSlider {
+        titulo: "Periodo de Renovación de Código";
+        subtitulo: "Frecuencia de tiempo en segundos para regenerar un nuevo código OTP.";
+        sufijo: "s";
+        minimum: 15.0;
+        maximum: 60.0;
+        step: 15.0;
+        value <=> root.periodo-segundos;
+    }
+
+    SettingSlider {
+        titulo: "Número de Dígitos";
+        subtitulo: "Longitud de la secuencia numérica generada (6 u 8 dígitos).";
+        sufijo: " dígitos";
+        minimum: 6.0;
+        maximum: 8.0;
+        step: 2.0;
+        value <=> root.digitos;
+    }
+
+    SettingBlock {
+        titulo: "Algoritmo Criptográfico HMAC";
+        descripcion: "Función hash para calcular el token temporal.";
+        restaurar => {}
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            for alg in [
+                { id: "HmacSHA1", nombre: "SHA-1 (Estándar)" },
+                { id: "HmacSHA256", nombre: "SHA-256" },
+                { id: "HmacSHA512", nombre: "SHA-512" }
+            ]: TouchArea {
+                width: 140px; height: 32px;
+                clicked => { root.algoritmo = alg.id; }
+                Rectangle {
+                    background: root.algoritmo == alg.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: Theme.grosor-borde;
+                    border-color: root.algoritmo == alg.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+                    Text { text: alg.nombre; color: root.algoritmo == alg.id ? Theme.accent-primary : Theme.text-primary; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                }
+            }
+        }
+    }
+}

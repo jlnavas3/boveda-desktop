@@ -1,0 +1,567 @@
+import { Theme } from "../theme.slint";
+import { EntryBadge } from "../components/badge.slint";
+import { SecretField } from "../components/secret_field.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
+
+export struct EntryDetailData {
+    id: string,
+    titulo: string,
+    tipo: string,
+    favorito: bool,
+    papelera: bool,
+    creada_en: string,
+    modificada_en: string,
+    categoria_nombre: string,
+    perfil_nombre: string,
+    
+    // Credenciales estándar
+    usuario: string,
+    password: string,
+    url: string,
+    totp_codigo: string,
+    
+    // Tarjeta
+    tarjeta_numero: string,
+    tarjeta_titular: string,
+    tarjeta_vencimiento: string,
+    tarjeta_cvv: string,
+    tarjeta_pin: string,
+    
+    // Cuenta bancaria
+    banco_iban: string,
+    banco_cuenta: string,
+    banco_entidad: string,
+    banco_bic: string,
+    
+    // Servidor SSH
+    servidor_host: string,
+    servidor_puerto: string,
+    servidor_usuario: string,
+    servidor_password: string,
+    
+    // Wi-Fi
+    wifi_ssid: string,
+    wifi_password: string,
+    wifi_seguridad: string,
+    
+    // Cripto Wallet
+    wallet_direccion: string,
+    wallet_red: string,
+    wallet_semilla: string,
+    
+    // Contacto
+    contacto_email: string,
+    contacto_telefono: string,
+    contacto_empresa: string,
+    
+    // Identidad
+    identidad_nombre_completo: string,
+    identidad_numero_doc: string,
+    identidad_tipo_doc: string,
+    
+    // Notas generales
+    notas: string,
+    
+    // Flags
+    tiene_datos: bool,
+}
+
+export component EntryDetail inherits Rectangle {
+    in property <EntryDetailData> entrada;
+    callback copiar-campo(string, string);
+    callback editar();
+    callback mover-papelera();
+    callback restaurar();
+    callback eliminar-definitivo();
+    callback cerrar();
+
+    background: Theme.background;
+
+    if !entrada.tiene_datos : VerticalLayout {
+        padding: 20px;
+        alignment: center;
+        spacing: 12px;
+
+        AppIcon {
+            source: @image-url("../assets/icons/shield.svg");
+            icon-size: 40px;
+            icon-color: Theme.text-secondary;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: "Selecciona una entrada para ver los detalles";
+            color: Theme.text-secondary;
+            font-size: 14px;
+            font-weight: 600;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: "Tus credenciales están seguras y cifradas en memoria.";
+            color: Theme.text-muted;
+            font-size: 12px;
+            horizontal-alignment: center;
+        }
+    }
+
+    if entrada.tiene_datos : Flickable {
+        content-height: contenido.min-height;
+
+        contenido := VerticalLayout {
+            padding: 20px;
+            spacing: 16px;
+            alignment: start;
+
+            // Cabecera de la Entrada
+            HorizontalLayout {
+                alignment: space-between;
+
+                VerticalLayout {
+                    spacing: 4px;
+                    horizontal-stretch: 1;
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: start;
+
+                        Text {
+                            text: entrada.titulo;
+                            color: Theme.text-primary;
+                            font-size: 20px;
+                            font-weight: 700;
+                            vertical-alignment: center;
+                        }
+
+                        if entrada.favorito : AppIcon {
+                            source: @image-url("../assets/icons/star.svg");
+                            icon-size: 18px;
+                            icon-color: Theme.accent-amber;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+
+                        EntryBadge {
+                            tipo: entrada.tipo;
+                        }
+
+                        if entrada.categoria_nombre != "" : Rectangle {
+                            background: Theme.surface-hover;
+                            border-radius: Theme.radius-sm;
+                            height: 22px;
+                            HorizontalLayout {
+                                padding-left: 6px;
+                                padding-right: 6px;
+                                spacing: 4px;
+                                alignment: center;
+                                AppIcon {
+                                    source: @image-url("../assets/icons/folder.svg");
+                                    icon-size: 12px;
+                                    icon-color: Theme.text-secondary;
+                                    vertical-alignment: center;
+                                }
+                                Text {
+                                    text: entrada.categoria_nombre;
+                                    color: Theme.text-secondary;
+                                    font-size: 10px;
+                                    font-weight: 600;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        if entrada.perfil_nombre != "" : Rectangle {
+                            background: Theme.surface-hover;
+                            border-radius: Theme.radius-sm;
+                            height: 22px;
+                            HorizontalLayout {
+                                padding-left: 6px;
+                                padding-right: 6px;
+                                spacing: 4px;
+                                alignment: center;
+                                AppIcon {
+                                    source: @image-url("../assets/icons/person.svg");
+                                    icon-size: 12px;
+                                    icon-color: Theme.text-secondary;
+                                    vertical-alignment: center;
+                                }
+                                Text {
+                                    text: entrada.perfil_nombre;
+                                    color: Theme.text-secondary;
+                                    font-size: 10px;
+                                    font-weight: 600;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: center;
+
+                    if !entrada.papelera : TouchArea {
+                        width: 72px;
+                        height: 28px;
+                        clicked => { root.editar(); }
+
+                        Rectangle {
+                            background: parent.has-hover ? Theme.surface-hover : Theme.surface;
+                            border-width: 1px;
+                            border-color: Theme.border;
+                            border-radius: Theme.radius-sm;
+
+                            HorizontalLayout {
+                                alignment: center;
+                                spacing: 4px;
+                                AppIcon { source: @image-url("../assets/icons/edit.svg"); icon-size: 12px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                                Text { text: "Editar"; color: Theme.text-primary; font-size: 11px; font-weight: 600; vertical-alignment: center; }
+                            }
+                        }
+                    }
+
+                    if !entrada.papelera : TouchArea {
+                        width: 32px;
+                        height: 28px;
+                        clicked => { root.mover-papelera(); }
+
+                        Rectangle {
+                            background: parent.has-hover ? Theme.danger.transparentize(80%) : Theme.surface;
+                            border-width: 1px;
+                            border-color: parent.has-hover ? Theme.danger : Theme.border;
+                            border-radius: Theme.radius-sm;
+
+                            AppIcon {
+                                source: @image-url("../assets/icons/delete.svg");
+                                icon-size: 14px;
+                                icon-color: Theme.danger;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    if entrada.papelera : TouchArea {
+                        width: 86px;
+                        height: 28px;
+                        clicked => { root.restaurar(); }
+
+                        Rectangle {
+                            background: parent.has-hover ? Theme.accent-primary.transparentize(80%) : Theme.surface;
+                            border-width: 1px;
+                            border-color: parent.has-hover ? Theme.accent-primary : Theme.border;
+                            border-radius: Theme.radius-sm;
+
+                            HorizontalLayout {
+                                alignment: center;
+                                spacing: 4px;
+                                AppIcon { source: @image-url("../assets/icons/restart.svg"); icon-size: 12px; icon-color: Theme.accent-primary; vertical-alignment: center; }
+                                Text { text: "Restaurar"; color: Theme.accent-primary; font-size: 11px; font-weight: 600; vertical-alignment: center; }
+                            }
+                        }
+                    }
+
+                    if entrada.papelera : TouchArea {
+                        width: 76px;
+                        height: 28px;
+                        clicked => { root.eliminar-definitivo(); }
+
+                        Rectangle {
+                            background: parent.has-hover ? Theme.danger.transparentize(80%) : Theme.surface;
+                            border-width: 1px;
+                            border-color: parent.has-hover ? Theme.danger : Theme.border;
+                            border-radius: Theme.radius-sm;
+
+                            HorizontalLayout {
+                                alignment: center;
+                                spacing: 4px;
+                                AppIcon { source: @image-url("../assets/icons/close.svg"); icon-size: 12px; icon-color: Theme.danger; vertical-alignment: center; }
+                                Text { text: "Borrar"; color: Theme.danger; font-size: 11px; font-weight: 600; vertical-alignment: center; }
+                            }
+                        }
+                    }
+
+                    TouchArea {
+                        width: 28px;
+                        height: 28px;
+                        clicked => {
+                            root.cerrar();
+                        }
+
+                        Rectangle {
+                            background: parent.has-hover ? Theme.surface-hover : Colors.transparent;
+                            border-radius: Theme.radius-sm;
+                            AppIcon {
+                                source: @image-url("../assets/icons/close.svg");
+                                icon-size: 14px;
+                                icon-color: Theme.text-secondary;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 1px;
+                background: Theme.border;
+            }
+
+            // Campos según el tipo nativo
+            // 1. LOGIN / CREDENCIALES
+            if entrada.usuario != "" : SecretField {
+                etiqueta: "Usuario / Identificador";
+                valor: entrada.usuario;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-usuario;
+                copiar => { root.copiar-campo(entrada.usuario, "Usuario"); }
+            }
+
+            if entrada.password != "" : SecretField {
+                etiqueta: "Contraseña";
+                valor: entrada.password;
+                es-secreto: true;
+                color-indicador: Theme.color-ind-password;
+                copiar => { root.copiar-campo(entrada.password, "Contraseña"); }
+            }
+
+            if entrada.url != "" : SecretField {
+                etiqueta: "URL / Sitio Web";
+                valor: entrada.url;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-url;
+                copiar => { root.copiar-campo(entrada.url, "URL"); }
+            }
+
+            if entrada.totp_codigo != "" : SecretField {
+                etiqueta: "Código de Verificación 2FA (TOTP)";
+                valor: entrada.totp_codigo;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-totp;
+                copiar => { root.copiar-campo(entrada.totp_codigo, "Código TOTP"); }
+            }
+
+            // 2. TARJETA BANCARIA
+            if entrada.tarjeta_numero != "" : SecretField {
+                etiqueta: "Número de Tarjeta (PAN)";
+                valor: entrada.tarjeta_numero;
+                es-secreto: true;
+                color-indicador: Theme.color-ind-password;
+                copiar => { root.copiar-campo(entrada.tarjeta_numero, "Número de Tarjeta"); }
+            }
+
+            if entrada.tarjeta_titular != "" : SecretField {
+                etiqueta: "Titular de la Tarjeta";
+                valor: entrada.tarjeta_titular;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-usuario;
+                copiar => { root.copiar-campo(entrada.tarjeta_titular, "Titular"); }
+            }
+
+            if entrada.tarjeta_vencimiento != "" : SecretField {
+                etiqueta: "Fecha de Vencimiento";
+                valor: entrada.tarjeta_vencimiento;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-totp;
+                copiar => { root.copiar-campo(entrada.tarjeta_vencimiento, "Vencimiento"); }
+            }
+
+            if entrada.tarjeta_cvv != "" : SecretField {
+                etiqueta: "Código de Seguridad (CVV)";
+                valor: entrada.tarjeta_cvv;
+                es-secreto: true;
+                color-indicador: Theme.color-ind-password;
+                copiar => { root.copiar-campo(entrada.tarjeta_cvv, "CVV"); }
+            }
+
+            if entrada.tarjeta_pin != "" : SecretField {
+                etiqueta: "Código PIN de Tarjeta";
+                valor: entrada.tarjeta_pin;
+                es-secreto: true;
+                color-indicador: Theme.color-ind-password;
+                copiar => { root.copiar-campo(entrada.tarjeta_pin, "PIN"); }
+            }
+
+            // 3. CUENTA BANCARIA
+            if entrada.banco_iban != "" : SecretField {
+                etiqueta: "IBAN";
+                valor: entrada.banco_iban;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-url;
+                copiar => { root.copiar-campo(entrada.banco_iban, "IBAN"); }
+            }
+
+            if entrada.banco_entidad != "" : SecretField {
+                etiqueta: "Entidad Bancaria";
+                valor: entrada.banco_entidad;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-url;
+                copiar => { root.copiar-campo(entrada.banco_entidad, "Banco"); }
+            }
+
+            if entrada.banco_cuenta != "" : SecretField {
+                etiqueta: "Número de Cuenta";
+                valor: entrada.banco_cuenta;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-url;
+                copiar => { root.copiar-campo(entrada.banco_cuenta, "Número de Cuenta"); }
+            }
+
+            if entrada.banco_bic != "" : SecretField {
+                etiqueta: "Código BIC / SWIFT";
+                valor: entrada.banco_bic;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-url;
+                copiar => { root.copiar-campo(entrada.banco_bic, "BIC / SWIFT"); }
+            }
+
+            // 4. SERVIDOR SSH
+            if entrada.servidor_host != "" : SecretField {
+                etiqueta: "Host / Dirección IP";
+                valor: entrada.servidor_host + (entrada.servidor_puerto != "" ? ":" + entrada.servidor_puerto : "");
+                es-secreto: false;
+                color-indicador: Theme.color-ind-url;
+                copiar => { root.copiar-campo(entrada.servidor_host, "Host Servidor"); }
+            }
+
+            if entrada.servidor_usuario != "" : SecretField {
+                etiqueta: "Usuario SSH";
+                valor: entrada.servidor_usuario;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-usuario;
+                copiar => { root.copiar-campo(entrada.servidor_usuario, "Usuario SSH"); }
+            }
+
+            if entrada.servidor_password != "" : SecretField {
+                etiqueta: "Contraseña o Llave Privada SSH";
+                valor: entrada.servidor_password;
+                es-secreto: true;
+                color-indicador: Theme.color-ind-password;
+                copiar => { root.copiar-campo(entrada.servidor_password, "Clave Servidor"); }
+            }
+
+            // 5. WI-FI
+            if entrada.wifi_ssid != "" : SecretField {
+                etiqueta: "Nombre de Red (SSID)";
+                valor: entrada.wifi_ssid;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-url;
+                copiar => { root.copiar-campo(entrada.wifi_ssid, "SSID Wi-Fi"); }
+            }
+
+            if entrada.wifi_password != "" : SecretField {
+                etiqueta: "Contraseña Wi-Fi";
+                valor: entrada.wifi_password;
+                es-secreto: true;
+                color-indicador: Theme.color-ind-password;
+                copiar => { root.copiar-campo(entrada.wifi_password, "Contraseña Wi-Fi"); }
+            }
+
+            if entrada.wifi_seguridad != "" : SecretField {
+                etiqueta: "Tipo de Seguridad";
+                valor: entrada.wifi_seguridad;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-totp;
+                copiar => { root.copiar-campo(entrada.wifi_seguridad, "Seguridad Wi-Fi"); }
+            }
+
+            // 6. WALLET CRIPTO
+            if entrada.wallet_direccion != "" : SecretField {
+                etiqueta: "Dirección Pública";
+                valor: entrada.wallet_direccion;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-passkey;
+                copiar => { root.copiar-campo(entrada.wallet_direccion, "Dirección Wallet"); }
+            }
+
+            if entrada.wallet_red != "" : SecretField {
+                etiqueta: "Red / Blockchain";
+                valor: entrada.wallet_red;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-passkey;
+                copiar => { root.copiar-campo(entrada.wallet_red, "Red Wallet"); }
+            }
+
+            if entrada.wallet_semilla != "" : SecretField {
+                etiqueta: "Frase Semilla / Llave Privada";
+                valor: entrada.wallet_semilla;
+                es-secreto: true;
+                color-indicador: Theme.color-ind-passkey;
+                copiar => { root.copiar-campo(entrada.wallet_semilla, "Semilla Wallet"); }
+            }
+
+            // 7. IDENTIDAD
+            if entrada.identidad_nombre_completo != "" : SecretField {
+                etiqueta: "Nombre Completo";
+                valor: entrada.identidad_nombre_completo;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-usuario;
+                copiar => { root.copiar-campo(entrada.identidad_nombre_completo, "Nombre Completo"); }
+            }
+
+            if entrada.identidad_numero_doc != "" : SecretField {
+                etiqueta: "Número de Documento" + (entrada.identidad_tipo_doc != "" ? " (" + entrada.identidad_tipo_doc + ")" : "");
+                valor: entrada.identidad_numero_doc;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-usuario;
+                copiar => { root.copiar-campo(entrada.identidad_numero_doc, "Documento"); }
+            }
+
+            // 8. CONTACTO
+            if entrada.contacto_email != "" : SecretField {
+                etiqueta: "Correo Electrónico";
+                valor: entrada.contacto_email;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-usuario;
+                copiar => { root.copiar-campo(entrada.contacto_email, "Email"); }
+            }
+
+            if entrada.contacto_telefono != "" : SecretField {
+                etiqueta: "Teléfono";
+                valor: entrada.contacto_telefono;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-url;
+                copiar => { root.copiar-campo(entrada.contacto_telefono, "Teléfono"); }
+            }
+
+            // NOTAS GENERALES
+            if entrada.notas != "" : SecretField {
+                etiqueta: "Notas Estructuradas";
+                valor: entrada.notas;
+                es-secreto: false;
+                multi-linea: true;
+                color-indicador: Theme.color-ind-notas;
+                copiar => { root.copiar-campo(entrada.notas, "Notas"); }
+            }
+
+            // Metadatos
+            HorizontalLayout {
+                spacing: 12px;
+                alignment: start;
+
+                Text {
+                    text: "Modificado: " + entrada.modificada_en;
+                    color: Theme.text-muted;
+                    font-size: 11px;
+                }
+
+                Text {
+                    text: "•";
+                    color: Theme.text-muted;
+                    font-size: 11px;
+                }
+
+                Text {
+                    text: "Creado: " + entrada.creada_en;
+                    color: Theme.text-muted;
+                    font-size: 11px;
+                }
+            }
+        }
+    }
+}

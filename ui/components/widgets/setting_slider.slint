@@ -1,0 +1,98 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Slider } from "std-widgets.slint";
+import { Theme } from "../../theme.slint";
+
+export component SettingSlider inherits Rectangle {
+    in property <string> titulo: "";
+    in property <string> subtitulo: "";
+    in property <string> sufijo: "";
+    in property <float> minimum: 0.0;
+    in property <float> maximum: 100.0;
+    in property <float> step: 1.0;
+    in-out property <float> value: 0.0;
+    callback changed(float);
+
+    background: Theme.surface;
+    border-radius: Theme.curvatura-esquinas;
+    border-width: Theme.grosor-borde;
+    border-color: Theme.border;
+
+    VerticalLayout {
+        padding: 14px;
+        spacing: Theme.espaciado-componentes;
+
+        // Fila 1: Título alineado a la izquierda
+        Text {
+            text: root.titulo;
+            color: Theme.text-primary;
+            font-size: 13px;
+            font-weight: 600;
+            horizontal-alignment: left;
+        }
+
+        // Fila 2: Descripción explicativa
+        if root.subtitulo != "" : Text {
+            text: root.subtitulo;
+            color: Theme.text-secondary;
+            font-size: 11px;
+            wrap: word-wrap;
+            horizontal-alignment: left;
+        }
+
+        // Separador con margen idéntico a SettingBlock
+        VerticalLayout {
+            padding-top: 6px;
+            padding-bottom: 6px;
+            Rectangle {
+                height: 1px;
+                background: Theme.border;
+            }
+        }
+
+        // Fila 3: Slider a la izquierda con línea de arrastre continua y Badge a la derecha centrado verticalmente
+        HorizontalLayout {
+            spacing: 20px;
+
+            Slider {
+                horizontal-stretch: 1;
+                minimum: root.minimum;
+                maximum: root.maximum;
+                step: root.step;
+                value <=> root.value;
+                changed(val) => { root.changed(Math.round(val)); }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                horizontal-stretch: 0;
+
+                Rectangle {
+                    background: Theme.accent-primary.transparentize(85%);
+                    border-radius: Theme.radius-sm;
+                    border-width: Theme.grosor-borde;
+                    border-color: Theme.accent-primary.transparentize(50%);
+                    height: 26px;
+
+                    HorizontalLayout {
+                        padding-left: 10px;
+                        padding-right: 10px;
+                        alignment: center;
+
+                        Text {
+                            text: "\{Math.round(root.value)}\{root.sufijo}";
+                            color: Theme.accent-primary;
+                            font-size: 12px;
+                            font-weight: 700;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,56 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+
+export component FormFieldBox inherits VerticalLayout {
+    in property <string> etiqueta: "";
+    in-out property <string> texto: "";
+    in property <color> color-indicador: Colors.transparent;
+    in property <bool> es-password: false;
+    in property <bool> read-only: false;
+
+    spacing: 4px;
+
+    if root.etiqueta != "" : Text {
+        text: root.etiqueta;
+        color: Theme.text-secondary;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    Rectangle {
+        height: 36px;
+        background: Theme.background;
+        border-width: Theme.grosor-borde;
+        border-color: (root.color-indicador != Colors.transparent) ? root.color-indicador.transparentize(65%) : Theme.border;
+        border-radius: Theme.curvatura-esquinas;
+        clip: true;
+
+        // Franja vertical izquierda de acento (4.5px) fiel a Android TarjetaDatoDetalle
+        if root.color-indicador != Colors.transparent : Rectangle {
+            x: 0px;
+            y: 0px;
+            width: 4.5px;
+            height: parent.height;
+            background: root.color-indicador;
+        }
+
+        HorizontalLayout {
+            padding-left: (root.color-indicador != Colors.transparent) ? 12px : 8px;
+            padding-right: 8px;
+
+            TextInput {
+                text <=> root.texto;
+                color: Theme.text-primary;
+                font-size: 12px;
+                vertical-alignment: center;
+                single-line: true;
+                read-only: root.read-only;
+            }
+        }
+    }
+}

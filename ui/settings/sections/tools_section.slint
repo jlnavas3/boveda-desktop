@@ -1,0 +1,93 @@
+import { Theme } from "../../theme.slint";
+
+export component ToolsSection inherits VerticalLayout {
+    in-out property <int> gen-longitud-default: 20;
+    in-out property <bool> gen-evitar-ambiguos: true;
+    in-out property <int> totp-periodo-default: 30;
+
+    callback abrir-generador();
+    callback ejecutar-auditoria-salud();
+
+    spacing: 12px;
+
+    // 1. Acceso directo al Generador Criptográfico
+    Rectangle {
+        background: Theme.background; border-radius: Theme.radius-sm;
+        border-width: 1px; border-color: Theme.border;
+
+        HorizontalLayout {
+            padding: 12px;
+            spacing: 12px; alignment: center;
+            Rectangle {
+                width: 32px; height: 32px; border-radius: Theme.radius-sm;
+                background: Theme.accent-purple.transparentize(85%);
+                Text { text: "🎲"; font-size: 14px; horizontal-alignment: center; vertical-alignment: center; }
+            }
+            VerticalLayout {
+                horizontal-stretch: 1; spacing: 2px;
+                Text { text: "Generador Criptográfico y Frases Diceware"; color: Theme.text-primary; font-size: 13px; font-weight: 600; }
+                Text { text: "Generación segura con OsRng del kernel y zeroización de RAM"; color: Theme.text-secondary; font-size: 11px; }
+            }
+            TouchArea {
+                width: 90px; height: 30px;
+                clicked => { root.abrir-generador(); }
+                Rectangle {
+                    background: Theme.accent-purple; border-radius: Theme.radius-sm;
+                    Text { text: "Abrir 🎲"; color: #FFFFFF; font-size: 11px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+                }
+            }
+        }
+    }
+
+    // 2. Parámetros de Códigos TOTP / 2FA
+    Rectangle {
+        background: Theme.background; border-radius: Theme.radius-sm;
+        border-width: 1px; border-color: Theme.border;
+
+        HorizontalLayout {
+            padding: 12px;
+            spacing: 12px; alignment: center;
+            Rectangle {
+                width: 32px; height: 32px; border-radius: Theme.radius-sm;
+                background: Theme.accent-blue.transparentize(85%);
+                Text { text: "⏱"; font-size: 14px; horizontal-alignment: center; vertical-alignment: center; }
+            }
+            VerticalLayout {
+                horizontal-stretch: 1; spacing: 2px;
+                Text { text: "Verificación en Dos Pasos (TOTP RFC 6238)"; color: Theme.text-primary; font-size: 13px; font-weight: 600; }
+                Text { text: "Ventana predeterminada: 30 segundos • 6 dígitos • Algoritmo HMAC-SHA1"; color: Theme.text-secondary; font-size: 11px; }
+            }
+            Text { text: "RFC 6238"; color: Theme.accent-blue; font-size: 11px; font-weight: 700; }
+        }
+    }
+
+    // 3. Auditoría de Salud y Contraseñas Débiles
+    Rectangle {
+        background: Theme.background; border-radius: Theme.radius-sm;
+        border-width: 1px; border-color: Theme.border;
+
+        HorizontalLayout {
+            padding: 12px;
+            spacing: 12px; alignment: center;
+            Rectangle {
+                width: 32px; height: 32px; border-radius: Theme.radius-sm;
+                background: Theme.danger.transparentize(85%);
+                Text { text: "🛡"; font-size: 14px; horizontal-alignment: center; vertical-alignment: center; }
+            }
+            VerticalLayout {
+                horizontal-stretch: 1; spacing: 2px;
+                Text { text: "Auditoría de Salud de la Bóveda"; color: Theme.text-primary; font-size: 13px; font-weight: 600; }
+                Text { text: "Detección local de contraseñas duplicadas, débiles o sin 2FA activo"; color: Theme.text-secondary; font-size: 11px; }
+            }
+            TouchArea {
+                width: 90px; height: 30px;
+                clicked => { root.ejecutar-auditoria-salud(); }
+                Rectangle {
+                    background: Theme.surface-hover; border-width: 1px; border-color: Theme.border;
+                    border-radius: Theme.radius-sm;
+                    Text { text: "Analizar"; color: Theme.text-primary; font-size: 11px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                }
+            }
+        }
+    }
+}

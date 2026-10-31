@@ -1,0 +1,133 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "../../components/widgets/app_icon.slint";
+
+export component SettingsTopBar inherits Rectangle {
+    in-out property <string> termino-busqueda: "";
+    callback volver();
+    callback restaurar-predeterminados();
+    callback guardar();
+
+    height: 56px;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    HorizontalLayout {
+        padding-left: 20px;
+        padding-right: 20px;
+        spacing: 16px;
+        alignment: space-between;
+
+        // Izquierda: Botón Volver + Título (Centrados verticalmente con la barra igual que el buscador)
+        VerticalLayout {
+            alignment: center;
+            HorizontalLayout {
+                spacing: 12px;
+                alignment: center;
+
+                TouchArea {
+                    width: 130px; height: 36px;
+                    clicked => { root.volver(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                        border-radius: Theme.radius-sm;
+                        border-width: 1px; border-color: Theme.border;
+
+                        HorizontalLayout {
+                            alignment: center; spacing: 6px;
+                            AppIcon { source: @image-url("../../assets/icons/arrow_back.svg"); icon-size: 16px; icon-color: Theme.accent-primary; vertical-alignment: center; }
+                            Text { text: "Bóveda"; color: Theme.text-primary; font-size: 13px; font-weight: 600; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                VerticalLayout {
+                    alignment: center;
+                    Rectangle { width: 1px; height: 24px; background: Theme.border; }
+                }
+
+                VerticalLayout {
+                    alignment: center;
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: center;
+                        AppIcon { source: @image-url("../../assets/icons/settings.svg"); icon-size: 18px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                        Text { text: "Ajustes de Bóveda"; color: Theme.text-primary; font-size: 16px; font-weight: 800; vertical-alignment: center; }
+                    }
+                }
+            }
+        }
+
+        // Centro: Buscador Rápido de Ajustes (Centrado verticalmente con la barra)
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 280px; height: 36px;
+                background: Theme.background;
+                border-radius: Theme.radius-sm;
+                border-width: 1px;
+                border-color: in-search.has-focus ? Theme.border-focus : Theme.border;
+
+                HorizontalLayout {
+                    padding-left: 10px; padding-right: 10px; spacing: 8px;
+                    AppIcon { source: @image-url("../../assets/icons/search.svg"); icon-size: 14px; icon-color: Theme.text-secondary; vertical-alignment: center; }
+                    in-search := TextInput {
+                        text <=> root.termino-busqueda;
+                        color: Theme.text-primary;
+                        font-size: 12px;
+                        vertical-alignment: center;
+                        single-line: true;
+                        horizontal-stretch: 1;
+                    }
+                }
+                if !in-search.has-focus && in-search.text == "" : Text {
+                    x: 32px; text: "Buscar ajustes..."; color: Theme.text-muted; font-size: 12px; vertical-alignment: center;
+                }
+            }
+        }
+
+        // Derecha: Restaurar Predeterminados Global y Guardar (Centrados verticalmente con la barra igual que el buscador)
+        VerticalLayout {
+            alignment: center;
+            HorizontalLayout {
+                spacing: 10px;
+                alignment: center;
+
+                TouchArea {
+                    width: 170px; height: 36px;
+                    clicked => { root.restaurar-predeterminados(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                        border-radius: Theme.radius-sm;
+                        border-width: 1px; border-color: Theme.border;
+                        HorizontalLayout {
+                            alignment: center; spacing: 6px;
+                            AppIcon { source: @image-url("../../assets/icons/restart.svg"); icon-size: 14px; icon-color: Theme.text-secondary; vertical-alignment: center; }
+                            Text { text: "Restaurar Defaults"; color: Theme.text-primary; font-size: 12px; font-weight: 600; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                TouchArea {
+                    width: 130px; height: 36px;
+                    clicked => { root.guardar(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            alignment: center; spacing: 6px;
+                            AppIcon { source: @image-url("../../assets/icons/save.svg"); icon-size: 14px; icon-color: #000000; vertical-alignment: center; }
+                            Text { text: "Guardar"; color: #000000; font-size: 12px; font-weight: 700; vertical-alignment: center; }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

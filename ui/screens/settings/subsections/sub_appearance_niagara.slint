@@ -1,0 +1,71 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingSwitch } from "../../../components/widgets/setting_switch.slint";
+import { SettingSlider } from "../../../components/widgets/setting_slider.slint";
+
+export component SubAppearanceNiagara inherits VerticalLayout {
+    in-out property <bool> mostrar-ola-niagara: true;
+    in-out property <bool> incluir-enie-niagara: true;
+    in-out property <float> amplitud-ola: 24.0;
+    in-out property <float> radio-ola: 110.0;
+    in-out property <float> tamano-circulo: 48.0;
+
+    callback restaurar-todo();
+    callback restaurar-niagara();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Índice A-Z (Ola Niagara)";
+        descripcion: "Barra alfabética lateral interactiva con curvatura sinusoidal y globo amplificador de letras.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingSwitch {
+        titulo: "Mostrar Franja Alfabética Lateral";
+        subtitulo: "Despliega el carril de letras de la 'A' a la 'Z' en el margen derecho de la lista de cuentas.";
+        checked <=> root.mostrar-ola-niagara;
+    }
+
+    SettingSwitch {
+        titulo: "Incluir Letra 'Ñ' en el Alfabeto";
+        subtitulo: "Incorpora la letra Ñ entre la N y la O según las normas de ordenación del idioma español.";
+        checked <=> root.incluir-enie-niagara;
+    }
+
+    SettingSlider {
+        titulo: "Amplitud de la Ola";
+        subtitulo: "Deflexión máxima horizontal hacia la izquierda al deslizar sobre las letras.";
+        sufijo: "px";
+        minimum: 10.0;
+        maximum: 50.0;
+        step: 2.0;
+        value <=> root.amplitud-ola;
+    }
+
+    SettingSlider {
+        titulo: "Radio de Influencia";
+        subtitulo: "Rango de letras adyacentes afectadas proporcionalmente por la curva de onda.";
+        sufijo: "px";
+        minimum: 60.0;
+        maximum: 180.0;
+        step: 5.0;
+        value <=> root.radio-ola;
+    }
+
+    SettingSlider {
+        titulo: "Tamaño del Círculo Ampliado";
+        subtitulo: "Diámetro de la cápsula flotante que destaca la letra seleccionada actualmente.";
+        sufijo: "px";
+        minimum: 32.0;
+        maximum: 64.0;
+        step: 2.0;
+        value <=> root.tamano-circulo;
+    }
+}

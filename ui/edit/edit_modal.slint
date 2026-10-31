@@ -1,0 +1,391 @@
+import { Theme } from "../theme.slint";
+import { TypeChipBar } from "type_chip_bar.slint";
+import { LoginForm } from "forms/login_form.slint";
+import { CardForm } from "forms/card_form.slint";
+import { BankForm } from "forms/bank_form.slint";
+import { ServerForm } from "forms/server_form.slint";
+import { WifiForm } from "forms/wifi_form.slint";
+import { WalletForm } from "forms/wallet_form.slint";
+import { IdentityForm } from "forms/identity_form.slint";
+import { ContactForm } from "forms/contact_form.slint";
+import { NoteForm } from "forms/note_form.slint";
+import { TotpField } from "sections/totp_field.slint";
+import { CategorySelector } from "sections/category_selector.slint";
+import { TagsField } from "sections/tags_field.slint";
+import { CustomFieldsEditor } from "sections/custom_fields_editor.slint";
+
+export struct EntryEditData {
+    id: string,
+    tipo: string,
+    titulo: string,
+    favorito: bool,
+    categoria_id: string,
+    usuario: string,
+    password: string,
+    url: string,
+    urls_secundarias: string,
+    notas: string,
+
+    // TOTP
+    totp_secreto: string,
+    totp_emisor: string,
+    totp_periodo: int,
+    totp_digitos: int,
+
+    // Metadatos
+    fecha_caducidad: string,
+    etiquetas: string,
+    campos_personalizados: string,
+
+    // Tarjeta
+    tarjeta_titular: string,
+    tarjeta_numero: string,
+    tarjeta_vencimiento: string,
+    tarjeta_cvv: string,
+    tarjeta_pin: string,
+
+    // Wi-Fi
+    wifi_ssid: string,
+    wifi_password: string,
+    wifi_seguridad: string,
+
+    // Servidor
+    servidor_host: string,
+    servidor_puerto: string,
+    servidor_usuario: string,
+    servidor_password: string,
+
+    // Cuenta Bancaria
+    banco_entidad: string,
+    banco_titular: string,
+    banco_numero_cuenta: string,
+    banco_swift_bic: string,
+
+    // Cripto Wallet
+    wallet_red: string,
+    wallet_direccion: string,
+    wallet_semilla: string,
+
+    // Documento Identidad
+    identidad_nombre: string,
+    identidad_tipo_doc: string,
+    identidad_numero: string,
+
+    // Contacto
+    contacto_nombre: string,
+    contacto_correo: string,
+    contacto_telefono: string,
+    contacto_empresa: string,
+}
+
+export component EditModal inherits Rectangle {
+    in-out property <EntryEditData> datos: {
+        id: "",
+        tipo: "LOGIN",
+        titulo: "",
+        favorito: false,
+        categoria_id: "",
+        usuario: "",
+        password: "",
+        url: "",
+        urls_secundarias: "",
+        notas: "",
+        totp_secreto: "",
+        totp_emisor: "",
+        totp_periodo: 30,
+        totp_digitos: 6,
+        fecha_caducidad: "",
+        etiquetas: "",
+        campos_personalizados: "",
+        tarjeta_titular: "",
+        tarjeta_numero: "",
+        tarjeta_vencimiento: "",
+        tarjeta_cvv: "",
+        tarjeta_pin: "",
+        wifi_ssid: "",
+        wifi_password: "",
+        wifi_seguridad: "WPA2",
+        servidor_host: "",
+        servidor_puerto: "22",
+        servidor_usuario: "",
+        servidor_password: "",
+        banco_entidad: "",
+        banco_titular: "",
+        banco_numero_cuenta: "",
+        banco_swift_bic: "",
+        wallet_red: "Bitcoin",
+        wallet_direccion: "",
+        wallet_semilla: "",
+        identidad_nombre: "",
+        identidad_tipo_doc: "DNI",
+        identidad_numero: "",
+        contacto_nombre: "",
+        contacto_correo: "",
+        contacto_telefono: "",
+        contacto_empresa: "",
+    };
+
+    in property <bool> es-nueva: false;
+
+    callback guardar(EntryEditData);
+    callback cancelar();
+    callback abrir-generador(string);
+
+    background: #000000.transparentize(35%);
+
+    TouchArea {
+        // Bloquear clicks de pasar al fondo
+    }
+
+    VerticalLayout {
+        alignment: center;
+
+        HorizontalLayout {
+            alignment: center;
+
+            Rectangle {
+                width: 620px;
+                max-height: root.height * 88%;
+                background: Theme.surface;
+                border-width: 1px;
+                border-color: Theme.border;
+                border-radius: Theme.radius-lg;
+                clip: true;
+
+                VerticalLayout {
+                    // Cabecera Modal
+                    VerticalLayout {
+                        padding: 16px;
+                        spacing: 12px;
+
+                        HorizontalLayout {
+                            alignment: space-between;
+
+                            HorizontalLayout {
+                                spacing: 8px;
+                                alignment: start;
+                                Text { text: root.es-nueva ? "✨" : "✏"; font-size: 18px; vertical-alignment: center; }
+                                Text {
+                                    text: root.es-nueva ? "Nueva Entrada" : "Editar Credencial";
+                                    color: Theme.text-primary;
+                                    font-size: 18px;
+                                    font-weight: 700;
+                                    vertical-alignment: center;
+                                }
+                            }
+
+                            TouchArea {
+                                width: 28px; height: 28px;
+                                clicked => { root.cancelar(); }
+                                Rectangle {
+                                    background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                                    border-radius: Theme.radius-sm;
+                                    border-width: 1px; border-color: Theme.border;
+                                    Text { text: "✕"; color: Theme.text-muted; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; }
+                                }
+                            }
+                        }
+
+                        // Título de la entrada y botón favorito ★
+                        HorizontalLayout {
+                            spacing: 8px;
+
+                            Rectangle {
+                                horizontal-stretch: 1; height: 38px;
+                                background: Theme.background;
+                                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+
+                                HorizontalLayout {
+                                    padding-left: 10px; padding-right: 10px;
+                                    in-titulo := TextInput {
+                                        text <=> root.datos.titulo;
+                                        color: Theme.text-primary;
+                                        font-size: 13px;
+                                        font-weight: 600;
+                                        vertical-alignment: center;
+                                        single-line: true;
+                                    }
+                                }
+                                if in-titulo.text == "" : Text {
+                                    x: 10px; text: "Título o Nombre del Servicio..."; color: Theme.text-muted; font-size: 12px; vertical-alignment: center;
+                                }
+                            }
+
+                            TouchArea {
+                                width: 38px; height: 38px;
+                                clicked => { root.datos.favorito = !root.datos.favorito; }
+                                Rectangle {
+                                    background: root.datos.favorito ? Theme.accent-amber.transparentize(80%) : Theme.background;
+                                    border-width: 1px; border-color: root.datos.favorito ? Theme.accent-amber : Theme.border;
+                                    border-radius: Theme.radius-sm;
+                                    Text {
+                                        text: "★";
+                                        color: root.datos.favorito ? Theme.accent-amber : Theme.text-muted;
+                                        font-size: 16px;
+                                        horizontal-alignment: center; vertical-alignment: center;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Barra selectora de Tipo
+                        TypeChipBar {
+                            tipo-seleccionado <=> root.datos.tipo;
+                            seleccionar(t) => { root.datos.tipo = t; }
+                        }
+                    }
+
+                    Rectangle { height: 1px; background: Theme.border; }
+
+                    // Contenido del Formulario Desplazable
+                    Flickable {
+                        content-height: form-layout.min-height;
+
+                        form-layout := VerticalLayout {
+                            padding: 16px;
+                            spacing: 12px;
+
+                            // Subformulario según tipo
+                            if root.datos.tipo == "LOGIN" : LoginForm {
+                                usuario <=> root.datos.usuario;
+                                password <=> root.datos.password;
+                                url <=> root.datos.url;
+                                urls-secundarias <=> root.datos.urls_secundarias;
+                                invocar-generador => { root.abrir-generador("login"); }
+                            }
+
+                            if root.datos.tipo == "TARJETA" : CardForm {
+                                titular <=> root.datos.tarjeta_titular;
+                                numero <=> root.datos.tarjeta_numero;
+                                vencimiento <=> root.datos.tarjeta_vencimiento;
+                                cvv <=> root.datos.tarjeta_cvv;
+                                pin <=> root.datos.tarjeta_pin;
+                            }
+
+                            if root.datos.tipo == "CUENTA_BANCARIA" : BankForm {
+                                entidad <=> root.datos.banco_entidad;
+                                titular <=> root.datos.banco_titular;
+                                numero-cuenta <=> root.datos.banco_numero_cuenta;
+                                swift-bic <=> root.datos.banco_swift_bic;
+                            }
+
+                            if root.datos.tipo == "SERVIDOR" : ServerForm {
+                                host <=> root.datos.servidor_host;
+                                puerto <=> root.datos.servidor_puerto;
+                                usuario <=> root.datos.servidor_usuario;
+                                password <=> root.datos.servidor_password;
+                            }
+
+                            if root.datos.tipo == "WIFI" : WifiForm {
+                                ssid <=> root.datos.wifi_ssid;
+                                password <=> root.datos.wifi_password;
+                                tipo-seguridad <=> root.datos.wifi_seguridad;
+                                invocar-generador => { root.abrir-generador("wifi"); }
+                            }
+
+                            if root.datos.tipo == "WALLET" : WalletForm {
+                                red <=> root.datos.wallet_red;
+                                direccion <=> root.datos.wallet_direccion;
+                                semilla <=> root.datos.wallet_semilla;
+                            }
+
+                            if root.datos.tipo == "IDENTIDAD" : IdentityForm {
+                                nombre <=> root.datos.identidad_nombre;
+                                tipo-doc <=> root.datos.identidad_tipo_doc;
+                                numero <=> root.datos.identidad_numero;
+                            }
+
+                            if root.datos.tipo == "CONTACTO" : ContactForm {
+                                nombre <=> root.datos.contacto_nombre;
+                                correo <=> root.datos.contacto_correo;
+                                telefono <=> root.datos.contacto_telefono;
+                                empresa <=> root.datos.contacto_empresa;
+                            }
+
+                            if root.datos.tipo == "NOTA" : NoteForm {
+                                notas <=> root.datos.notas;
+                            }
+
+                            Rectangle { height: 1px; background: Theme.border; }
+
+                            // Secciones transversales
+                            TotpField {
+                                totp-secreto <=> root.datos.totp_secreto;
+                                totp-emisor <=> root.datos.totp_emisor;
+                                totp-periodo <=> root.datos.totp_periodo;
+                                totp-digitos <=> root.datos.totp_digitos;
+                            }
+
+                            CategorySelector {
+                                categoria-id <=> root.datos.categoria_id;
+                            }
+
+                            TagsField {
+                                etiquetas <=> root.datos.etiquetas;
+                                fecha-caducidad <=> root.datos.fecha_caducidad;
+                            }
+
+                            CustomFieldsEditor {
+                                campos-personalizados <=> root.datos.campos_personalizados;
+                            }
+
+                            if root.datos.tipo != "NOTA" : VerticalLayout {
+                                spacing: 4px;
+                                Text { text: "Notas Seguras Adicionales"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+                                Rectangle {
+                                    height: 50px; background: Theme.background;
+                                    border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                                    HorizontalLayout {
+                                        padding: 6px;
+                                        TextInput {
+                                            text <=> root.datos.notas;
+                                            color: Theme.text-primary; font-size: 11px; wrap: word-wrap;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle { height: 1px; background: Theme.border; }
+
+                    // Barra inferior de botones
+                    HorizontalLayout {
+                        padding: 14px;
+                        spacing: 12px;
+                        alignment: end;
+
+                        TouchArea {
+                            width: 100px; height: 36px;
+                            clicked => { root.cancelar(); }
+                            Rectangle {
+                                background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                                Text { text: "Cancelar"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                            }
+                        }
+
+                        TouchArea {
+                            width: 140px; height: 36px;
+                            clicked => {
+                                if root.datos.titulo != "" {
+                                    root.guardar(root.datos);
+                                }
+                            }
+                            Rectangle {
+                                background: root.datos.titulo == "" ? Theme.text-muted :
+                                           parent.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                                border-radius: Theme.radius-sm;
+                                Text {
+                                    text: root.es-nueva ? "✓ Crear Entrada" : "✓ Guardar Cambios";
+                                    color: #FFFFFF; font-size: 12px; font-weight: 700;
+                                    horizontal-alignment: center; vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

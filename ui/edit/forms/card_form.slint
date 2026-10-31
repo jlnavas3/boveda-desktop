@@ -1,0 +1,58 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { FormFieldBox } from "../../components/widgets/form_field_box.slint";
+
+export component CardForm inherits VerticalLayout {
+    in-out property <string> titular: "";
+    in-out property <string> numero: "";
+    in-out property <string> vencimiento: "";
+    in-out property <string> cvv: "";
+    in-out property <string> pin: "";
+
+    spacing: 10px;
+
+    // Titular
+    FormFieldBox {
+        etiqueta: "Titular de la Tarjeta";
+        texto <=> root.titular;
+        color-indicador: Theme.color-ind-usuario;
+    }
+
+    // Número
+    FormFieldBox {
+        etiqueta: "Número de Tarjeta";
+        texto <=> root.numero;
+        color-indicador: Theme.color-ind-password;
+    }
+
+    // Fila: Vencimiento, CVV, PIN
+    HorizontalLayout {
+        spacing: 8px;
+
+        FormFieldBox {
+            horizontal-stretch: 1;
+            etiqueta: "Vence (MM/AA)";
+            texto <=> root.vencimiento;
+            color-indicador: Theme.color-ind-totp;
+        }
+
+        FormFieldBox {
+            horizontal-stretch: 1;
+            etiqueta: "CVV";
+            texto <=> root.cvv;
+            color-indicador: Theme.color-ind-password;
+        }
+
+        FormFieldBox {
+            horizontal-stretch: 1;
+            etiqueta: "PIN";
+            texto <=> root.pin;
+            color-indicador: Theme.color-ind-password;
+        }
+    }
+}

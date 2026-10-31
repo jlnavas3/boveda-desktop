@@ -1,0 +1,684 @@
+import { Theme } from "../theme.slint";
+import { SearchBar } from "../components/search_bar.slint";
+import { EntryItem, EntryOverview } from "../components/entry_item.slint";
+import { EntryDetail, EntryDetailData } from "entry_detail.slint";
+import { AlphabetIndex } from "../components/alphabet_index.slint";
+import { FilterBar } from "../components/filter_bar.slint";
+import { FilterPopover } from "../components/filter_popover.slint";
+import { DropdownOption } from "../components/dropdown_filter.slint";
+import { ContextMenu } from "../components/widgets/context_menu.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
+import { GroupHeaderItem } from "../components/widgets/group_header_item.slint";
+import { ListOverflowMenu } from "../components/widgets/list_overflow_menu.slint";
+
+export struct FilterItem {
+    id: string,
+    nombre: string,
+    icono: string,
+    conteo: int,
+}
+
+export component MainScreen inherits Rectangle {
+    in property <[FilterItem]> tipos-filtro: [];
+    in property <[FilterItem]> categorias-filtro: [];
+    in property <[DropdownOption]> perfiles-filtro: [];
+    in property <[DropdownOption]> etiquetas-filtro: [];
+
+    in property <string> filtro-tipo-actual: "TODOS";
+    in property <string> filtro-categoria-actual: "TODAS";
+    in property <string> filtro-perfil-actual: "TODOS";
+    in property <string> filtro-etiqueta-actual: "TODAS";
+    in property <string> entrada-seleccionada-id: "";
+    
+    in property <[EntryOverview]> lista-entradas: [];
+    in property <EntryDetailData> detalle-actual;
+    in property <string> texto-notificacion: "";
+
+    in property <bool> mostrar-ola-niagara: true;
+    in property <bool> efecto-ola-niagara: true;
+    in property <length> amplitud-ola-niagara: 24px;
+    in property <bool> incluir-enie-niagara: true;
+
+    in property <bool> solo-favoritos: false;
+    in property <string> orden-actual: "NOMBRE_AZ";
+
+    in-out property <bool> sidebar-colapsada: false;
+    in-out property <length> ancho-sidebar: 230px;
+    in-out property <length> ancho-lista: 360px;
+    in-out property <length> lista-viewport-y: 0px;
+
+    callback seleccionar-tipo(string);
+    callback seleccionar-categoria(string);
+    callback seleccionar-perfil(string);
+    callback seleccionar-etiqueta(string);
+    callback seleccionar-entrada(string);
+
+    property <int> menu-filtro-abierto: 0;
+    callback buscar(string);
+    callback bloquear-boveda();
+    callback copiar-campo(string, string);
+    callback cerrar-detalle();
+    callback abrir-nueva-entrada();
+    callback abrir-ajustes();
+    callback editar-entrada(string);
+    callback mover-papelera(string);
+    callback restaurar-entrada(string);
+    callback eliminar-definitivo(string);
+    callback saltar-a-letra(string);
+    callback alternar-favorito(string);
+    callback alternar-anclado(string);
+    callback copiar-totp(string);
+
+    // Callbacks del menú de 3 puntos y agrupamiento
+    callback alternar-grupo(string);
+    callback alternar-solo-favoritos();
+    callback normalizar-titulos();
+    callback crear-nuevo-tipo(string);
+    callback cambiar-orden(string);
+    callback importar-bitwarden();
+    callback importar-csv();
+    callback fusionar-boveda();
+    callback exportar-bvda();
+    callback exportar-json();
+    callback exportar-csv();
+    callback navegar-apariencia();
+    callback abrir-ayuda();
+
+    property <string> menu-contextual-id: "";
+    property <bool> menu-contextual-favorito: false;
+    property <bool> menu-contextual-anclado: false;
+    property <bool> menu-contextual-tiene-totp: false;
+    property <bool> menu-contextual-tiene-password: false;
+    property <bool> menu-contextual-tiene-usuario: false;
+    property <string> menu-contextual-subtitulo: "";
+    property <length> menu-contextual-pos-x: 0px;
+    property <length> menu-contextual-pos-y: 0px;
+
+    menu-ctx := ContextMenu {
+        x: root.menu-contextual-pos-x;
+        y: root.menu-contextual-pos-y;
+        es-favorito: root.menu-contextual-favorito;
+        es-anclado: root.menu-contextual-anclado;
+        tiene-totp: root.menu-contextual-tiene-totp;
+        tiene-password: root.menu-contextual-tiene-password;
+        tiene-usuario: root.menu-contextual-tiene-usuario;
+
+        copiar-usuario => { root.copiar-campo(root.menu-contextual-subtitulo, "Usuario"); }
+        copiar-password => { root.copiar-campo(root.menu-contextual-id, "Contraseña"); }
+        copiar-totp => { root.copiar-totp(root.menu-contextual-id); }
+        alternar-favorito => { root.alternar-favorito(root.menu-contextual-id); }
+        alternar-anclado => { root.alternar-anclado(root.menu-contextual-id); }
+        editar => { root.editar-entrada(root.menu-contextual-id); }
+        eliminar => { root.mover-papelera(root.menu-contextual-id); }
+    }
+
+    overflow-menu := ListOverflowMenu {
+        x: (root.sidebar-colapsada ? 64px : root.ancho-sidebar) + root.ancho-lista - 250px;
+        y: 54px;
+        solo-favoritos: root.solo-favoritos;
+        orden-actual: root.orden-actual;
+        filtro-tipo-actual: root.filtro-tipo-actual;
+
+        crear-nuevo-tipo(t) => { root.crear-nuevo-tipo(t); }
+        cambiar-orden(o) => { root.cambiar-orden(o); }
+        cambiar-filtro-tipo(t) => { root.seleccionar-tipo(t); }
+        alternar-solo-favoritos => { root.alternar-solo-favoritos(); }
+        normalizar-titulos => { root.normalizar-titulos(); }
+        importar-bitwarden => { root.importar-bitwarden(); }
+        importar-csv => { root.importar-csv(); }
+        fusionar-boveda => { root.fusionar-boveda(); }
+        exportar-bvda => { root.exportar-bvda(); }
+        exportar-json => { root.exportar-json(); }
+        exportar-csv => { root.exportar-csv(); }
+        navegar-apariencia => { root.navegar-apariencia(); }
+        navegar-ajustes => { root.abrir-ajustes(); }
+        abrir-ayuda => { root.abrir-ayuda(); }
+    }
+
+    background: Theme.background;
+
+    HorizontalLayout {
+        // PANEL IZQUIERDO: Barra Lateral de Filtros (Redimensionable y Colapsable)
+        Rectangle {
+            width: root.sidebar-colapsada ? 64px : root.ancho-sidebar;
+            background: Theme.surface;
+            border-width: 1px;
+            border-color: Theme.border;
+            clip: true;
+
+            VerticalLayout {
+                padding: 10px;
+                spacing: 12px;
+
+                // Cabecera: Menú Hamburguesa + Estado
+                HorizontalLayout {
+                    alignment: space-between;
+                    spacing: 6px;
+
+                    // Botón Hamburguesa ☰ para colapsar/expandir
+                    TouchArea {
+                        width: 32px;
+                        height: 32px;
+                        clicked => {
+                            root.sidebar-colapsada = !root.sidebar-colapsada;
+                        }
+
+                        Rectangle {
+                            background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                            border-radius: Theme.radius-sm;
+                            border-width: 1px;
+                            border-color: Theme.border;
+
+                            AppIcon {
+                                source: @image-url("../assets/icons/menu.svg");
+                                icon-size: 16px;
+                                icon-color: Theme.text-primary;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    if !root.sidebar-colapsada : HorizontalLayout {
+                        spacing: 6px;
+                        alignment: center;
+
+                        Rectangle {
+                            width: 8px;
+                            height: 8px;
+                            border-radius: 4px;
+                            background: Theme.accent-primary;
+                        }
+
+                        Text {
+                            text: "Bóveda";
+                            color: Theme.text-primary;
+                            font-size: 13px;
+                            font-weight: 700;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    // Botón Bloquear
+                    btn-bloquear := TouchArea {
+                        width: root.sidebar-colapsada ? 32px : 72px;
+                        height: 32px;
+                        clicked => { root.bloquear-boveda(); }
+
+                        Rectangle {
+                            background: btn-bloquear.has-hover ? Theme.danger.transparentize(80%) : Theme.surface-hover;
+                            border-width: 1px;
+                            border-color: btn-bloquear.has-hover ? Theme.danger : Theme.border;
+                            border-radius: Theme.radius-sm;
+
+                            HorizontalLayout {
+                                alignment: center;
+                                spacing: 4px;
+
+                                AppIcon {
+                                    source: @image-url("../assets/icons/lock.svg");
+                                    icon-size: 14px;
+                                    icon-color: btn-bloquear.has-hover ? Theme.danger : Theme.text-primary;
+                                    vertical-alignment: center;
+                                }
+                                if !root.sidebar-colapsada : Text {
+                                    text: "Bloquear";
+                                    color: btn-bloquear.has-hover ? Theme.danger : Theme.text-secondary;
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Botón Nueva Entrada
+                btn-nueva := TouchArea {
+                    height: 34px;
+                    clicked => { root.abrir-nueva-entrada(); }
+
+                    Rectangle {
+                        background: btn-nueva.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                        border-radius: Theme.radius-sm;
+
+                        HorizontalLayout {
+                            alignment: center;
+                            spacing: 6px;
+
+                            AppIcon {
+                                source: @image-url("../assets/icons/add.svg");
+                                icon-size: 15px;
+                                icon-color: #FFFFFF;
+                                vertical-alignment: center;
+                            }
+                            if !root.sidebar-colapsada : Text {
+                                text: "Nueva Entrada";
+                                font-size: 12px;
+                                font-weight: 700;
+                                color: #FFFFFF;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+
+                Rectangle { height: 1px; background: Theme.border; }
+
+                // Lista de Filtros de Tipos Nativos
+                if !root.sidebar-colapsada : Text {
+                    text: "TIPOS DE ENTRADA";
+                    color: Theme.text-muted;
+                    font-size: 10px;
+                    font-weight: 700;
+                    horizontal-alignment: left;
+                }
+
+                Flickable {
+                    vertical-stretch: 1;
+                    content-height: sidebar-content.min-height;
+
+                    sidebar-content := VerticalLayout {
+                        spacing: 12px;
+
+                        lista-tipos := VerticalLayout {
+                            spacing: 4px;
+
+                            for item in tipos-filtro : TouchArea {
+                                height: 32px;
+                                clicked => { root.seleccionar-tipo(item.id); }
+
+                                Rectangle {
+                                    background: filtro-tipo-actual == item.id ? Theme.surface-selected :
+                                               parent.has-hover ? Theme.surface-hover : Colors.transparent;
+                                    border-radius: Theme.radius-sm;
+                                    border-width: filtro-tipo-actual == item.id ? 1px : 0px;
+                                    border-color: Theme.accent-primary;
+
+                                    HorizontalLayout {
+                                        padding-left: 12px;
+                                        padding-right: 12px;
+                                        spacing: 10px;
+
+                                        AppIcon {
+                                            source: item.id == "LOGIN" ? @image-url("../assets/icons/key.svg") :
+                                                    item.id == "TARJETA" ? @image-url("../assets/icons/credit_card.svg") :
+                                                    item.id == "CUENTA_BANCARIA" ? @image-url("../assets/icons/account_balance.svg") :
+                                                    item.id == "SERVIDOR" ? @image-url("../assets/icons/computer.svg") :
+                                                    item.id == "WIFI" ? @image-url("../assets/icons/wifi.svg") :
+                                                    item.id == "WALLET" ? @image-url("../assets/icons/wallet.svg") :
+                                                    item.id == "IDENTIDAD" ? @image-url("../assets/icons/badge.svg") :
+                                                    item.id == "CONTACTO" ? @image-url("../assets/icons/person.svg") :
+                                                    item.id == "NOTA" ? @image-url("../assets/icons/note.svg") :
+                                                    item.id == "PAPELERA" ? @image-url("../assets/icons/delete.svg") :
+                                                    @image-url("../assets/icons/folder.svg");
+                                            icon-size: 16px;
+                                            icon-color: filtro-tipo-actual == item.id ? Theme.accent-primary : Theme.text-secondary;
+                                            vertical-alignment: center;
+                                        }
+
+                                        if !root.sidebar-colapsada : Text {
+                                            text: item.nombre;
+                                            color: filtro-tipo-actual == item.id ? Theme.text-primary : Theme.text-secondary;
+                                            font-size: 12px;
+                                            font-weight: filtro-tipo-actual == item.id ? 600 : 400;
+                                            horizontal-stretch: 1;
+                                            vertical-alignment: center;
+                                            horizontal-alignment: left;
+                                        }
+
+                                        if !root.sidebar-colapsada : VerticalLayout {
+                                            alignment: center;
+                                            Rectangle {
+                                                background: Theme.border;
+                                                border-radius: Theme.radius-sm;
+                                                height: 18px;
+                                                HorizontalLayout {
+                                                    padding-left: 6px;
+                                                    padding-right: 6px;
+                                                    alignment: center;
+                                                    Text {
+                                                        text: item.conteo;
+                                                        color: Theme.text-secondary;
+                                                        font-size: 10px;
+                                                        font-weight: 600;
+                                                        vertical-alignment: center;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if categorias-filtro.length > 0 && !root.sidebar-colapsada : VerticalLayout {
+                            spacing: 6px;
+
+                            Text {
+                                text: "CATEGORÍAS";
+                                color: Theme.text-muted;
+                                font-size: 10px;
+                                font-weight: 700;
+                                horizontal-alignment: left;
+                            }
+
+                            lista-cats := VerticalLayout {
+                                spacing: 4px;
+
+                                for cat in categorias-filtro : TouchArea {
+                                    height: 30px;
+                                    clicked => { root.seleccionar-categoria(cat.id); }
+
+                                    Rectangle {
+                                        background: filtro-categoria-actual == cat.id ? Theme.surface-selected :
+                                                   parent.has-hover ? Theme.surface-hover : Colors.transparent;
+                                        border-radius: Theme.radius-sm;
+                                        border-width: filtro-categoria-actual == cat.id ? 1px : 0px;
+                                        border-color: Theme.accent-blue;
+
+                                        HorizontalLayout {
+                                            padding-left: 12px;
+                                            padding-right: 12px;
+                                            spacing: 10px;
+
+                                            AppIcon {
+                                                source: @image-url("../assets/icons/folder.svg");
+                                                icon-size: 14px;
+                                                icon-color: filtro-categoria-actual == cat.id ? Theme.accent-primary : Theme.text-secondary;
+                                                vertical-alignment: center;
+                                            }
+
+                                            Text {
+                                                text: cat.nombre;
+                                                color: filtro-categoria-actual == cat.id ? Theme.text-primary : Theme.text-secondary;
+                                                font-size: 12px;
+                                                horizontal-stretch: 1;
+                                                vertical-alignment: center;
+                                                horizontal-alignment: left;
+                                            }
+
+                                            VerticalLayout {
+                                                alignment: center;
+                                                Rectangle {
+                                                    background: Theme.border;
+                                                    border-radius: Theme.radius-sm;
+                                                    height: 18px;
+                                                    HorizontalLayout {
+                                                        padding-left: 6px;
+                                                        padding-right: 6px;
+                                                        alignment: center;
+                                                        Text {
+                                                             text: cat.conteo;
+                                                             color: Theme.text-secondary;
+                                                             font-size: 10px;
+                                                             font-weight: 600;
+                                                             vertical-alignment: center;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Rectangle { height: 1px; background: Theme.border; }
+
+                // Botón Ajustes
+                btn-ajustes := TouchArea {
+                    height: 32px;
+                    clicked => { root.abrir-ajustes(); }
+
+                    Rectangle {
+                        background: btn-ajustes.has-hover ? Theme.surface-hover : Theme.background;
+                        border-width: 1px;
+                        border-color: Theme.border;
+                        border-radius: Theme.radius-sm;
+
+                        HorizontalLayout {
+                            alignment: center;
+                            spacing: 6px;
+
+                            AppIcon {
+                                source: @image-url("../assets/icons/settings.svg");
+                                icon-size: 15px;
+                                icon-color: btn-ajustes.has-hover ? Theme.accent-primary : Theme.text-primary;
+                                vertical-alignment: center;
+                            }
+                            if !root.sidebar-colapsada : Text {
+                                text: "Ajustes de Bóveda";
+                                font-size: 11px;
+                                font-weight: 600;
+                                color: Theme.text-secondary;
+                                vertical-alignment: center;
+                                horizontal-alignment: left;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // SPLITTER 1 (Lateral <-> Lista)
+        Rectangle {
+            width: 4px;
+            background: split-1.has-hover ? Theme.accent-primary : Theme.border;
+
+            split-1 := TouchArea {
+                mouse-cursor: col-resize;
+                moved => {
+                    if !root.sidebar-colapsada {
+                        root.ancho-sidebar = Math.clamp(root.ancho-sidebar + (split-1.mouse-x - split-1.pressed-x), 160px, 360px);
+                    }
+                }
+            }
+        }
+
+        // PANEL CENTRAL: Lista Fluida de Entradas con Ola Niagara A-Z
+        Rectangle {
+            width: root.ancho-lista;
+            background: Theme.background;
+            border-width: 1px;
+            border-color: Theme.border;
+
+            VerticalLayout {
+                padding: 12px;
+                spacing: 10px;
+
+                // Buscador en Tiempo Real + Botón Menú de 3 Puntos
+                HorizontalLayout {
+                    spacing: 8px;
+
+                    SearchBar {
+                        horizontal-stretch: 1;
+                        search-changed(q) => { root.buscar(q); }
+                        clear-clicked() => { root.buscar(""); }
+                    }
+
+                    btn-overflow := TouchArea {
+                        width: 36px;
+                        height: 36px;
+                        clicked => {
+                            overflow-menu.show();
+                        }
+
+                        Rectangle {
+                            background: btn-overflow.has-hover ? Theme.surface-hover : Theme.surface;
+                            border-radius: Theme.curvatura-esquinas > 0px ? Theme.curvatura-esquinas / 2 : 6px;
+                            border-width: Theme.grosor-borde;
+                            border-color: Theme.border;
+
+                            AppIcon {
+                                source: @image-url("../assets/icons/more_vert.svg");
+                                icon-size: 18px;
+                                icon-color: btn-overflow.has-hover ? Theme.accent-primary : Theme.text-primary;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+
+                // Barra Superior de Filtros Rápidos (Dropdowns con PopupWindow nativo)
+                FilterBar {
+                    filtro-tipo: root.filtro-tipo-actual;
+                    filtro-perfil: root.filtro-perfil-actual;
+                    filtro-categoria: root.filtro-categoria-actual;
+                    filtro-etiqueta: root.filtro-etiqueta-actual;
+                    opciones-tipos: [
+                        { id: "TODOS", nombre: "Todos los tipos", icono: "🗂", conteo: 0 },
+                        { id: "LOGIN", nombre: "Cuentas Web (Login)", icono: "🔐", conteo: 0 },
+                        { id: "TARJETA", nombre: "Tarjetas Bancarias", icono: "💳", conteo: 0 },
+                        { id: "WIFI", nombre: "Redes Wi-Fi", icono: "📶", conteo: 0 },
+                        { id: "SERVIDOR", nombre: "Servidores SSH", icono: "🖥", conteo: 0 },
+                        { id: "CUENTA_BANCARIA", nombre: "Cuentas Bancarias", icono: "🏦", conteo: 0 },
+                        { id: "IDENTIDAD", nombre: "Documentos de Identidad", icono: "🪪", conteo: 0 },
+                        { id: "WALLET", nombre: "Cripto Wallets", icono: "🪙", conteo: 0 },
+                        { id: "CONTACTO", nombre: "Contactos Seguros", icono: "👤", conteo: 0 },
+                        { id: "NOTA", nombre: "Notas Seguras", icono: "📝", conteo: 0 }
+                    ];
+                    opciones-perfiles: root.perfiles-filtro;
+                    opciones-categorias: [
+                        { id: "TODAS", nombre: "Todas las categorías", icono: "📁", conteo: 0 }
+                    ];
+                    opciones-etiquetas: root.etiquetas-filtro;
+
+                    seleccionar-tipo(t) => { root.seleccionar-tipo(t); }
+                    seleccionar-perfil(p) => { root.seleccionar-perfil(p); }
+                    seleccionar-categoria(c) => { root.seleccionar-categoria(c); }
+                    seleccionar-etiqueta(e) => { root.seleccionar-etiqueta(e); }
+                }
+
+                // Resumen de Conteo
+                HorizontalLayout {
+                    padding-left: 4px;
+                    padding-right: 4px;
+                    alignment: space-between;
+
+                    Text {
+                        text: lista-entradas.length + (lista-entradas.length == 1 ? " elemento" : " elementos");
+                        color: Theme.text-muted;
+                        font-size: 11px;
+                        font-weight: 600;
+                    }
+                }
+
+                // Lista de Entradas + Abecedario Lateral Niagara
+                HorizontalLayout {
+                    vertical-stretch: 1;
+
+                    if lista-entradas.length == 0 : VerticalLayout {
+                        horizontal-stretch: 1;
+                        alignment: center;
+                        spacing: 8px;
+
+                        AppIcon {
+                            source: @image-url("../assets/icons/search.svg");
+                            icon-size: 32px;
+                            icon-color: Theme.text-secondary;
+                            horizontal-alignment: center;
+                        }
+                        Text { text: "No se encontraron entradas"; color: Theme.text-secondary; font-size: 13px; horizontal-alignment: center; }
+                    }
+
+                    if lista-entradas.length > 0 : lista-flickable := Flickable {
+                        horizontal-stretch: 1;
+                        content-y <=> root.lista-viewport-y;
+                        content-height: items-layout.min-height;
+
+                        items-layout := VerticalLayout {
+                            alignment: start;
+                            spacing: 6px;
+
+                            for entrada in lista-entradas : HorizontalLayout {
+                                if entrada.es_cabecera_grupo : GroupHeaderItem {
+                                    titulo: entrada.titulo;
+                                    conteo: entrada.grupo_conteo;
+                                    expandido: entrada.grupo_expandido;
+                                    alternar => { root.alternar-grupo(entrada.clave_grupo); }
+                                }
+                                if !entrada.es_cabecera_grupo : EntryItem {
+                                    entrada: entrada;
+                                    seleccionado: entrada.id == entrada-seleccionada-id;
+                                    clicked => { root.seleccionar-entrada(entrada.id); }
+                                    abrir-menu-contextual(id, mx, my) => {
+                                        root.menu-contextual-id = id;
+                                        root.menu-contextual-favorito = entrada.favorito;
+                                        root.menu-contextual-anclado = entrada.anclado;
+                                        root.menu-contextual-tiene-totp = entrada.tiene_totp;
+                                        root.menu-contextual-tiene-password = entrada.tiene_password;
+                                        root.menu-contextual-tiene-usuario = entrada.tiene_usuario;
+                                        root.menu-contextual-subtitulo = entrada.subtitulo;
+                                        root.menu-contextual-pos-x = Math.max(10px, Math.min(root.width - 210px, (root.sidebar-colapsada ? 64px : root.ancho-sidebar) + 16px + mx));
+                                        root.menu-contextual-pos-y = Math.max(10px, Math.min(root.height - 240px, 126px + my + root.lista-viewport-y));
+                                        menu-ctx.show();
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Franja A-Z Niagara
+                    if root.mostrar-ola-niagara && lista-entradas.length > 5 : AlphabetIndex {
+                        incluir-enie: root.incluir-enie-niagara;
+                        efecto-ola: root.efecto-ola-niagara;
+                        amplitud-ola: root.amplitud-ola-niagara;
+                        letra-seleccionada(l) => { root.saltar-a-letra(l); }
+                    }
+                }
+            }
+        }
+
+        // SPLITTER 2 (Lista <-> Detalle)
+        Rectangle {
+            width: 4px;
+            background: split-2.has-hover ? Theme.accent-primary : Theme.border;
+
+            split-2 := TouchArea {
+                mouse-cursor: col-resize;
+                moved => {
+                    root.ancho-lista = Math.clamp(root.ancho-lista + (split-2.mouse-x - split-2.pressed-x), 260px, 550px);
+                }
+            }
+        }
+
+        // PANEL DERECHO: Detalle Completo de la Entrada Seleccionada
+        Rectangle {
+            horizontal-stretch: 1;
+            background: Theme.surface;
+
+            VerticalLayout {
+                if texto-notificacion != "" : Rectangle {
+                    height: 36px;
+                    background: Theme.accent-primary.transparentize(85%);
+                    border-width: 1px;
+                    border-color: Theme.accent-primary;
+
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        padding-right: 12px;
+                        spacing: 8px;
+                        alignment: center;
+
+                        Text { text: "✓"; color: Theme.accent-primary; font-weight: 800; vertical-alignment: center; }
+                        Text { text: texto-notificacion; color: Theme.accent-primary; font-size: 12px; font-weight: 600; vertical-alignment: center; }
+                    }
+                }
+
+                EntryDetail {
+                    entrada: detalle-actual;
+                    copiar-campo(v, n) => { root.copiar-campo(v, n); }
+                    editar => { root.editar-entrada(root.entrada-seleccionada-id); }
+                    mover-papelera => { root.mover-papelera(root.entrada-seleccionada-id); }
+                    restaurar => { root.restaurar-entrada(root.entrada-seleccionada-id); }
+                    eliminar-definitivo => { root.eliminar-definitivo(root.entrada-seleccionada-id); }
+                    cerrar => { root.cerrar-detalle(); }
+                }
+            }
+        }
+    }
+}

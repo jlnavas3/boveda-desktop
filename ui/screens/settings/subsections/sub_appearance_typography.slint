@@ -1,0 +1,109 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+import { SettingSlider } from "../../../components/widgets/setting_slider.slint";
+
+export component SubAppearanceTypography inherits VerticalLayout {
+    callback restaurar-todo();
+    callback restaurar-escala();
+    callback restaurar-familia();
+    callback restaurar-peso();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Tipografía";
+        descripcion: "Familia tipográfica, grosor y escala porcentual de los textos de la interfaz.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingSlider {
+        titulo: "Escala de Texto";
+        subtitulo: "Ajuste continuo del tamaño porcentual de fuentes de toda la aplicación.";
+        sufijo: "%";
+        minimum: 85.0;
+        maximum: 130.0;
+        step: 5.0;
+        value: Theme.escala-texto * 100.0;
+        changed(val) => {
+            Theme.escala-texto = val / 100.0;
+        }
+    }
+
+    SettingBlock {
+        titulo: "Familia Tipográfica";
+        descripcion: "Selecciona el estilo de fuente para los identificadores y contenidos.";
+        restaurar => { root.restaurar-familia(); }
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            for f in [
+                { id: "sans", nombre: "Sans-Serif" },
+                { id: "monospace", nombre: "Monoespaciada" },
+                { id: "serif", nombre: "Serif" },
+                { id: "sistema", nombre: "Sistema" }
+            ]: TouchArea {
+                width: 105px; height: 32px;
+                clicked => { Theme.familia-fuente = f.id; }
+                Rectangle {
+                    background: Theme.familia-fuente == f.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: Theme.grosor-borde;
+                    border-color: Theme.familia-fuente == f.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+
+                    Text {
+                        text: f.nombre;
+                        color: Theme.familia-fuente == f.id ? Theme.accent-primary : Theme.text-primary;
+                        font-size: 11px;
+                        font-weight: 600;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+
+    SettingBlock {
+        titulo: "Peso Tipográfico";
+        descripcion: "Grosor visual predeterminado para encabezados y etiquetas de datos.";
+        restaurar => { root.restaurar-peso(); }
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            for p in [
+                { id: "normal", nombre: "Normal" },
+                { id: "medio", nombre: "Medio" },
+                { id: "negrita", nombre: "Negrita" }
+            ]: TouchArea {
+                width: 90px; height: 32px;
+                clicked => { Theme.peso-texto = p.id; }
+                Rectangle {
+                    background: Theme.peso-texto == p.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: Theme.grosor-borde;
+                    border-color: Theme.peso-texto == p.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+
+                    Text {
+                        text: p.nombre;
+                        color: Theme.peso-texto == p.id ? Theme.accent-primary : Theme.text-primary;
+                        font-size: 11px;
+                        font-weight: 600;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

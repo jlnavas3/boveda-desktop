@@ -1,0 +1,91 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { DropdownOption } from "dropdown_filter.slint";
+
+export component FilterPopover inherits Rectangle {
+    in property <string> titulo: "";
+    in property <[DropdownOption]> opciones: [];
+    in property <string> seleccion-id: "";
+
+    callback seleccionar(string);
+    callback cerrar();
+
+    background: Theme.surface;
+    border-radius: Theme.radius-md;
+    border-width: 1px;
+    border-color: Theme.border;
+    drop-shadow-blur: 12px;
+    drop-shadow-color: #000000.transparentize(50%);
+    clip: true;
+
+    VerticalLayout {
+        padding: 8px;
+        spacing: 4px;
+
+        HorizontalLayout {
+            padding-left: 6px; padding-right: 6px;
+            alignment: space-between;
+            Text { text: root.titulo; color: Theme.text-muted; font-size: 11px; font-weight: 700; vertical-alignment: center; }
+            TouchArea {
+                width: 20px; height: 20px;
+                clicked => { root.cerrar(); }
+                Text { text: "✕"; color: Theme.text-muted; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; }
+            }
+        }
+
+        Rectangle { height: 1px; background: Theme.border; }
+
+        Flickable {
+            content-height: opt-layout.min-height;
+            max-height: 220px;
+
+            opt-layout := VerticalLayout {
+                spacing: 2px;
+                for opt in root.opciones : TouchArea {
+                    height: 28px;
+                    clicked => {
+                        root.seleccionar(opt.id);
+                        root.cerrar();
+                    }
+                    Rectangle {
+                        background: opt.id == root.seleccion-id ?
+                            Theme.accent-primary.transparentize(85%) :
+                            parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+
+                        HorizontalLayout {
+                            padding-left: 8px; padding-right: 8px;
+                            spacing: 8px;
+                            alignment: space-between;
+
+                            HorizontalLayout {
+                                spacing: 6px;
+                                alignment: start;
+                                Text { text: opt.icono; font-size: 12px; vertical-alignment: center; }
+                                Text {
+                                    text: opt.nombre;
+                                    color: opt.id == root.seleccion-id ? Theme.accent-primary : Theme.text-primary;
+                                    font-size: 11px;
+                                    font-weight: opt.id == root.seleccion-id ? 700 : 500;
+                                    vertical-alignment: center;
+                                }
+                            }
+
+                            if opt.conteo > 0 : Text {
+                                text: opt.conteo;
+                                color: Theme.text-muted;
+                                font-size: 10px;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

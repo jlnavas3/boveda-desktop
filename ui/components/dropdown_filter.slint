@@ -1,0 +1,55 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { DropdownPopover, DropdownOption } from "widgets/dropdown_popover.slint";
+import { AppIcon } from "widgets/app_icon.slint";
+
+export { DropdownOption }
+
+export component DropdownFilter inherits Rectangle {
+    in property <image> icon-source: @image-url("../assets/icons/folder.svg");
+    in property <string> titulo: "";
+    in property <string> seleccion-id: "";
+    in property <[DropdownOption]> opciones: [];
+
+    callback seleccionar(string);
+
+    width: 32px;
+    height: 28px;
+    border-radius: Theme.radius-sm;
+    background: (seleccion-id != "" && seleccion-id != "TODOS" && seleccion-id != "TODAS") ?
+        Theme.accent-primary.transparentize(80%) :
+        touch.has-hover ? Theme.surface-hover : Theme.background;
+    border-width: 1px;
+    border-color: (seleccion-id != "" && seleccion-id != "TODOS" && seleccion-id != "TODAS") ?
+        Theme.accent-primary : Theme.border;
+
+    popover := DropdownPopover {
+        titulo: root.titulo;
+        opciones: root.opciones;
+        seleccion-id: root.seleccion-id;
+        seleccionar(id) => {
+            root.seleccionar(id);
+        }
+    }
+
+    touch := TouchArea {
+        clicked => {
+            popover.show();
+        }
+        HorizontalLayout {
+            alignment: center;
+            AppIcon {
+                source: root.icon-source;
+                icon-size: 14px;
+                icon-color: (seleccion-id != "" && seleccion-id != "TODOS" && seleccion-id != "TODAS") ? Theme.accent-primary : Theme.text-primary;
+                vertical-alignment: center;
+                horizontal-alignment: center;
+            }
+        }
+    }
+}

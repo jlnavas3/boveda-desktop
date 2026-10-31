@@ -1,0 +1,51 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingSwitch } from "../../../components/widgets/setting_switch.slint";
+
+export component SubAppearanceSidebar inherits VerticalLayout {
+    callback restaurar-todo();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Personalizar Menú Lateral";
+        descripcion: "Estructura, visibilidad de cabecera y accesos rápidos en la barra lateral del explorador.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingSwitch {
+        titulo: "Mostrar Cabecera de Bóveda";
+        subtitulo: "Muestra el nombre de la bóveda, icono de seguridad y estado de candado.";
+        checked <=> Theme.menu-lateral-mostrar-cabecera;
+    }
+
+    SettingSwitch {
+        titulo: "Mostrar Pie de Seguridad";
+        subtitulo: "Indica la versión de compilación y estado del perfil en la parte inferior.";
+        checked <=> Theme.menu-lateral-mostrar-pie;
+    }
+
+    SettingSwitch {
+        titulo: "Mostrar Botón de Bloqueo Rápido";
+        subtitulo: "Botón para cerrar sesión y purgar la clave maestra de memoria de forma instantánea.";
+        checked <=> Theme.menu-lateral-mostrar-boton-bloquear;
+    }
+
+    SettingSwitch {
+        titulo: "Agrupar Elementos en Secciones";
+        subtitulo: "Organiza las categorías de cuentas y herramientas bajo títulos de sección.";
+        checked <=> Theme.menu-lateral-agrupar-items;
+    }
+
+    SettingSwitch {
+        titulo: "Estilo Sin Bordes Divisores";
+        subtitulo: "Oculta las líneas separadoras entre los elementos del menú lateral.";
+        checked <=> Theme.menu-lateral-sin-bordes;
+    }
+}

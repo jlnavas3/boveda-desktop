@@ -1,0 +1,42 @@
+import { Theme } from "../../theme.slint";
+
+export component CategorySelector inherits VerticalLayout {
+    in-out property <string> categoria-id: "";
+
+    spacing: 6px;
+
+    HorizontalLayout {
+        alignment: space-between;
+        Text { text: "Categoría / Colección"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        Text { text: "Asignación rápida"; color: Theme.text-muted; font-size: 10px; }
+    }
+
+    HorizontalLayout {
+        spacing: 6px;
+        for cat in [
+            { id: "", nombre: "Ninguna" },
+            { id: "personal", nombre: "Personal" },
+            { id: "trabajo", nombre: "Trabajo" },
+            { id: "finanzas", nombre: "Finanzas" },
+            { id: "servidores", nombre: "Servidores" }
+        ]: TouchArea {
+            height: 28px;
+            clicked => { root.categoria-id = cat.id; }
+            Rectangle {
+                background: root.categoria-id == cat.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                border-width: 1px;
+                border-color: root.categoria-id == cat.id ? Theme.accent-primary : Theme.border;
+                border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    Text {
+                        text: cat.nombre;
+                        color: root.categoria-id == cat.id ? Theme.accent-primary : Theme.text-secondary;
+                        font-size: 11px; font-weight: 600;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

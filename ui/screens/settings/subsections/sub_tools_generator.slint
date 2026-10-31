@@ -1,0 +1,103 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingSlider } from "../../../components/widgets/setting_slider.slint";
+import { SettingSwitch } from "../../../components/widgets/setting_switch.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+
+export component SubToolsGenerator inherits VerticalLayout {
+    in-out property <float> longitud: 20.0;
+    in-out property <bool> mayusculas: true;
+    in-out property <bool> minusculas: true;
+    in-out property <bool> digitos: true;
+    in-out property <bool> simbolos: true;
+    in-out property <bool> excluir-ambiguos: true;
+
+    callback abrir-generador();
+    callback restaurar-todo();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Generador de Contraseñas";
+        descripcion: "Entropía criptográfica basada en generador aleatorio seguro del SO (OsRng) y frases Diceware.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingSlider {
+        titulo: "Longitud de Contraseña";
+        subtitulo: "Cantidad de caracteres generados para las nuevas credenciales.";
+        sufijo: " chars";
+        minimum: 4.0;
+        maximum: 128.0;
+        step: 1.0;
+        value <=> root.longitud;
+    }
+
+    SettingSwitch {
+        titulo: "Incluir Letras Mayúsculas (A-Z)";
+        subtitulo: "Incorpora caracteres en caja alta en la mezcla aleatoria.";
+        checked <=> root.mayusculas;
+    }
+
+    SettingSwitch {
+        titulo: "Incluir Letras Minúsculas (a-z)";
+        subtitulo: "Incorpora caracteres en caja baja en la mezcla aleatoria.";
+        checked <=> root.minusculas;
+    }
+
+    SettingSwitch {
+        titulo: "Incluir Números (0-9)";
+        subtitulo: "Incorpora dígitos numéricos en la mezcla aleatoria.";
+        checked <=> root.digitos;
+    }
+
+    SettingSwitch {
+        titulo: "Incluir Símbolos Especiales (!@#$%^&*)";
+        subtitulo: "Incorpora caracteres de puntuación estándar y símbolos no alfanuméricos.";
+        checked <=> root.simbolos;
+    }
+
+    SettingSwitch {
+        titulo: "Excluir Caracteres Ambiguos (O, 0, l, 1, I)";
+        subtitulo: "Evita caracteres visualmente similares que puedan causar confusión al transcribir.";
+        checked <=> root.excluir-ambiguos;
+    }
+
+    SettingBlock {
+        titulo: "Modal Interactivo del Generador";
+        descripcion: "Abre la ventana completa con modo frase de paso Diceware y generador de patrones.";
+        mostrar-restaurar: false;
+
+        HorizontalLayout {
+            alignment: start;
+            TouchArea {
+                width: 170px; height: 34px;
+                clicked => { root.abrir-generador(); }
+
+                Rectangle {
+                    border-radius: Theme.radius-sm;
+                    background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                    border-width: Theme.grosor-borde;
+                    border-color: Theme.border;
+
+                    HorizontalLayout {
+                        alignment: center; spacing: 6px;
+                        Text {
+                            text: "Abrir Generador";
+                            color: Theme.accent-primary;
+                            font-size: 12px;
+                            font-weight: 700;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

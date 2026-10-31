@@ -1,0 +1,61 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+
+export component SubAppearanceTheme inherits VerticalLayout {
+    in-out property <string> modo-tema: "oscuro";
+
+    callback restaurar-todo();
+    callback restaurar-tema();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Tema y Modo Visual";
+        descripcion: "Esquema cromático y contraste de la interfaz gráfica.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingBlock {
+        titulo: "Modo de Visualización";
+        descripcion: "Selecciona el fondo de ventana adecuado según la luminosidad de tu entorno.";
+        restaurar => { root.restaurar-tema(); }
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            for m in [
+                { id: "oscuro", nombre: "Oscuro" },
+                { id: "claro", nombre: "Claro" },
+                { id: "amoled", nombre: "AMOLED" },
+                { id: "sistema", nombre: "Sistema" }
+            ]: TouchArea {
+                width: 90px; height: 34px;
+                clicked => { root.modo-tema = m.id; }
+
+                Rectangle {
+                    border-radius: Theme.radius-sm;
+                    background: root.modo-tema == m.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: 1px;
+                    border-color: root.modo-tema == m.id ? Theme.accent-primary : Theme.border;
+
+                    Text {
+                        text: m.nombre;
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: root.modo-tema == m.id ? Theme.accent-primary : Theme.text-primary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

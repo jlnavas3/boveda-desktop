@@ -1,0 +1,45 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingSlider } from "../../../components/widgets/setting_slider.slint";
+import { SettingSwitch } from "../../../components/widgets/setting_switch.slint";
+
+export component SubSecurityAutodestruct inherits VerticalLayout {
+    in-out property <int> autodestruccion-intentos: 0;
+    in-out property <bool> biometria-activa: false;
+
+    callback restaurar-todo();
+    callback restaurar-autodestruccion();
+    callback alternar-biometria(bool);
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Autodestrucción y Biometría";
+        descripcion: "Protección física y autenticación mediante hardware del sistema operativo.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingSlider {
+        titulo: "Autodestrucción por Intentos Fallidos Consecutivos";
+        subtitulo: "Elimina de forma irreversible el archivo .bvda al superar el límite de intentos (0 = Desactivado).";
+        sufijo: " intentos";
+        minimum: 0.0;
+        maximum: 20.0;
+        step: 5.0;
+        value: root.autodestruccion-intentos;
+        changed(val) => { root.autodestruccion-intentos = Math.round(val); }
+    }
+
+    SettingSwitch {
+        titulo: "Desbloqueo Biométrico del Sistema";
+        subtitulo: "Habilita autenticación por huella dactilar o llave FIDO2 mediante el llavero del sistema operativo.";
+        checked <=> root.biometria-activa;
+        toggled(act) => { root.alternar-biometria(act); }
+    }
+}

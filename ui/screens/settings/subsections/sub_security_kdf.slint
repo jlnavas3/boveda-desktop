@@ -1,0 +1,47 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+import { SettingRadioOption } from "../../../components/widgets/setting_radio_option.slint";
+
+export component SubSecurityKdf inherits VerticalLayout {
+    in-out property <string> perfil-argon2: "ESTANDAR";
+
+    callback restaurar-todo();
+    callback restaurar-perfil();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "KDF Argon2id";
+        descripcion: "Algoritmo de derivación de claves resistente a ataques por fuerza bruta y GPU/ASIC.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingBlock {
+        titulo: "Perfil de Derivación Criptográfica (Argon2id v0x13)";
+        descripcion: "Ajusta el consumo de memoria RAM y el tiempo de cómputo requerido para abrir la bóveda.";
+        restaurar => { root.restaurar-perfil(); }
+
+        VerticalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            for p in [
+                { id: "ESTANDAR", nombre: "Estándar", desc: "64 MiB RAM, 3 iteraciones (Rápido y seguro)" },
+                { id: "REFORZADO", nombre: "Reforzado", desc: "128 MiB RAM, 4 iteraciones (Recomendado homelab)" },
+                { id: "ULTRASEGURO", nombre: "Ultraseguro", desc: "256 MiB RAM, 5 iteraciones (Máxima resistencia)" }
+            ]: SettingRadioOption {
+                id: p.id;
+                titulo: p.nombre;
+                descripcion: p.desc;
+                seleccionado: root.perfil-argon2 == p.id;
+                clicked => { root.perfil-argon2 = p.id; }
+            }
+        }
+    }
+}

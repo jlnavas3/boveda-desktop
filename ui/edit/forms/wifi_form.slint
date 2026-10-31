@@ -1,0 +1,84 @@
+import { Theme } from "../../theme.slint";
+
+export component WifiForm inherits VerticalLayout {
+    in-out property <string> ssid: "";
+    in-out property <string> password: "";
+    in-out property <string> tipo-seguridad: "WPA2";
+
+    callback invocar-generador();
+
+    spacing: 10px;
+
+    // Nombre de Red (SSID)
+    VerticalLayout {
+        spacing: 4px;
+        Text { text: "Nombre de la Red Wi-Fi (SSID)"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        Rectangle {
+            height: 36px; background: Theme.background;
+            border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+            HorizontalLayout {
+                padding-left: 8px; padding-right: 8px;
+                TextInput {
+                    text <=> root.ssid;
+                    color: Theme.text-primary; font-size: 12px;
+                    vertical-alignment: center; single-line: true;
+                }
+            }
+        }
+    }
+
+    // Contraseña Wi-Fi
+    VerticalLayout {
+        spacing: 4px;
+        Text { text: "Contraseña de la Red"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        HorizontalLayout {
+            spacing: 8px;
+            Rectangle {
+                horizontal-stretch: 1; height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.password;
+                        color: Theme.text-primary; font-size: 12px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+
+            TouchArea {
+                width: 36px; height: 36px;
+                clicked => { root.invocar-generador(); }
+                Rectangle {
+                    background: Theme.background; border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                    Text { text: "🎲"; font-size: 14px; horizontal-alignment: center; vertical-alignment: center; }
+                }
+            }
+        }
+    }
+
+    // Seguridad
+    VerticalLayout {
+        spacing: 4px;
+        Text { text: "Protocolo de Seguridad"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        HorizontalLayout {
+            spacing: 8px;
+            for sec in ["WPA3", "WPA2", "WPA", "WEP", "Abierta"]: TouchArea {
+                horizontal-stretch: 1; height: 30px;
+                clicked => { root.tipo-seguridad = sec; }
+                Rectangle {
+                    background: root.tipo-seguridad == sec ? Theme.accent-cyan.transparentize(85%) : Theme.background;
+                    border-width: 1px;
+                    border-color: root.tipo-seguridad == sec ? Theme.accent-cyan : Theme.border;
+                    border-radius: Theme.radius-sm;
+                    Text {
+                        text: sec;
+                        color: root.tipo-seguridad == sec ? Theme.accent-cyan : Theme.text-secondary;
+                        font-size: 11px; font-weight: 600;
+                        horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

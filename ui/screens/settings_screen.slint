@@ -1,0 +1,330 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
+import { SettingsData } from "../settings/settings_modal.slint";
+import { SettingsTopBar } from "settings/settings_topbar.slint";
+import { SettingsColCategories, MainCategory } from "settings/settings_col_categories.slint";
+import { SettingsColSubsections, SubCategoryItem } from "settings/settings_col_subsections.slint";
+import { SettingsContentPanel } from "settings/settings_content_panel.slint";
+import { PortRuleItem, PortRuleRow } from "settings/subsections/sub_system_services.slint";
+import { SubdomainRuleItem, SubdomainRuleRow } from "settings/subsections/sub_system_subdomains.slint";
+import { ColorPickerModal, HsvColorResult } from "../components/widgets/color_picker_modal.slint";
+
+export { PortRuleItem, PortRuleRow, SubdomainRuleItem, SubdomainRuleRow, HsvColorResult }
+
+export component SettingsScreen inherits Rectangle {
+    in-out property <SettingsData> datos;
+    in property <string> mensaje-error: "";
+    in property <string> mensaje-exito: "";
+    in property <bool> cambiando-clave: false;
+
+    in property <[PortRuleRow]> filas-puertos: [];
+    in property <[SubdomainRuleRow]> filas-subdominios: [];
+
+    in property <string> hex-usuario: "#2563EB";
+    in property <string> hex-password: "#EAB308";
+    in property <string> hex-totp: "#F97316";
+    in property <string> hex-passkey: "#8B5CF6";
+    in property <string> hex-url: "#06B6D4";
+    in property <string> hex-app: "#16A34A";
+
+    callback guardar(SettingsData);
+    callback restaurar-predeterminados();
+    callback restaurar-campo(string);
+    callback restaurar-seccion(string);
+    callback cambiar-clave-maestra(string, string, string);
+    callback volver();
+    callback exportar-json();
+    callback exportar-csv();
+    callback importar-bitwarden();
+    callback importar-csv();
+    callback fusionar-boveda();
+    callback abrir-generador();
+    callback auditoria-salud();
+    callback alternar-biometria(bool);
+    callback agregar-puerto(string, string);
+    callback eliminar-puerto(string);
+    callback agregar-subdominio(string);
+    callback eliminar-subdominio(string);
+    callback reportar-ancho-chips(float);
+    callback calcular-hsv(float, float, float) -> HsvColorResult;
+    callback aplicar-color-indicador(string, color, string);
+
+    property <bool> modal-color-abierto: false;
+    property <string> modal-color-clave: "";
+    property <string> modal-color-titulo: "";
+    property <string> modal-color-campo: "";
+    property <color> modal-color-actual: #2563EB;
+    property <string> modal-color-hex: "#2563EB";
+    property <float> modal-color-h: 215.0;
+    property <float> modal-color-s: 0.84;
+    property <float> modal-color-v: 0.92;
+
+    property <int> categoria-activa: 1;
+    property <int> subseccion-activa: 1;
+    property <string> termino-busqueda: "";
+
+    property <[MainCategory]> categorias: [
+        { id: 1, titulo: "Seguridad", icono: "shield", badge: "5" },
+        { id: 2, titulo: "Apariencia", icono: "palette", badge: "12" },
+        { id: 3, titulo: "Lista de cuentas", icono: "list", badge: "6" },
+        { id: 4, titulo: "Herramientas", icono: "build", badge: "5" },
+        { id: 5, titulo: "Copias y datos", icono: "save", badge: "4" },
+        { id: 6, titulo: "Sistema", icono: "settings", badge: "4" }
+    ];
+
+    property <[SubCategoryItem]> subsecciones-seguridad: [
+        { id: 1, categoria_padre: 1, titulo: "Temporizadores y Freno", badge: "\{root.datos.autobloqueo_segundos}s" },
+        { id: 2, categoria_padre: 1, titulo: "KDF Argon2id", badge: root.datos.perfil_argon2 },
+        { id: 3, categoria_padre: 1, titulo: "Clave Maestra", badge: "256 bits" },
+        { id: 4, categoria_padre: 1, titulo: "Autodestrucción y Biometría", badge: root.datos.biometria_activa ? "Biometría" : "Manual" },
+        { id: 5, categoria_padre: 1, titulo: "Contraseñas Comunes", badge: "≥ 8 chars" }
+    ];
+
+    property <[SubCategoryItem]> subsecciones-apariencia: [
+        { id: 101, categoria_padre: 2, titulo: "Tema y colores", badge: root.datos.modo_tema },
+        { id: 102, categoria_padre: 2, titulo: "Tipografía", badge: "\{Math.round(Theme.escala-texto * 100)}%" },
+        { id: 103, categoria_padre: 2, titulo: "Formas y bordes", badge: "\{Math.round(Theme.curvatura-esquinas / 1px)}px" },
+        { id: 104, categoria_padre: 2, titulo: "Personalizar menú lateral", badge: Theme.menu-lateral-mostrar-cabecera ? "Cabecera ON" : "Compacto" },
+        { id: 105, categoria_padre: 2, titulo: "Diseño de la lista", badge: root.datos.criterio_ordenacion },
+        { id: 106, categoria_padre: 2, titulo: "Índice A-Z (Niagara)", badge: root.datos.mostrar_ola_niagara ? "Ola ON" : "Oculto" },
+        { id: 107, categoria_padre: 2, titulo: "Formatos", badge: "4x4 / IBAN" },
+        { id: 108, categoria_padre: 2, titulo: "Plantillas de campos", badge: "4 presets" },
+        { id: 109, categoria_padre: 2, titulo: "Indicadores y colores", badge: Theme.estilo-indicadores },
+        { id: 110, categoria_padre: 2, titulo: "Nombre de la bóveda", badge: root.datos.nombre_boveda != "" ? root.datos.nombre_boveda : "Bóveda" },
+        { id: 111, categoria_padre: 2, titulo: "Avisos y asistencia", badge: Theme.avisos-mostrar-campana ? "Campana ON" : "Silencioso" },
+        { id: 112, categoria_padre: 2, titulo: "Animaciones y transiciones", badge: "220ms" }
+    ];
+
+    property <[SubCategoryItem]> subsecciones-lista: [
+        { id: 201, categoria_padre: 3, titulo: "Gestión de credenciales", badge: "Todas" },
+        { id: 202, categoria_padre: 3, titulo: "Ordenación y fijado", badge: root.datos.fijar_anclados_arriba ? "Anclados 1°" : "Natural" },
+        { id: 203, categoria_padre: 3, titulo: "Privacidad y seguridad visual", badge: root.datos.ocultar_contrasena ? "Oculto" : "Visible" },
+        { id: 204, categoria_padre: 3, titulo: "Salud de la bóveda", badge: "Zxcvbn" },
+        { id: 205, categoria_padre: 3, titulo: "Papelera de reciclaje", badge: "30 días" },
+        { id: 206, categoria_padre: 3, titulo: "Categorías de cuentas", badge: "Carpetas" }
+    ];
+
+    property <[SubCategoryItem]> subsecciones-herramientas: [
+        { id: 301, categoria_padre: 4, titulo: "Generador de contraseñas", badge: "20 chars" },
+        { id: 302, categoria_padre: 4, titulo: "Verificación en dos pasos", badge: "30s / 6d" },
+        { id: 303, categoria_padre: 4, titulo: "Historial de claves", badge: "5 claves" },
+        { id: 304, categoria_padre: 4, titulo: "Servicios y puertos Homelab", badge: "Puertos" },
+        { id: 305, categoria_padre: 4, titulo: "Normalización de títulos", badge: "URLs" }
+    ];
+
+    property <[SubCategoryItem]> subsecciones-copias: [
+        { id: 401, categoria_padre: 5, titulo: "Copia de seguridad y exportar", badge: ".bvda / CSV" },
+        { id: 402, categoria_padre: 5, titulo: "Importar credenciales", badge: "Bitwarden / Google" },
+        { id: 403, categoria_padre: 5, titulo: "Fusión de bóvedas (3-Vías)", badge: "Merge" },
+        { id: 404, categoria_padre: 5, titulo: "Kit de emergencia", badge: "PDF" }
+    ];
+
+    property <[SubCategoryItem]> subsecciones-sistema: [
+        { id: 501, categoria_padre: 6, titulo: "Opciones de escritorio", badge: "Ventana" },
+        { id: 502, categoria_padre: 6, titulo: "Diagnóstico criptográfico", badge: "XChaCha20" },
+        { id: 503, categoria_padre: 6, titulo: "Registro de eventos y auditoría", badge: "Logs" },
+        { id: 504, categoria_padre: 6, titulo: "Acerca de Bóveda Local", badge: "v0.1.0" }
+    ];
+
+    width: 100%;
+    height: 100%;
+    background: Theme.background;
+
+    VerticalLayout {
+        width: 100%;
+        height: 100%;
+
+        // BARRA SUPERIOR INTEGRADA ESTILO KDE PLASMA
+        SettingsTopBar {
+            termino-busqueda <=> root.termino-busqueda;
+            volver => { root.volver(); }
+            restaurar-predeterminados => { root.restaurar-predeterminados(); }
+            guardar => { root.guardar(root.datos); }
+        }
+
+        // MENSAJES DE NOTIFICACIÓN
+        if root.mensaje-exito != "" : Rectangle {
+            height: 36px;
+            background: Theme.accent-primary.transparentize(85%);
+            border-width: 1px; border-color: Theme.accent-primary;
+            HorizontalLayout {
+                alignment: center; spacing: 8px;
+                AppIcon { source: @image-url("../assets/icons/check.svg"); icon-size: 14px; icon-color: Theme.accent-primary; vertical-alignment: center; }
+                Text { text: root.mensaje-exito; color: Theme.accent-primary; font-size: 12px; font-weight: 600; vertical-alignment: center; }
+            }
+        }
+
+        if root.mensaje-error != "" : Rectangle {
+            height: 36px;
+            background: Theme.danger.transparentize(85%);
+            border-width: 1px; border-color: Theme.danger;
+            HorizontalLayout {
+                alignment: center; spacing: 8px;
+                AppIcon { source: @image-url("../assets/icons/close.svg"); icon-size: 14px; icon-color: Theme.danger; vertical-alignment: center; }
+                Text { text: root.mensaje-error; color: Theme.danger; font-size: 12px; font-weight: 600; vertical-alignment: center; }
+            }
+        }
+
+        // ARQUITECTURA DE 3 COLUMNAS (ESTILO KDE PLASMA)
+        HorizontalLayout {
+            vertical-stretch: 1;
+
+            // COLUMNA 1: Categorías Principales (~230px fija)
+            SettingsColCategories {
+                categorias: root.categorias;
+                categoria-activa <=> root.categoria-activa;
+                seleccionada(cat-id) => {
+                    if cat-id == 1 { root.subseccion-activa = 1; }
+                    else if cat-id == 2 { root.subseccion-activa = 101; }
+                    else if cat-id == 3 { root.subseccion-activa = 201; }
+                    else if cat-id == 4 { root.subseccion-activa = 301; }
+                    else if cat-id == 5 { root.subseccion-activa = 401; }
+                    else if cat-id == 6 { root.subseccion-activa = 501; }
+                }
+            }
+
+            // COLUMNA 2: Sub-secciones de la Categoría (~210px fija, SIN ÍCONOS)
+            SettingsColSubsections {
+                subsecciones: root.categoria-activa == 1 ? root.subsecciones-seguridad :
+                              root.categoria-activa == 2 ? root.subsecciones-apariencia :
+                              root.categoria-activa == 3 ? root.subsecciones-lista :
+                              root.categoria-activa == 4 ? root.subsecciones-herramientas :
+                              root.categoria-activa == 5 ? root.subsecciones-copias :
+                              root.subsecciones-sistema;
+                categoria-activa: root.categoria-activa;
+                subseccion-activa <=> root.subseccion-activa;
+            }
+
+            // COLUMNA 3: Área de Contenido y Ajustes (Flickable Vertical 100% Alto)
+            SettingsContentPanel {
+                datos <=> root.datos;
+                subseccion-activa: root.subseccion-activa;
+                cambiando-clave: root.cambiando-clave;
+                filas-puertos: root.filas-puertos;
+                filas-subdominios: root.filas-subdominios;
+                hex-usuario: root.hex-usuario;
+                hex-password: root.hex-password;
+                hex-totp: root.hex-totp;
+                hex-passkey: root.hex-passkey;
+                hex-url: root.hex-url;
+                hex-app: root.hex-app;
+
+                restaurar-campo(c) => { root.restaurar-campo(c); }
+                restaurar-seccion(s) => { root.restaurar-seccion(s); }
+                cambiar-clave-maestra(act, nva, conf) => { root.cambiar-clave-maestra(act, nva, conf); }
+                exportar-json => { root.exportar-json(); }
+                exportar-csv => { root.exportar-csv(); }
+                importar-bitwarden => { root.importar-bitwarden(); }
+                importar-csv => { root.importar-csv(); }
+                fusionar-boveda => { root.fusionar-boveda(); }
+                abrir-generador => { root.abrir-generador(); }
+                auditoria-salud => { root.auditoria-salud(); }
+                alternar-biometria(act) => { root.alternar-biometria(act); }
+                agregar-puerto(p, n) => { root.agregar-puerto(p, n); }
+                eliminar-puerto(id) => { root.eliminar-puerto(id); }
+                agregar-subdominio(s) => { root.agregar-subdominio(s); }
+                eliminar-subdominio(id) => { root.eliminar-subdominio(id); }
+                reportar-ancho-chips(w) => { root.reportar-ancho-chips(w); }
+                abrir-selector-color(c) => {
+                    root.modal-color-clave = c;
+                    root.modal-color-abierto = true;
+                    if c == "usuario" {
+                        root.modal-color-titulo = "Color de Usuario / Correo";
+                        root.modal-color-campo = "Usuario / Correo";
+                        root.modal-color-actual = Theme.color-ind-usuario;
+                        root.modal-color-hex = root.hex-usuario;
+                        root.modal-color-h = 217.0;
+                        root.modal-color-s = 0.84;
+                        root.modal-color-v = 0.92;
+                    }
+                    if c == "password" {
+                        root.modal-color-titulo = "Color de Contraseñas y Secretos";
+                        root.modal-color-campo = "Contraseñas y Secretos";
+                        root.modal-color-actual = Theme.color-ind-password;
+                        root.modal-color-hex = root.hex-password;
+                        root.modal-color-h = 45.0;
+                        root.modal-color-s = 0.96;
+                        root.modal-color-v = 0.92;
+                    }
+                    if c == "totp" {
+                        root.modal-color-titulo = "Color de Verificación en dos pasos";
+                        root.modal-color-campo = "Verificación en dos pasos";
+                        root.modal-color-actual = Theme.color-ind-totp;
+                        root.modal-color-hex = root.hex-totp;
+                        root.modal-color-h = 24.0;
+                        root.modal-color-s = 0.91;
+                        root.modal-color-v = 0.98;
+                    }
+                    if c == "passkey" {
+                        root.modal-color-titulo = "Color de Criptografía y Llaves avanzadas";
+                        root.modal-color-campo = "Criptografía y Llaves avanzadas";
+                        root.modal-color-actual = Theme.color-ind-passkey;
+                        root.modal-color-hex = root.hex-passkey;
+                        root.modal-color-h = 258.0;
+                        root.modal-color-s = 0.62;
+                        root.modal-color-v = 0.96;
+                    }
+                    if c == "url" {
+                        root.modal-color-titulo = "Color de Redes, Servidores y Web";
+                        root.modal-color-campo = "Redes, Servidores y Web";
+                        root.modal-color-actual = Theme.color-ind-url;
+                        root.modal-color-hex = root.hex-url;
+                        root.modal-color-h = 187.0;
+                        root.modal-color-s = 0.97;
+                        root.modal-color-v = 0.83;
+                    }
+                    if c == "app" {
+                        root.modal-color-titulo = "Color de Aplicaciones vinculadas";
+                        root.modal-color-campo = "Aplicaciones vinculadas";
+                        root.modal-color-actual = Theme.color-ind-app;
+                        root.modal-color-hex = root.hex-app;
+                        root.modal-color-h = 142.0;
+                        root.modal-color-s = 0.84;
+                        root.modal-color-v = 0.64;
+                    }
+                }
+            }
+        }
+    }
+
+    // Modal Selector de Color HSV Flotante (Fiel 1:1 a Android)
+    if root.modal-color-abierto : ColorPickerModal {
+        x: 0px;
+        y: 0px;
+        width: parent.width;
+        height: parent.height;
+        abierto: root.modal-color-abierto;
+        clave-color: root.modal-color-clave;
+        titulo-modal: root.modal-color-titulo;
+        nombre-campo: root.modal-color-campo;
+        color-actual: root.modal-color-actual;
+        hex-actual: root.modal-color-hex;
+        tono: root.modal-color-h;
+        saturacion: root.modal-color-s;
+        brillo: root.modal-color-v;
+
+        hsv-modificado(h, s, v) => {
+            root.modal-color-h = h;
+            root.modal-color-s = s;
+            root.modal-color-v = v;
+            let res = root.calcular-hsv(h, s, v);
+            root.modal-color-actual = res.color;
+            root.modal-color-hex = res.hex;
+        }
+
+        aceptar(clave, col, hex) => {
+            root.aplicar-color-indicador(clave, col, hex);
+            root.modal-color-abierto = false;
+        }
+
+        cancelar => {
+            root.modal-color-abierto = false;
+        }
+    }
+}

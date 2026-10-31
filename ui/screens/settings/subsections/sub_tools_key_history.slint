@@ -1,0 +1,41 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingSlider } from "../../../components/widgets/setting_slider.slint";
+import { SettingSwitch } from "../../../components/widgets/setting_switch.slint";
+
+export component SubToolsKeyHistory inherits VerticalLayout {
+    in-out property <float> max-historial: 5.0;
+    in-out property <bool> purga-automatica: true;
+
+    callback restaurar-todo();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Historial de Claves";
+        descripcion: "Retención temporal de contraseñas previamente generadas y políticas de purga.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingSlider {
+        titulo: "Máximo de Contraseñas Anteriores";
+        subtitulo: "Cantidad de claves previas guardadas en el historial de cada entrada para auditoría.";
+        sufijo: " claves";
+        minimum: 1.0;
+        maximum: 20.0;
+        step: 1.0;
+        value <=> root.max-historial;
+    }
+
+    SettingSwitch {
+        titulo: "Purga Automática de Historial Temporal";
+        subtitulo: "Destruye automáticamente las claves del historial tras 30 minutos de inactividad.";
+        checked <=> root.purga-automatica;
+    }
+}

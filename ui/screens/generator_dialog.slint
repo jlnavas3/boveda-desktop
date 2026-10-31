@@ -1,0 +1,629 @@
+import { Theme } from "../theme.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
+
+export struct GeneratorOptions {
+    longitud: int,
+    mayusculas: bool,
+    minusculas: bool,
+    numeros: bool,
+    simbolos: bool,
+    evitar_ambiguos: bool,
+    modo_frase: bool,
+    numero_palabras: int,
+    separador: string,
+    capitalizar_palabras: bool,
+}
+
+export component GeneratorDialog inherits Rectangle {
+    in-out property <GeneratorOptions> options: {
+        longitud: 20,
+        mayusculas: true,
+        minusculas: true,
+        numeros: true,
+        simbolos: true,
+        evitar_ambiguos: true,
+        modo_frase: false,
+        numero_palabras: 4,
+        separador: "-",
+        capitalizar_palabras: true,
+    };
+
+    in property <string> contrasena-generada: "";
+    in property <int> fuerza-puntuacion: 85;
+    in property <string> fuerza-etiqueta: "Fuerte";
+    in property <bool> mostrar-boton-aplicar: true;
+
+    callback regenerar(GeneratorOptions);
+    callback aplicar(string);
+    callback copiar(string);
+    callback cerrar();
+
+    // Fondo semi-transparente que bloquea la interacción inferior
+    background: #000000.transparentize(40%);
+
+    TouchArea {
+        // Bloquear clicks de pasar al fondo
+    }
+
+    VerticalLayout {
+        alignment: center;
+        HorizontalLayout {
+            alignment: center;
+
+            Rectangle {
+                width: 540px;
+                max-height: root.height * 85%;
+                background: Theme.surface;
+                border-width: 1px;
+                border-color: Theme.border;
+                border-radius: Theme.radius-lg;
+                clip: true;
+
+                Flickable {
+                    content-height: content-layout.min-height;
+
+                    content-layout := VerticalLayout {
+                        padding: 24px;
+                        spacing: 16px;
+
+            // Cabecera
+            HorizontalLayout {
+                alignment: space-between;
+
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+
+                    AppIcon {
+                        source: @image-url("../assets/icons/build.svg");
+                        icon-size: 20px;
+                        icon-color: Theme.accent-primary;
+                        vertical-alignment: center;
+                    }
+                    Text {
+                        text: "Generador Criptográfico";
+                        color: Theme.text-primary;
+                        font-size: 18px;
+                        font-weight: 700;
+                        vertical-alignment: center;
+                    }
+                }
+
+                TouchArea {
+                    width: 28px;
+                    height: 28px;
+                    clicked => { root.cerrar(); }
+
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : Colors.transparent;
+                        border-radius: Theme.radius-sm;
+                        AppIcon {
+                            source: @image-url("../assets/icons/close.svg");
+                            icon-size: 14px;
+                            icon-color: Theme.text-secondary;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            // Cuadro de Contraseña Generada
+            Rectangle {
+                background: Theme.background;
+                border-width: 1px;
+                border-color: Theme.border;
+                border-radius: Theme.radius-md;
+
+                VerticalLayout {
+                    padding: 12px;
+                    spacing: 8px;
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: center;
+
+                        TextInput {
+                            text: contrasena-generada;
+                            color: Theme.text-primary;
+                            font-size: 15px;
+                            font-family: "monospace";
+                            read-only: true;
+                            horizontal-stretch: 1;
+                            vertical-alignment: center;
+                            single-line: true;
+                        }
+
+                        // Botón Regenerar
+                        btn-regen := TouchArea {
+                            width: 32px;
+                            height: 32px;
+                            clicked => { root.regenerar(root.options); }
+
+                            Rectangle {
+                                background: btn-regen.has-hover ? Theme.surface-hover : Theme.surface;
+                                border-width: 1px;
+                                border-color: Theme.border;
+                                border-radius: Theme.radius-sm;
+                                AppIcon {
+                                    source: @image-url("../assets/icons/restart.svg");
+                                    icon-size: 15px;
+                                    icon-color: Theme.text-primary;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        // Botón Copiar
+                        btn-copiar := TouchArea {
+                            width: 32px;
+                            height: 32px;
+                            clicked => { root.copiar(contrasena-generada); }
+
+                            Rectangle {
+                                background: btn-copiar.has-hover ? Theme.surface-hover : Theme.surface;
+                                border-width: 1px;
+                                border-color: Theme.border;
+                                border-radius: Theme.radius-sm;
+                                AppIcon {
+                                    source: @image-url("../assets/icons/copy.svg");
+                                    icon-size: 15px;
+                                    icon-color: Theme.text-primary;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+
+                    // Barra de Fuerza / Entropía
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: center;
+
+                        Rectangle {
+                            horizontal-stretch: 1;
+                            height: 6px;
+                            background: Theme.surface-hover;
+                            border-radius: 3px;
+
+                            Rectangle {
+                                x: 0;
+                                width: parent.width * (fuerza-puntuacion / 100);
+                                height: 6px;
+                                border-radius: 3px;
+                                background: fuerza-puntuacion < 40 ? Theme.danger :
+                                           fuerza-puntuacion < 70 ? Theme.accent-amber :
+                                           Theme.accent-primary;
+                            }
+                        }
+
+                        Text {
+                            text: fuerza-etiqueta;
+                            color: fuerza-puntuacion < 40 ? Theme.danger :
+                                   fuerza-puntuacion < 70 ? Theme.accent-amber :
+                                   Theme.accent-primary;
+                            font-size: 11px;
+                            font-weight: 600;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            // Selector de Modo (Caracteres vs Frase)
+            HorizontalLayout {
+                spacing: 8px;
+
+                btn-modo-chars := TouchArea {
+                    horizontal-stretch: 1;
+                    height: 32px;
+                    clicked => {
+                        root.options.modo_frase = false;
+                        root.regenerar(root.options);
+                    }
+
+                    Rectangle {
+                        background: !root.options.modo_frase ? Theme.surface-selected :
+                                   btn-modo-chars.has-hover ? Theme.surface-hover : Theme.background;
+                        border-width: 1px;
+                        border-color: !root.options.modo_frase ? Theme.accent-primary : Theme.border;
+                        border-radius: Theme.radius-sm;
+
+                        Text {
+                            text: "Caracteres Aleatorios";
+                            color: !root.options.modo_frase ? Theme.accent-primary : Theme.text-secondary;
+                            font-size: 12px;
+                            font-weight: 600;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                btn-modo-frase := TouchArea {
+                    horizontal-stretch: 1;
+                    height: 32px;
+                    clicked => {
+                        root.options.modo_frase = true;
+                        root.regenerar(root.options);
+                    }
+
+                    Rectangle {
+                        background: root.options.modo_frase ? Theme.surface-selected :
+                                   btn-modo-frase.has-hover ? Theme.surface-hover : Theme.background;
+                        border-width: 1px;
+                        border-color: root.options.modo_frase ? Theme.accent-primary : Theme.border;
+                        border-radius: Theme.radius-sm;
+
+                        Text {
+                            text: "Frase Diceware";
+                            color: root.options.modo_frase ? Theme.accent-primary : Theme.text-secondary;
+                            font-size: 12px;
+                            font-weight: 600;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            // Opciones de Modo Caracteres
+            if !root.options.modo_frase : VerticalLayout {
+                spacing: 10px;
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    Text {
+                        text: "Longitud: " + root.options.longitud + " caracteres";
+                        color: Theme.text-secondary;
+                        font-size: 12px;
+                        vertical-alignment: center;
+                    }
+
+                    HorizontalLayout {
+                        spacing: 6px;
+
+                        btn-len-minus := TouchArea {
+                            width: 28px;
+                            height: 26px;
+                            clicked => {
+                                if root.options.longitud > 8 {
+                                    root.options.longitud -= 1;
+                                    root.regenerar(root.options);
+                                }
+                            }
+                            Rectangle {
+                                background: btn-len-minus.has-hover ? Theme.surface-hover : Theme.background;
+                                border-width: 1px;
+                                border-color: Theme.border;
+                                border-radius: Theme.radius-sm;
+                                Text {
+                                    text: "-";
+                                    color: Theme.text-primary;
+                                    font-size: 14px;
+                                    font-weight: 700;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        btn-len-plus := TouchArea {
+                            width: 28px;
+                            height: 26px;
+                            clicked => {
+                                if root.options.longitud < 64 {
+                                    root.options.longitud += 1;
+                                    root.regenerar(root.options);
+                                }
+                            }
+                            Rectangle {
+                                background: btn-len-plus.has-hover ? Theme.surface-hover : Theme.background;
+                                border-width: 1px;
+                                border-color: Theme.border;
+                                border-radius: Theme.radius-sm;
+                                Text {
+                                    text: "+";
+                                    color: Theme.text-primary;
+                                    font-size: 14px;
+                                    font-weight: 700;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 12px;
+
+                    btn-opt-mayus := TouchArea {
+                        horizontal-stretch: 1;
+                        height: 28px;
+                        clicked => {
+                            root.options.mayusculas = !root.options.mayusculas;
+                            root.regenerar(root.options);
+                        }
+                        Rectangle {
+                            background: root.options.mayusculas ? Theme.surface-selected : Theme.background;
+                            border-width: 1px;
+                            border-color: root.options.mayusculas ? Theme.accent-blue : Theme.border;
+                            border-radius: Theme.radius-sm;
+                            Text {
+                                text: (root.options.mayusculas ? "✓ " : "") + "Mayúsculas (A-Z)";
+                                color: root.options.mayusculas ? Theme.text-primary : Theme.text-secondary;
+                                font-size: 11px;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    btn-opt-minus := TouchArea {
+                        horizontal-stretch: 1;
+                        height: 28px;
+                        clicked => {
+                            root.options.minusculas = !root.options.minusculas;
+                            root.regenerar(root.options);
+                        }
+                        Rectangle {
+                            background: root.options.minusculas ? Theme.surface-selected : Theme.background;
+                            border-width: 1px;
+                            border-color: root.options.minusculas ? Theme.accent-blue : Theme.border;
+                            border-radius: Theme.radius-sm;
+                            Text {
+                                text: (root.options.minusculas ? "✓ " : "") + "Minúsculas (a-z)";
+                                color: root.options.minusculas ? Theme.text-primary : Theme.text-secondary;
+                                font-size: 11px;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 12px;
+
+                    btn-opt-num := TouchArea {
+                        horizontal-stretch: 1;
+                        height: 28px;
+                        clicked => {
+                            root.options.numeros = !root.options.numeros;
+                            root.regenerar(root.options);
+                        }
+                        Rectangle {
+                            background: root.options.numeros ? Theme.surface-selected : Theme.background;
+                            border-width: 1px;
+                            border-color: root.options.numeros ? Theme.accent-blue : Theme.border;
+                            border-radius: Theme.radius-sm;
+                            Text {
+                                text: (root.options.numeros ? "✓ " : "") + "Números (0-9)";
+                                color: root.options.numeros ? Theme.text-primary : Theme.text-secondary;
+                                font-size: 11px;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    btn-opt-sim := TouchArea {
+                        horizontal-stretch: 1;
+                        height: 28px;
+                        clicked => {
+                            root.options.simbolos = !root.options.simbolos;
+                            root.regenerar(root.options);
+                        }
+                        Rectangle {
+                            background: root.options.simbolos ? Theme.surface-selected : Theme.background;
+                            border-width: 1px;
+                            border-color: root.options.simbolos ? Theme.accent-blue : Theme.border;
+                            border-radius: Theme.radius-sm;
+                            Text {
+                                text: (root.options.simbolos ? "✓ " : "") + "Símbolos (!@#$)";
+                                color: root.options.simbolos ? Theme.text-primary : Theme.text-secondary;
+                                font-size: 11px;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+
+                btn-opt-amb := TouchArea {
+                    height: 28px;
+                    clicked => {
+                        root.options.evitar_ambiguos = !root.options.evitar_ambiguos;
+                        root.regenerar(root.options);
+                    }
+                    Rectangle {
+                        background: root.options.evitar_ambiguos ? Theme.surface-selected : Theme.background;
+                        border-width: 1px;
+                        border-color: root.options.evitar_ambiguos ? Theme.accent-primary : Theme.border;
+                        border-radius: Theme.radius-sm;
+                        Text {
+                            text: (root.options.evitar_ambiguos ? "✓ " : "") + "Evitar caracteres ambiguos (1, l, I, 0, O)";
+                            color: root.options.evitar_ambiguos ? Theme.text-primary : Theme.text-secondary;
+                            font-size: 11px;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            // Opciones de Modo Frase Diceware
+            if root.options.modo_frase : VerticalLayout {
+                spacing: 10px;
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    Text {
+                        text: "Cantidad de palabras: " + root.options.numero_palabras;
+                        color: Theme.text-secondary;
+                        font-size: 12px;
+                        vertical-alignment: center;
+                    }
+
+                    HorizontalLayout {
+                        spacing: 6px;
+
+                        btn-word-minus := TouchArea {
+                            width: 28px;
+                            height: 26px;
+                            clicked => {
+                                if root.options.numero_palabras > 3 {
+                                    root.options.numero_palabras -= 1;
+                                    root.regenerar(root.options);
+                                }
+                            }
+                            Rectangle {
+                                background: btn-word-minus.has-hover ? Theme.surface-hover : Theme.background;
+                                border-width: 1px;
+                                border-color: Theme.border;
+                                border-radius: Theme.radius-sm;
+                                Text {
+                                    text: "-";
+                                    color: Theme.text-primary;
+                                    font-size: 14px;
+                                    font-weight: 700;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        btn-word-plus := TouchArea {
+                            width: 28px;
+                            height: 26px;
+                            clicked => {
+                                if root.options.numero_palabras < 8 {
+                                    root.options.numero_palabras += 1;
+                                    root.regenerar(root.options);
+                                }
+                            }
+                            Rectangle {
+                                background: btn-word-plus.has-hover ? Theme.surface-hover : Theme.background;
+                                border-width: 1px;
+                                border-color: Theme.border;
+                                border-radius: Theme.radius-sm;
+                                Text {
+                                    text: "+";
+                                    color: Theme.text-primary;
+                                    font-size: 14px;
+                                    font-weight: 700;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: center;
+
+                    Text {
+                        text: "Separador:";
+                        color: Theme.text-secondary;
+                        font-size: 12px;
+                        vertical-alignment: center;
+                    }
+
+                    for sep in ["-", "_", ".", " "] : TouchArea {
+                        width: 32px;
+                        height: 28px;
+                        clicked => {
+                            root.options.separador = sep;
+                            root.regenerar(root.options);
+                        }
+                        Rectangle {
+                            background: root.options.separador == sep ? Theme.surface-selected : Theme.background;
+                            border-width: 1px;
+                            border-color: root.options.separador == sep ? Theme.accent-primary : Theme.border;
+                            border-radius: Theme.radius-sm;
+                            Text {
+                                text: sep == " " ? "esp" : sep;
+                                color: Theme.text-primary;
+                                font-size: 12px;
+                                font-weight: 700;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 1px;
+                background: Theme.border;
+            }
+
+            // Botones Inferiores
+            HorizontalLayout {
+                spacing: 12px;
+                alignment: end;
+
+                TouchArea {
+                    width: 100px;
+                    height: 36px;
+                    clicked => { root.cerrar(); }
+
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                        border-width: 1px;
+                        border-color: Theme.border;
+                        border-radius: Theme.radius-md;
+
+                        Text {
+                            text: "Cerrar";
+                            color: Theme.text-secondary;
+                            font-size: 13px;
+                            font-weight: 600;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                if mostrar-boton-aplicar : TouchArea {
+                    width: 160px;
+                    height: 36px;
+                    clicked => { root.aplicar(contrasena-generada); }
+
+                    Rectangle {
+                        background: parent.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                        border-radius: Theme.radius-md;
+
+                        HorizontalLayout {
+                            alignment: center;
+                            spacing: 6px;
+
+                            Text {
+                                text: "✓";
+                                color: #FFFFFF;
+                                font-weight: 800;
+                                vertical-alignment: center;
+                            }
+                            Text {
+                                text: "Usar Contraseña";
+                                color: #FFFFFF;
+                                font-size: 13px;
+                                font-weight: 700;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+}

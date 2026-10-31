@@ -1,0 +1,207 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { IndicatorLines } from "indicators/indicator_lines.slint";
+import { IndicatorDots } from "indicators/indicator_dots.slint";
+import { IndicatorIcons } from "indicators/indicator_icons.slint";
+import { IndicatorStrip } from "indicators/indicator_strip.slint";
+import { AppIcon } from "widgets/app_icon.slint";
+
+export struct EntryOverview {
+    id: string,
+    titulo: string,
+    subtitulo: string,
+    tipo: string,
+    favorito: bool,
+    anclado: bool,
+    categoria_id: string,
+    tiene_usuario: bool,
+    tiene_password: bool,
+    tiene_totp: bool,
+    tiene_passkey: bool,
+    tiene_url: bool,
+    tiene_app: bool,
+    tiene_notas: bool,
+    totp_codigo: string,
+    totp_restante: int,
+    servicio: string,
+    es_cabecera_grupo: bool,
+    clave_grupo: string,
+    grupo_conteo: int,
+    grupo_expandido: bool,
+    es_hijo_grupo: bool,
+}
+
+export component EntryItem inherits Rectangle {
+    in property <EntryOverview> entrada;
+    in property <bool> seleccionado: false;
+    callback clicked();
+    callback abrir-menu-contextual(string, length, length);
+
+    background: seleccionado ? Theme.surface-selected :
+                touch.has-hover ? Theme.surface-hover :
+                Theme.surface;
+    border-radius: Theme.radio-tarjetas;
+    border-width: 1px;
+    border-color: seleccionado ? Theme.accent-primary : Theme.border;
+    height: 64px;
+
+    // Conector visual sutil para cuentas hijas agrupadas
+    if entrada.es_hijo_grupo : Rectangle {
+        x: 6px;
+        y: 12px;
+        width: 3px;
+        height: root.height - 24px;
+        background: Theme.accent-primary.transparentize(50%);
+        border-radius: 1.5px;
+    }
+
+    // ESTILO 1: Líneas superiores en el borde superior
+    if Theme.estilo-indicadores == "lineas" : IndicatorLines {
+        y: 0px; width: 100%; height: 3px;
+        tiene-usuario: root.entrada.tiene_usuario;
+        tiene-password: root.entrada.tiene_password;
+        tiene-totp: root.entrada.tiene_totp;
+        tiene-passkey: root.entrada.tiene_passkey;
+        tiene-url: root.entrada.tiene_url;
+        tiene-app: root.entrada.tiene_app;
+        tiene-notas: root.entrada.tiene_notas;
+    }
+
+    touch := TouchArea {
+        pointer-event(event) => {
+            if (event.button == PointerEventButton.right && event.kind == PointerEventKind.down) {
+                root.abrir-menu-contextual(root.entrada.id, touch.mouse-x, root.y + touch.mouse-y);
+            }
+        }
+        clicked => {
+            root.clicked();
+        }
+
+        HorizontalLayout {
+            padding-left: entrada.es_hijo_grupo ? (Theme.estilo-indicadores == "lateral" ? 22px : 26px) : (Theme.estilo-indicadores == "lateral" ? 10px : 14px);
+            padding-right: 14px;
+            spacing: 12px;
+
+            // ESTILO 4: Franja lateral izquierda
+            if Theme.estilo-indicadores == "lateral" : IndicatorStrip {
+                width: 4px;
+                tiene-usuario: root.entrada.tiene_usuario;
+                tiene-password: root.entrada.tiene_password;
+                tiene-totp: root.entrada.tiene_totp;
+                tiene-passkey: root.entrada.tiene_passkey;
+                tiene-url: root.entrada.tiene_url;
+                tiene-app: root.entrada.tiene_app;
+                tiene-notas: root.entrada.tiene_notas;
+            }
+
+            VerticalLayout {
+                horizontal-stretch: 1;
+                spacing: 4px;
+                alignment: center;
+
+                // Fila 1 (Superior)
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: space-between;
+
+                    // Izquierda: Título (limpio y prominente)
+                    Text {
+                        text: entrada.titulo;
+                        color: Theme.text-primary;
+                        font-size: 13px;
+                        font-weight: 700;
+                        overflow: elide;
+                        min-width: 0px;
+                        horizontal-stretch: 1;
+                        horizontal-alignment: left;
+                        vertical-alignment: center;
+                    }
+
+                    // Derecha: TOTP activo en monospace + cuenta regresiva + Estrella favorito
+                    HorizontalLayout {
+                        spacing: 6px;
+                        alignment: end;
+
+                        if entrada.totp_codigo != "" : HorizontalLayout {
+                            spacing: 4px;
+                            alignment: center;
+
+                            Text {
+                                text: entrada.totp_codigo;
+                                color: Theme.accent-primary;
+                                font-size: 11px;
+                                font-weight: 700;
+                                vertical-alignment: center;
+                            }
+
+                            Text {
+                                text: "(\{entrada.totp_restante}s)";
+                                color: Theme.text-muted;
+                                font-size: 10px;
+                                vertical-alignment: center;
+                            }
+                        }
+
+                        if entrada.anclado : AppIcon {
+                            source: @image-url("../assets/icons/pin.svg");
+                            icon-size: 13px;
+                            icon-color: Theme.text-primary;
+                            vertical-alignment: center;
+                        }
+
+                        if entrada.favorito : AppIcon {
+                            source: @image-url("../assets/icons/star.svg");
+                            icon-size: 14px;
+                            icon-color: #F59E0B;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                // Fila 2 (Inferior)
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: space-between;
+
+                    // Izquierda: Subtítulo (usuario / detalle)
+                    Text {
+                        text: entrada.subtitulo != "" ? entrada.subtitulo : "(sin usuario o detalle)";
+                        color: Theme.text-secondary;
+                        font-size: 11px;
+                        overflow: elide;
+                        min-width: 0px;
+                        horizontal-stretch: 1;
+                        horizontal-alignment: left;
+                        vertical-alignment: center;
+                    }
+
+                    // Derecha: Indicadores de color alineados al borde derecho del contenedor
+                    if Theme.estilo-indicadores == "iconos" : IndicatorIcons {
+                        tiene-usuario: root.entrada.tiene_usuario;
+                        tiene-password: root.entrada.tiene_password;
+                        tiene-totp: root.entrada.tiene_totp;
+                        tiene-passkey: root.entrada.tiene_passkey;
+                        tiene-url: root.entrada.tiene_url;
+                        tiene-app: root.entrada.tiene_app;
+                        tiene-notas: root.entrada.tiene_notas;
+                    }
+
+                    if Theme.estilo-indicadores == "puntos" : IndicatorDots {
+                        tiene-usuario: root.entrada.tiene_usuario;
+                        tiene-password: root.entrada.tiene_password;
+                        tiene-totp: root.entrada.tiene_totp;
+                        tiene-passkey: root.entrada.tiene_passkey;
+                        tiene-url: root.entrada.tiene_url;
+                        tiene-app: root.entrada.tiene_app;
+                        tiene-notas: root.entrada.tiene_notas;
+                    }
+                }
+            }
+        }
+    }
+}

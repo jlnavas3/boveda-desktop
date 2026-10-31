@@ -1,0 +1,221 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+
+export component NiagaraSettingsSection inherits VerticalLayout {
+    in-out property <bool> efecto-ola: true;
+    in-out property <int> amplitud-ola: 24;
+    in-out property <int> alcance-ola: 110;
+    in-out property <bool> mostrar-circulo: true;
+    in-out property <int> diametro-circulo: 48;
+    in-out property <int> desplazamiento-circulo: 56;
+    in-out property <bool> incluir-enie: true;
+    in-out property <int> ancho-tactil: 26;
+    in-out property <float> opacidad-inactivas: 0.6;
+
+    spacing: 12px;
+
+    // 1. Efecto de Curvatura de Ola
+    VerticalLayout {
+        spacing: 6px;
+        Text { text: "Física y Dinámica de la Ola"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+
+        Rectangle {
+            background: Theme.background; border-radius: Theme.radius-sm;
+            border-width: 1px; border-color: Theme.border;
+            VerticalLayout {
+                padding: 10px; spacing: 8px;
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    Text { text: "Activar efecto ola en deslizamiento"; color: Theme.text-primary; font-size: 12px; vertical-alignment: center; }
+                    TouchArea {
+                        width: 70px; height: 26px;
+                        clicked => { root.efecto-ola = !root.efecto-ola; }
+                        Rectangle {
+                            background: root.efecto-ola ? Theme.accent-primary.transparentize(80%) : Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            Text { text: root.efecto-ola ? "✓ Activo" : "Inactivo"; color: root.efecto-ola ? Theme.accent-primary : Theme.text-muted; font-size: 10px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                if root.efecto-ola : HorizontalLayout {
+                    spacing: 6px;
+                    Text { text: "Amplitud:"; color: Theme.text-secondary; font-size: 11px; vertical-alignment: center; }
+                    for amp in [
+                        { val: 16, label: "16px (Suave)" },
+                        { val: 24, label: "24px (Media)" },
+                        { val: 36, label: "36px (Amplia)" },
+                        { val: 48, label: "48px (Máxima)" }
+                    ]: TouchArea {
+                        horizontal-stretch: 1; height: 26px;
+                        clicked => { root.amplitud-ola = amp.val; }
+                        Rectangle {
+                            background: root.amplitud-ola == amp.val ? Theme.accent-primary : Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            Text {
+                                text: amp.label;
+                                color: root.amplitud-ola == amp.val ? #FFFFFF : Theme.text-secondary;
+                                font-size: 10px; font-weight: 600;
+                                horizontal-alignment: center; vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+
+                if root.efecto-ola : HorizontalLayout {
+                    spacing: 6px;
+                    Text { text: "Alcance vertical (Radio):"; color: Theme.text-secondary; font-size: 11px; vertical-alignment: center; }
+                    for rad in [
+                        { val: 80, label: "80px" },
+                        { val: 110, label: "110px" },
+                        { val: 140, label: "140px" }
+                    ]: TouchArea {
+                        horizontal-stretch: 1; height: 26px;
+                        clicked => { root.alcance-ola = rad.val; }
+                        Rectangle {
+                            background: root.alcance-ola == rad.val ? Theme.accent-primary : Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            Text {
+                                text: rad.label;
+                                color: root.alcance-ola == rad.val ? #FFFFFF : Theme.text-secondary;
+                                font-size: 10px; font-weight: 600;
+                                horizontal-alignment: center; vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Círculo Flotante en la Cresta
+    VerticalLayout {
+        spacing: 6px;
+        Text { text: "Globo Flotante en la Cresta"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+
+        Rectangle {
+            background: Theme.background; border-radius: Theme.radius-sm;
+            border-width: 1px; border-color: Theme.border;
+            VerticalLayout {
+                padding: 10px; spacing: 8px;
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    Text { text: "Mostrar círculo con letra activa"; color: Theme.text-primary; font-size: 12px; vertical-alignment: center; }
+                    TouchArea {
+                        width: 70px; height: 26px;
+                        clicked => { root.mostrar-circulo = !root.mostrar-circulo; }
+                        Rectangle {
+                            background: root.mostrar-circulo ? Theme.accent-primary.transparentize(80%) : Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            Text { text: root.mostrar-circulo ? "✓ Sí" : "No"; color: root.mostrar-circulo ? Theme.accent-primary : Theme.text-muted; font-size: 10px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                if root.mostrar-circulo : HorizontalLayout {
+                    spacing: 6px;
+                    Text { text: "Diámetro:"; color: Theme.text-secondary; font-size: 11px; vertical-alignment: center; }
+                    for d in [
+                        { val: 36, label: "36px (Mini)" },
+                        { val: 48, label: "48px (Estándar)" },
+                        { val: 56, label: "56px (Grande)" }
+                    ]: TouchArea {
+                        horizontal-stretch: 1; height: 26px;
+                        clicked => { root.diametro-circulo = d.val; }
+                        Rectangle {
+                            background: root.diametro-circulo == d.val ? Theme.accent-primary : Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            Text {
+                                text: d.label;
+                                color: root.diametro-circulo == d.val ? #FFFFFF : Theme.text-secondary;
+                                font-size: 10px; font-weight: 600;
+                                horizontal-alignment: center; vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Letras, Zona Táctil y Respuesta
+    VerticalLayout {
+        spacing: 6px;
+        Text { text: "Letras, Zona Interactiva y Contraste"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+
+        Rectangle {
+            background: Theme.background; border-radius: Theme.radius-sm;
+            border-width: 1px; border-color: Theme.border;
+            VerticalLayout {
+                padding: 10px; spacing: 8px;
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    Text { text: "Incluir letra 'Ñ' en la franja"; color: Theme.text-primary; font-size: 12px; vertical-alignment: center; }
+                    TouchArea {
+                        width: 70px; height: 26px;
+                        clicked => { root.incluir-enie = !root.incluir-enie; }
+                        Rectangle {
+                            background: root.incluir-enie ? Theme.accent-primary.transparentize(80%) : Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            Text { text: root.incluir-enie ? "✓ Sí" : "No"; color: root.incluir-enie ? Theme.accent-primary : Theme.text-muted; font-size: 10px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 6px;
+                    Text { text: "Ancho zona táctil:"; color: Theme.text-secondary; font-size: 11px; vertical-alignment: center; }
+                    for w in [
+                        { val: 20, label: "20px" },
+                        { val: 26, label: "26px" },
+                        { val: 34, label: "34px" }
+                    ]: TouchArea {
+                        horizontal-stretch: 1; height: 26px;
+                        clicked => { root.ancho-tactil = w.val; }
+                        Rectangle {
+                            background: root.ancho-tactil == w.val ? Theme.accent-primary : Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            Text {
+                                text: w.label;
+                                color: root.ancho-tactil == w.val ? #FFFFFF : Theme.text-secondary;
+                                font-size: 10px; font-weight: 600;
+                                horizontal-alignment: center; vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 6px;
+                    Text { text: "Opacidad letras inactivas:"; color: Theme.text-secondary; font-size: 11px; vertical-alignment: center; }
+                    for op in [
+                        { val: 0.4, label: "40%" },
+                        { val: 0.6, label: "60%" },
+                        { val: 0.9, label: "90%" }
+                    ]: TouchArea {
+                        horizontal-stretch: 1; height: 26px;
+                        clicked => { root.opacidad-inactivas = op.val; }
+                        Rectangle {
+                            background: Math.abs(root.opacidad-inactivas - op.val) < 0.05 ? Theme.accent-primary : Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            Text {
+                                text: op.label;
+                                color: Math.abs(root.opacidad-inactivas - op.val) < 0.05 ? #FFFFFF : Theme.text-secondary;
+                                font-size: 10px; font-weight: 600;
+                                horizontal-alignment: center; vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

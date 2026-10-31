@@ -1,0 +1,210 @@
+import { Theme } from "../../theme.slint";
+
+export struct AccentColorOption {
+    clave: string,
+    nombre: string,
+    color_hex: color,
+}
+
+export component AppearanceSection inherits VerticalLayout {
+    in-out property <string> modo-tema: "oscuro";
+    in-out property <string> color-acento: "menta";
+    in-out property <string> nombre-boveda: "Mi Bóveda Principal";
+
+    callback cambiar-modo(string);
+    callback cambiar-acento(string);
+    callback cambiar-nombre-boveda(string);
+
+    spacing: 12px;
+
+    // 1. Selector de Modo de Tema
+    VerticalLayout {
+        spacing: 6px;
+        Text { text: "Modo de Visualización"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+
+        HorizontalLayout {
+            spacing: 8px;
+            for m in [
+                { id: "oscuro", nombre: "🌙 Oscuro" },
+                { id: "claro", nombre: "☀️ Claro" },
+                { id: "amoled", nombre: "🖤 AMOLED" },
+                { id: "sistema", nombre: "💻 Sistema" }
+            ]: TouchArea {
+                horizontal-stretch: 1; height: 36px;
+                clicked => {
+                    root.modo-tema = m.id;
+                    root.cambiar-modo(m.id);
+                }
+                Rectangle {
+                    background: root.modo-tema == m.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: 1px;
+                    border-color: root.modo-tema == m.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+
+                    Text {
+                        text: m.nombre;
+                        color: root.modo-tema == m.id ? Theme.accent-primary : Theme.text-primary;
+                        font-size: 12px; font-weight: 600;
+                        horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Laboratorio de 19 Paletas de Acento Soberanas de Android
+    VerticalLayout {
+        spacing: 6px;
+        HorizontalLayout {
+            alignment: space-between;
+            Text { text: "Color de Acento Canónico (19 Paletas)"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+            Text { text: root.color-acento; color: Theme.accent-primary; font-size: 11px; font-weight: 700; }
+        }
+
+        // Fila 1 de Acentos
+        HorizontalLayout {
+            spacing: 6px;
+            for a in [
+                { clave: "menta", hex: #57E6B4 },
+                { clave: "azul", hex: #6FA8FF },
+                { clave: "rosa", hex: #FF8FCB },
+                { clave: "violeta", hex: #B98BFF },
+                { clave: "rojo", hex: #F44336 },
+                { clave: "purpura", hex: #9C27B0 },
+                { clave: "purpura_oscuro", hex: #673AB7 },
+                { clave: "indigo", hex: #3F51B5 },
+                { clave: "celeste", hex: #03A9F4 },
+                { clave: "cian", hex: #00BCD4 }
+            ]: TouchArea {
+                width: 26px; height: 26px;
+                clicked => {
+                    root.color-acento = a.clave;
+                    root.cambiar-acento(a.clave);
+                }
+                Rectangle {
+                    border-radius: 13px;
+                    background: a.hex;
+                    border-width: root.color-acento == a.clave ? 2px : 0px;
+                    border-color: #FFFFFF;
+                }
+            }
+        }
+
+        // Fila 2 de Acentos
+        HorizontalLayout {
+            spacing: 6px;
+            for a in [
+                { clave: "verde", hex: #4CAF50 },
+                { clave: "verde_claro", hex: #8BC34A },
+                { clave: "lima", hex: #CDDC39 },
+                { clave: "amarillo", hex: #FFEB3B },
+                { clave: "naranja", hex: #FF9800 },
+                { clave: "naranja_oscuro", hex: #FF5722 },
+                { clave: "marron", hex: #8D6E63 },
+                { clave: "gris", hex: #B0BEC5 },
+                { clave: "gris_azulado", hex: #90A4AE }
+            ]: TouchArea {
+                width: 26px; height: 26px;
+                clicked => {
+                    root.color-acento = a.clave;
+                    root.cambiar-acento(a.clave);
+                }
+                Rectangle {
+                    border-radius: 13px;
+                    background: a.hex;
+                    border-width: root.color-acento == a.clave ? 2px : 0px;
+                    border-color: #FFFFFF;
+                }
+            }
+        }
+    }
+
+    // 3. Radio de Bordes / Esquinas
+    VerticalLayout {
+        spacing: 6px;
+        Text { text: "Radio de Bordes y Esquinas"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+        HorizontalLayout {
+            spacing: 8px;
+            for r in [
+                { val: 0px, nombre: "0px (Cuadrado)" },
+                { val: 4px, nombre: "4px (Sutil)" },
+                { val: 8px, nombre: "8px (Estándar)" },
+                { val: 16px, nombre: "16px (Redondo)" }
+            ]: TouchArea {
+                horizontal-stretch: 1; height: 32px;
+                clicked => {
+                    Theme.radio-tarjetas = r.val;
+                    Theme.radius-sm = r.val <= 4px ? r.val : 4px;
+                    Theme.radius-md = r.val;
+                    Theme.radius-lg = r.val >= 8px ? r.val + 4px : 8px;
+                }
+                Rectangle {
+                    background: Theme.radio-tarjetas == r.val ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: 1px;
+                    border-color: Theme.radio-tarjetas == r.val ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+
+                    Text {
+                        text: r.nombre;
+                        color: Theme.radio-tarjetas == r.val ? Theme.accent-primary : Theme.text-primary;
+                        font-size: 11px; font-weight: 600;
+                        horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+
+    // 4. Estilo de Indicadores de Campos en Tarjetas (Fiel a Android)
+    VerticalLayout {
+        spacing: 6px;
+        Text { text: "Estilo de Indicadores de Datos en Tarjetas"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+        HorizontalLayout {
+            spacing: 8px;
+            for est in [
+                { id: "lineas", nombre: "━ Líneas" },
+                { id: "puntos", nombre: "• Puntos" },
+                { id: "iconos", nombre: "🏷 Iconos" },
+                { id: "lateral", nombre: "▌ Lateral" },
+                { id: "ninguno", nombre: "✕ Ninguno" }
+            ]: TouchArea {
+                horizontal-stretch: 1; height: 32px;
+                clicked => { Theme.estilo-indicadores = est.id; }
+                Rectangle {
+                    background: Theme.estilo-indicadores == est.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: 1px;
+                    border-color: Theme.estilo-indicadores == est.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+
+                    Text {
+                        text: est.nombre;
+                        color: Theme.estilo-indicadores == est.id ? Theme.accent-primary : Theme.text-primary;
+                        font-size: 11px; font-weight: 600;
+                        horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+
+    // 5. Nombre Personalizado de la Bóveda
+    VerticalLayout {
+        spacing: 6px;
+        Text { text: "Nombre de la Bóveda"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; }
+        Rectangle {
+            height: 36px; background: Theme.background;
+            border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+            HorizontalLayout {
+                padding-left: 10px; padding-right: 10px;
+                TextInput {
+                    text <=> root.nombre-boveda;
+                    color: Theme.text-primary;
+                    font-size: 12px;
+                    vertical-alignment: center;
+                    single-line: true;
+                    accepted => { root.cambiar-nombre-boveda(root.nombre-boveda); }
+                }
+            }
+        }
+    }
+}

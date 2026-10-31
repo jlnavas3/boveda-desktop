@@ -1,0 +1,42 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+
+export component IndicatorStrip inherits VerticalLayout {
+    in property <bool> tiene-usuario: false;
+    in property <bool> tiene-password: false;
+    in property <bool> tiene-totp: false;
+    in property <bool> tiene-passkey: false;
+    in property <bool> tiene-url: false;
+    in property <bool> tiene-app: false;
+    in property <bool> tiene-notas: false;
+
+    width: 4px;
+    spacing: 2px;
+
+    if root.tiene-usuario : Rectangle {
+        vertical-stretch: 1; border-radius: 1px; background: Theme.color-ind-usuario.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+    }
+    if root.tiene-password : Rectangle {
+        vertical-stretch: 1; border-radius: 1px; background: Theme.color-ind-password.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+    }
+    if root.tiene-totp : Rectangle {
+        vertical-stretch: 1; border-radius: 1px; background: Theme.color-ind-totp.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+    }
+    if root.tiene-passkey : Rectangle {
+        vertical-stretch: 1; border-radius: 1px; background: Theme.color-ind-passkey.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+    }
+    if root.tiene-url : Rectangle {
+        vertical-stretch: 1; border-radius: 1px; background: Theme.color-ind-url.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+    }
+    if root.tiene-app : Rectangle {
+        vertical-stretch: 1; border-radius: 1px; background: Theme.color-ind-app.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+    }
+    if root.tiene-notas : Rectangle {
+        vertical-stretch: 1; border-radius: 1px; background: Theme.color-ind-notas.transparentize(100% - (Theme.opacidad-indicadores * 100%));
+    }
+}

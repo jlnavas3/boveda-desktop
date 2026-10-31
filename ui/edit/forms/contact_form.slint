@@ -1,0 +1,82 @@
+import { Theme } from "../../theme.slint";
+
+export component ContactForm inherits VerticalLayout {
+    in-out property <string> nombre: "";
+    in-out property <string> correo: "";
+    in-out property <string> telefono: "";
+    in-out property <string> empresa: "";
+
+    spacing: 10px;
+
+    VerticalLayout {
+        spacing: 4px;
+        Text { text: "Nombre Completo"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        Rectangle {
+            height: 36px; background: Theme.background;
+            border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+            HorizontalLayout {
+                padding-left: 8px; padding-right: 8px;
+                TextInput {
+                    text <=> root.nombre;
+                    color: Theme.text-primary; font-size: 12px;
+                    vertical-alignment: center; single-line: true;
+                }
+            }
+        }
+    }
+
+    HorizontalLayout {
+        spacing: 8px;
+
+        VerticalLayout {
+            horizontal-stretch: 1; spacing: 4px;
+            Text { text: "Correo Electrónico"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.correo;
+                        color: Theme.text-primary; font-size: 12px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+        }
+
+        VerticalLayout {
+            horizontal-stretch: 1; spacing: 4px;
+            Text { text: "Teléfono"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.telefono;
+                        color: Theme.text-primary; font-size: 12px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+        }
+    }
+
+    VerticalLayout {
+        spacing: 4px;
+        Text { text: "Organización o Empresa"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        Rectangle {
+            height: 36px; background: Theme.background;
+            border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+            HorizontalLayout {
+                padding-left: 8px; padding-right: 8px;
+                TextInput {
+                    text <=> root.empresa;
+                    color: Theme.text-primary; font-size: 12px;
+                    vertical-alignment: center; single-line: true;
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,234 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+import { SettingSlider } from "../../../components/widgets/setting_slider.slint";
+import { SettingColorRow } from "../../../components/widgets/setting_color_row.slint";
+import { RestoreButton } from "../../../components/widgets/restore_button.slint";
+
+export component SubAppearanceIndicators inherits VerticalLayout {
+    in property <string> hex-usuario: "#2563EB";
+    in property <string> hex-password: "#EAB308";
+    in property <string> hex-totp: "#F97316";
+    in property <string> hex-passkey: "#8B5CF6";
+    in property <string> hex-url: "#06B6D4";
+    in property <string> hex-app: "#16A34A";
+
+    callback restaurar-todo();
+    callback restaurar-estilo();
+    callback restaurar-calibracion();
+    callback restaurar-colores();
+    callback abrir-selector-color(string);
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Indicadores y Colores de Campos";
+        descripcion: "Personalización de las marcas visuales de contenido en las tarjetas de entradas.";
+        restaurar-grupo => { root.restaurar-todo(); }
+    }
+
+    SettingBlock {
+        titulo: "Estilo Visual de los Indicadores";
+        descripcion: "Define la geometría y disposición de las señales de presencia de usuario, clave, TOTP y notas.";
+        restaurar => { root.restaurar-estilo(); }
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            for est in [
+                { id: "lineas", nombre: "Líneas" },
+                { id: "puntos", nombre: "Puntos" },
+                { id: "iconos", nombre: "Íconos" },
+                { id: "lateral", nombre: "Lateral" },
+                { id: "ninguno", nombre: "Ninguno" }
+            ]: TouchArea {
+                width: 80px; height: 32px;
+                clicked => { Theme.estilo-indicadores = est.id; }
+                Rectangle {
+                    background: Theme.estilo-indicadores == est.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                    border-width: Theme.grosor-borde;
+                    border-color: Theme.estilo-indicadores == est.id ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+
+                    Text {
+                        text: est.nombre;
+                        color: Theme.estilo-indicadores == est.id ? Theme.accent-primary : Theme.text-primary;
+                        font-size: 11px; font-weight: 600;
+                        horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+
+    SettingSlider {
+        titulo: "Tamaño de Indicadores";
+        subtitulo: "Diámetro o calibre de los puntos e iconos identificadores en cada tarjeta.";
+        sufijo: "px";
+        minimum: 8.0;
+        maximum: 20.0;
+        step: 1.0;
+        value: Theme.tamanio-indicadores / 1px;
+        changed(val) => {
+            Theme.tamanio-indicadores = val * 1px;
+        }
+    }
+
+    SettingSlider {
+        titulo: "Opacidad de Indicadores";
+        subtitulo: "Transparencia de los distintivos para armonizar con el fondo del tema.";
+        sufijo: "%";
+        minimum: 20.0;
+        maximum: 100.0;
+        step: 5.0;
+        value: Theme.opacidad-indicadores * 100.0;
+        changed(val) => {
+            Theme.opacidad-indicadores = val / 100.0;
+        }
+    }
+
+    // Tarjeta Canónica Oficial: Colores de datos e indicadores
+    Rectangle {
+        background: Theme.surface;
+        border-radius: Theme.curvatura-esquinas;
+        border-width: Theme.grosor-borde;
+        border-color: Theme.border;
+
+        VerticalLayout {
+            padding: 14px;
+            spacing: 8px;
+
+            // Cabecera: Título SIN icono a la izquierda + Botón Restaurar alineado a la derecha
+            HorizontalLayout {
+                alignment: space-between;
+                spacing: 8px;
+
+                Text {
+                    text: "Colores de datos e indicadores";
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: Theme.text-primary;
+                    horizontal-stretch: 1;
+                    horizontal-alignment: left;
+                    vertical-alignment: center;
+                }
+
+                RestoreButton {
+                    compacto: true;
+                    restored => { root.restaurar-colores(); }
+                }
+            }
+
+            // Subtítulo descriptivo
+            Text {
+                text: "Personalización de la paleta cromática para cada tipo de credencial y campo.";
+                font-size: 11px;
+                color: Theme.text-secondary;
+                wrap: word-wrap;
+                horizontal-alignment: left;
+            }
+
+            // Separador con margen de 6px
+            VerticalLayout {
+                padding-top: 6px;
+                padding-bottom: 6px;
+                Rectangle {
+                    height: 1px;
+                    background: Theme.border;
+                }
+            }
+
+            // 1. Identidades y Titulares
+            SettingColorRow {
+                icono-fuente: @image-url("../../../assets/icons/person.svg");
+                titulo: "Identidades y Titulares";
+                subtitulo: "Usuarios, correos, titulares bancarios, SSH y documentos";
+                color-actual: Theme.color-ind-usuario;
+                hex-texto: root.hex-usuario;
+                al-pulsar => { root.abrir-selector-color("usuario"); }
+            }
+
+            VerticalLayout {
+                padding-top: 6px; padding-bottom: 6px;
+                Rectangle { height: 1px; background: Theme.border; }
+            }
+
+            // 2. Contraseñas y Secretos
+            SettingColorRow {
+                icono-fuente: @image-url("../../../assets/icons/key.svg");
+                titulo: "Contraseñas y Secretos";
+                subtitulo: "Claves web, contraseñas, Wi-Fi, CVV, PIN y claves privadas";
+                color-actual: Theme.color-ind-password;
+                hex-texto: root.hex-password;
+                al-pulsar => { root.abrir-selector-color("password"); }
+            }
+
+            VerticalLayout {
+                padding-top: 6px; padding-bottom: 6px;
+                Rectangle { height: 1px; background: Theme.border; }
+            }
+
+            // 3. Códigos y Vigencia (2FA)
+            SettingColorRow {
+                icono-fuente: @image-url("../../../assets/icons/timer.svg");
+                titulo: "Códigos y Vigencia (2FA)";
+                subtitulo: "Tokens TOTP, seguridad Wi-Fi y fechas de vencimiento";
+                color-actual: Theme.color-ind-totp;
+                hex-texto: root.hex-totp;
+                al-pulsar => { root.abrir-selector-color("totp"); }
+            }
+
+            VerticalLayout {
+                padding-top: 6px; padding-bottom: 6px;
+                Rectangle { height: 1px; background: Theme.border; }
+            }
+
+            // 4. Criptografía y Llaves avanzadas
+            SettingColorRow {
+                icono-fuente: @image-url("../../../assets/icons/fingerprint.svg");
+                titulo: "Criptografía y Llaves avanzadas";
+                subtitulo: "Passkeys FIDO2, frases semilla y claves públicas";
+                color-actual: Theme.color-ind-passkey;
+                hex-texto: root.hex-passkey;
+                al-pulsar => { root.abrir-selector-color("passkey"); }
+            }
+
+            VerticalLayout {
+                padding-top: 6px; padding-bottom: 6px;
+                Rectangle { height: 1px; background: Theme.border; }
+            }
+
+            // 5. Redes, Servidores y Web
+            SettingColorRow {
+                icono-fuente: @image-url("../../../assets/icons/language.svg");
+                titulo: "Redes, Servidores y Web";
+                subtitulo: "Sitios web, hosts de servidores, SSID Wi-Fi y bancos";
+                color-actual: Theme.color-ind-url;
+                hex-texto: root.hex-url;
+                al-pulsar => { root.abrir-selector-color("url"); }
+            }
+
+            VerticalLayout {
+                padding-top: 6px; padding-bottom: 6px;
+                Rectangle { height: 1px; background: Theme.border; }
+            }
+
+            // 6. Aplicaciones vinculadas
+            SettingColorRow {
+                icono-fuente: @image-url("../../../assets/icons/android.svg");
+                titulo: "Aplicaciones vinculadas";
+                subtitulo: "Paquetes y aplicaciones Android asociadas";
+                color-actual: Theme.color-ind-app;
+                hex-texto: root.hex-app;
+                al-pulsar => { root.abrir-selector-color("app"); }
+            }
+        }
+    }
+}

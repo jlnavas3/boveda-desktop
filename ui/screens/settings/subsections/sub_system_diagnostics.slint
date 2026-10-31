@@ -1,0 +1,84 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+
+export component SubSystemDiagnostics inherits VerticalLayout {
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Diagnóstico Criptográfico";
+        descripcion: "Auditoría de integridad, aislamiento de memoria y compatibilidad criptográfica de hardware.";
+    }
+
+    SettingBlock {
+        titulo: "Pruebas de Aislamiento y Resistencia";
+        descripcion: "Estado de las primitivas de cifrado activas en este entorno de escritorio.";
+        mostrar-restaurar: false;
+
+        VerticalLayout {
+            spacing: 8px;
+
+            Rectangle {
+                height: 48px;
+                background: Theme.background;
+                border-radius: Theme.radius-sm;
+                border-width: Theme.grosor-borde;
+                border-color: Theme.border;
+
+                HorizontalLayout {
+                    padding-left: 12px; padding-right: 12px; spacing: 10px; alignment: space-between;
+                    VerticalLayout {
+                        alignment: center; spacing: 2px;
+                        Text { text: "Cifrado Autenticado"; font-size: 12px; font-weight: 600; color: Theme.text-primary; }
+                        Text { text: "XChaCha20-Poly1305 (256 bits) con Nonce extendido de 192 bits"; font-size: 10px; color: Theme.text-muted; }
+                    }
+                    Rectangle {
+                        height: 24px;
+                        background: Theme.surface-hover;
+                        border-radius: Theme.radius-sm;
+                        border-width: Theme.grosor-borde;
+                        border-color: Theme.border;
+                        HorizontalLayout {
+                            padding-left: 8px; padding-right: 8px; alignment: center;
+                            Text { text: "✓ Activo"; color: Theme.accent-primary; font-size: 11px; font-weight: 700; vertical-alignment: center; }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 48px;
+                background: Theme.background;
+                border-radius: Theme.radius-sm;
+                border-width: Theme.grosor-borde;
+                border-color: Theme.border;
+
+                HorizontalLayout {
+                    padding-left: 12px; padding-right: 12px; spacing: 10px; alignment: space-between;
+                    VerticalLayout {
+                        alignment: center; spacing: 2px;
+                        Text { text: "Derivación KDF"; font-size: 12px; font-weight: 600; color: Theme.text-primary; }
+                        Text { text: "Argon2id v0x13 contra ataques GPU/ASIC por memoria dura"; font-size: 10px; color: Theme.text-muted; }
+                    }
+                    Rectangle {
+                        height: 24px;
+                        background: Theme.surface-hover;
+                        border-radius: Theme.radius-sm;
+                        border-width: Theme.grosor-borde;
+                        border-color: Theme.border;
+                        HorizontalLayout {
+                            padding-left: 8px; padding-right: 8px; alignment: center;
+                            Text { text: "✓ Verificado"; color: Theme.accent-primary; font-size: 11px; font-weight: 700; vertical-alignment: center; }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

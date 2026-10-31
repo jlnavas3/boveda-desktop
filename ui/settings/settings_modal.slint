@@ -1,0 +1,324 @@
+import { Theme } from "../theme.slint";
+import { AccordionItem } from "accordion_item.slint";
+import { SecuritySection } from "sections/security_section.slint";
+import { AppearanceSection } from "sections/appearance_section.slint";
+import { AccountsSection } from "sections/accounts_section.slint";
+import { ToolsSection } from "sections/tools_section.slint";
+import { BackupsSection } from "sections/backups_section.slint";
+import { SystemSection } from "sections/system_section.slint";
+
+export struct SettingsData {
+    // Seguridad
+    portapapeles_segundos: int,
+    autobloqueo_segundos: int,
+    autodestruccion_intentos: int,
+    perfil_argon2: string,
+    biometria_activa: bool,
+
+    // Apariencia
+    modo_tema: string,
+    color_acento: string,
+    nombre_boveda: string,
+
+    // Lista y Privacidad
+    ocultar_usuario: bool,
+    ocultar_contrasena: bool,
+    ocultar_notas: bool,
+    ocultar_campos: bool,
+    criterio_ordenacion: string,
+    fijar_anclados_arriba: bool,
+    mostrar_ola_niagara: bool,
+    incluir_enie_niagara: bool,
+
+    // Homelab y Red
+    prefijos_subdominios: string,
+    puertos_homelab: string,
+}
+
+export component SettingsModal inherits Rectangle {
+    in-out property <SettingsData> datos: {
+        portapapeles_segundos: 30,
+        autobloqueo_segundos: 60,
+        autodestruccion_intentos: 0,
+        perfil_argon2: "ESTANDAR",
+        biometria_activa: false,
+        modo_tema: "oscuro",
+        color_acento: "menta",
+        nombre_boveda: "Mi Bóveda Principal",
+        ocultar_usuario: false,
+        ocultar_contrasena: true,
+        ocultar_notas: false,
+        ocultar_campos: true,
+        criterio_ordenacion: "TITULO_AZ",
+        fijar_anclados_arriba: true,
+        mostrar_ola_niagara: true,
+        incluir_enie_niagara: true,
+        prefijos_subdominios: "admin, api, auth, cdn, dev, login, mail, portal, vpn",
+        puertos_homelab: "8006: Proxmox\n8096: Jellyfin\n8123: Home Assistant\n9000: Portainer\n9443: Portainer SSL\n5000: Synology DSM",
+    };
+
+    in property <string> mensaje-error: "";
+    in property <string> mensaje-exito: "";
+    in property <bool> cambiando-clave: false;
+
+    callback guardar(SettingsData);
+    callback cambiar-clave-maestra(string, string, string);
+    callback cerrar();
+    callback exportar-json();
+    callback exportar-csv();
+    callback importar-bitwarden();
+    callback importar-csv();
+    callback fusionar-boveda();
+    callback abrir-generador();
+    callback auditoria-salud();
+    callback alternar-biometria(bool);
+
+    property <string> termino-busqueda: "";
+    property <int> grupo-abierto: 0; // 0=ninguno o específico
+
+    // Fondo protector semi-transparente
+    background: #000000.transparentize(35%);
+
+    TouchArea {
+        // Bloquear eventos hacia el fondo
+    }
+
+    VerticalLayout {
+        alignment: center;
+
+        HorizontalLayout {
+            alignment: center;
+
+            Rectangle {
+                width: Math.max(Math.min(root.width * 85%, 820px), 550px);
+                max-height: root.height * 88%;
+                background: Theme.surface;
+                border-width: 1px;
+                border-color: Theme.border;
+                border-radius: Theme.radius-lg;
+                clip: true;
+
+                VerticalLayout {
+                    // Cabecera Modal con Buscador
+                    VerticalLayout {
+                        padding: 16px;
+                        spacing: 12px;
+
+                        HorizontalLayout {
+                            alignment: space-between;
+
+                            HorizontalLayout {
+                                spacing: 8px;
+                                alignment: start;
+                                Text { text: "⚙"; font-size: 20px; vertical-alignment: center; }
+                                Text { text: "Ajustes de Bóveda"; color: Theme.text-primary; font-size: 18px; font-weight: 700; vertical-alignment: center; }
+                            }
+
+                            TouchArea {
+                                width: 28px; height: 28px;
+                                clicked => { root.cerrar(); }
+                                Rectangle {
+                                    background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                                    border-radius: Theme.radius-sm;
+                                    border-width: 1px; border-color: Theme.border;
+                                    Text { text: "✕"; color: Theme.text-muted; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; }
+                                }
+                            }
+                        }
+
+                        // Buscador general de ajustes
+                        Rectangle {
+                            height: 38px;
+                            background: Theme.background;
+                            border-width: 1px;
+                            border-color: in-busqueda.has-focus ? Theme.border-focus : Theme.border;
+                            border-radius: Theme.radius-md;
+
+                            HorizontalLayout {
+                                padding-left: 10px; padding-right: 10px; spacing: 8px;
+                                Text { text: "🔍"; font-size: 13px; vertical-alignment: center; }
+                                in-busqueda := TextInput {
+                                    text <=> root.termino-busqueda;
+                                    color: Theme.text-primary;
+                                    font-size: 12px;
+                                    vertical-alignment: center;
+                                    single-line: true;
+                                    horizontal-stretch: 1;
+                                }
+                            }
+                            if !in-busqueda.has-focus && in-busqueda.text == "" : Text {
+                                x: 34px; text: "Buscar en ajustes..."; color: Theme.text-muted; font-size: 12px; vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    Rectangle { height: 1px; background: Theme.border; }
+
+                    // Lista desplazable de los 6 Acordeones
+                    Flickable {
+                        content-height: accordion-layout.min-height;
+
+                        accordion-layout := VerticalLayout {
+                            padding: 16px;
+                            spacing: 10px;
+
+                            // Mensaje de éxito / error
+                            if root.mensaje-exito != "" : Rectangle {
+                                background: Theme.accent-primary.transparentize(85%);
+                                border-width: 1px; border-color: Theme.accent-primary;
+                                border-radius: Theme.radius-sm;
+                                HorizontalLayout {
+                                    padding: 8px; alignment: center;
+                                    Text { text: root.mensaje-exito; color: Theme.accent-primary; font-size: 12px; font-weight: 600; horizontal-alignment: center; }
+                                }
+                            }
+                            if root.mensaje-error != "" : Rectangle {
+                                background: Theme.danger.transparentize(85%);
+                                border-width: 1px; border-color: Theme.danger;
+                                border-radius: Theme.radius-sm;
+                                HorizontalLayout {
+                                    padding: 8px; alignment: center;
+                                    Text { text: root.mensaje-error; color: Theme.danger; font-size: 12px; font-weight: 600; horizontal-alignment: center; }
+                                }
+                            }
+
+                            // 1. 🛡️ SEGURIDAD
+                            AccordionItem {
+                                icono: "🛡";
+                                titulo: "Seguridad y Cifrado";
+                                subtitulo: "Biometría, temporizadores, Argon2id y contraseña maestra";
+                                badge: "KDF";
+                                expandido: root.termino-busqueda != "" || root.grupo-abierto == 1;
+                                toggle => { root.grupo-abierto = (root.grupo-abierto == 1) ? 0 : 1; }
+
+                                SecuritySection {
+                                    portapapeles-segundos <=> root.datos.portapapeles_segundos;
+                                    autobloqueo-segundos <=> root.datos.autobloqueo_segundos;
+                                    autodestruccion-intentos <=> root.datos.autodestruccion_intentos;
+                                    perfil-argon2 <=> root.datos.perfil_argon2;
+                                    biometria-activa <=> root.datos.biometria_activa;
+                                    cambiar-clave(act, nva, conf) => { root.cambiar-clave-maestra(act, nva, conf); }
+                                    alternar-biometria(activa) => { root.alternar-biometria(activa); }
+                                }
+                            }
+
+                            // 2. 🎨 APARIENCIA
+                            AccordionItem {
+                                icono: "🎨";
+                                titulo: "Apariencia y Temas";
+                                subtitulo: "Modo de visualización, 19 acentos oficiales y nombre de bóveda";
+                                badge: "Temas";
+                                expandido: root.termino-busqueda != "" || root.grupo-abierto == 2;
+                                toggle => { root.grupo-abierto = (root.grupo-abierto == 2) ? 0 : 2; }
+
+                                AppearanceSection {
+                                    modo-tema <=> root.datos.modo_tema;
+                                    color-acento <=> root.datos.color_acento;
+                                    nombre-boveda <=> root.datos.nombre_boveda;
+                                }
+                            }
+
+                            // 3. 📋 LISTA DE CUENTAS
+                            AccordionItem {
+                                icono: "📋";
+                                titulo: "Lista de Cuentas y Privacidad";
+                                subtitulo: "Ordenación, fijados, Ola Niagara A-Z y ocultamiento";
+                                badge: "Niagara";
+                                expandido: root.termino-busqueda != "" || root.grupo-abierto == 3;
+                                toggle => { root.grupo-abierto = (root.grupo-abierto == 3) ? 0 : 3; }
+
+                                AccountsSection {
+                                    criterio-ordenacion <=> root.datos.criterio_ordenacion;
+                                    fijar-anclados-arriba <=> root.datos.fijar_anclados_arriba;
+                                    mostrar-ola-niagara <=> root.datos.mostrar_ola_niagara;
+                                    incluir-enie-niagara <=> root.datos.incluir_enie_niagara;
+                                    ocultar-usuario <=> root.datos.ocultar_usuario;
+                                    ocultar-contrasena <=> root.datos.ocultar_contrasena;
+                                    ocultar-notas <=> root.datos.ocultar_notas;
+                                    ocultar-campos <=> root.datos.ocultar_campos;
+                                }
+                            }
+
+                            // 4. 🛠️ HERRAMIENTAS
+                            AccordionItem {
+                                icono: "🛠";
+                                titulo: "Herramientas de Seguridad";
+                                subtitulo: "Generador Diceware, parámetros 2FA y auditoría de salud";
+                                badge: "2FA";
+                                expandido: root.termino-busqueda != "" || root.grupo-abierto == 4;
+                                toggle => { root.grupo-abierto = (root.grupo-abierto == 4) ? 0 : 4; }
+
+                                ToolsSection {
+                                    abrir-generador => { root.abrir-generador(); }
+                                    ejecutar-auditoria-salud => { root.auditoria-salud(); }
+                                }
+                            }
+
+                            // 5. 💾 COPIAS Y DATOS
+                            AccordionItem {
+                                icono: "💾";
+                                titulo: "Copias y Datos";
+                                subtitulo: "Exportación universal, migración Bitwarden/CSV y fusión Lossless";
+                                badge: "Lossless";
+                                expandido: root.termino-busqueda != "" || root.grupo-abierto == 5;
+                                toggle => { root.grupo-abierto = (root.grupo-abierto == 5) ? 0 : 5; }
+
+                                BackupsSection {
+                                    exportar-json => { root.exportar-json(); }
+                                    exportar-csv => { root.exportar-csv(); }
+                                    importar-bitwarden => { root.importar-bitwarden(); }
+                                    importar-csv => { root.importar-csv(); }
+                                    fusionar-boveda => { root.fusionar-boveda(); }
+                                }
+                            }
+
+                            // 6. ⚙️ SISTEMA Y HOMELAB
+                            AccordionItem {
+                                icono: "⚙";
+                                titulo: "Sistema y Homelab";
+                                subtitulo: "Prefijos de subdominios y puertos de servicios locales";
+                                badge: "Red";
+                                expandido: root.termino-busqueda != "" || root.grupo-abierto == 6;
+                                toggle => { root.grupo-abierto = (root.grupo-abierto == 6) ? 0 : 6; }
+
+                                SystemSection {
+                                    prefijos-subdominios <=> root.datos.prefijos_subdominios;
+                                    puertos-homelab <=> root.datos.puertos_homelab;
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle { height: 1px; background: Theme.border; }
+
+                    // Barra inferior de botones
+                    HorizontalLayout {
+                        padding: 14px;
+                        spacing: 12px;
+                        alignment: end;
+
+                        TouchArea {
+                            width: 100px; height: 36px;
+                            clicked => { root.cerrar(); }
+                            Rectangle {
+                                background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                                Text { text: "Cerrar"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                            }
+                        }
+
+                        TouchArea {
+                            width: 140px; height: 36px;
+                            clicked => { root.guardar(root.datos); }
+                            Rectangle {
+                                background: parent.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                                border-radius: Theme.radius-sm;
+                                Text { text: "✓ Guardar Ajustes"; color: #FFFFFF; font-size: 12px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

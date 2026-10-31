@@ -1,0 +1,45 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "app_icon.slint";
+
+export component RestoreButton inherits Rectangle {
+    in property <bool> compacto: true;
+    callback restored();
+
+    width: compacto ? 24px : 150px;
+    height: compacto ? 24px : 28px;
+    border-radius: Theme.radius-sm;
+    background: touch.has-hover ? Theme.surface-hover : transparent;
+    border-width: compacto ? 0px : 1px;
+    border-color: Theme.border;
+
+    touch := TouchArea {
+        clicked => { root.restored(); }
+
+        HorizontalLayout {
+            alignment: center;
+            spacing: 5px;
+
+            AppIcon {
+                source: @image-url("../../assets/icons/restart.svg");
+                icon-size: 14px;
+                icon-color: touch.has-hover ? Theme.accent-primary : Theme.text-muted;
+                vertical-alignment: center;
+                horizontal-alignment: center;
+            }
+
+            if !root.compacto : Text {
+                text: "Restablecer sección";
+                font-size: 11px;
+                font-weight: 500;
+                color: touch.has-hover ? Theme.text-primary : Theme.text-secondary;
+                vertical-alignment: center;
+            }
+        }
+    }
+}
