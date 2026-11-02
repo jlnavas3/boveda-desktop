@@ -76,8 +76,10 @@ export component EntryDetail inherits Rectangle {
     callback cerrar();
 
     background: Theme.background;
+    clip: true;
 
     if !entrada.tiene_datos : VerticalLayout {
+        width: 100%;
         padding: 20px;
         alignment: center;
         spacing: 12px;
@@ -94,6 +96,7 @@ export component EntryDetail inherits Rectangle {
             color: Theme.text-secondary;
             font-size: 14px;
             font-weight: 600;
+            wrap: word-wrap;
             horizontal-alignment: center;
         }
 
@@ -101,39 +104,48 @@ export component EntryDetail inherits Rectangle {
             text: "Tus credenciales están seguras y cifradas en memoria.";
             color: Theme.text-muted;
             font-size: 12px;
+            wrap: word-wrap;
             horizontal-alignment: center;
         }
     }
 
     if entrada.tiene_datos : Flickable {
+        content-width: self.width;
         content-height: contenido.min-height;
 
         contenido := VerticalLayout {
+            width: 100%;
             padding: 20px;
             spacing: 16px;
             alignment: start;
 
             // Cabecera de la Entrada
             HorizontalLayout {
-                alignment: space-between;
+                spacing: 12px;
 
                 VerticalLayout {
                     spacing: 4px;
                     horizontal-stretch: 1;
+                    min-width: 0px;
 
                     HorizontalLayout {
                         spacing: 8px;
                         alignment: start;
 
                         Text {
+                            horizontal-stretch: 1;
+                            min-width: 0px;
                             text: entrada.titulo;
                             color: Theme.text-primary;
                             font-size: 20px;
                             font-weight: 700;
+                            overflow: elide;
+                            horizontal-alignment: left;
                             vertical-alignment: center;
                         }
 
                         if entrada.favorito : AppIcon {
+                            horizontal-stretch: 0;
                             source: @image-url("../assets/icons/star.svg");
                             icon-size: 18px;
                             icon-color: Theme.accent-amber;
@@ -143,8 +155,10 @@ export component EntryDetail inherits Rectangle {
 
                     HorizontalLayout {
                         spacing: 8px;
+                        alignment: start;
 
                         EntryBadge {
+                            horizontal-stretch: 0;
                             tipo: entrada.tipo;
                         }
 
@@ -168,6 +182,7 @@ export component EntryDetail inherits Rectangle {
                                     color: Theme.text-secondary;
                                     font-size: 10px;
                                     font-weight: 600;
+                                    overflow: elide;
                                     vertical-alignment: center;
                                 }
                             }
@@ -193,6 +208,7 @@ export component EntryDetail inherits Rectangle {
                                     color: Theme.text-secondary;
                                     font-size: 10px;
                                     font-weight: 600;
+                                    overflow: elide;
                                     vertical-alignment: center;
                                 }
                             }
@@ -201,8 +217,9 @@ export component EntryDetail inherits Rectangle {
                 }
 
                 HorizontalLayout {
+                    horizontal-stretch: 0;
                     spacing: 8px;
-                    alignment: center;
+                    alignment: end;
 
                     if !entrada.papelera : TouchArea {
                         width: 72px;
@@ -541,25 +558,16 @@ export component EntryDetail inherits Rectangle {
 
             // Metadatos
             HorizontalLayout {
-                spacing: 12px;
-                alignment: start;
+                spacing: 8px;
 
                 Text {
-                    text: "Modificado: " + entrada.modificada_en;
+                    horizontal-stretch: 1;
+                    min-width: 0px;
+                    text: "Modificado: " + entrada.modificada_en + "  •  Creado: " + entrada.creada_en;
                     color: Theme.text-muted;
                     font-size: 11px;
-                }
-
-                Text {
-                    text: "•";
-                    color: Theme.text-muted;
-                    font-size: 11px;
-                }
-
-                Text {
-                    text: "Creado: " + entrada.creada_en;
-                    color: Theme.text-muted;
-                    font-size: 11px;
+                    overflow: elide;
+                    horizontal-alignment: left;
                 }
             }
         }

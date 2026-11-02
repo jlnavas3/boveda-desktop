@@ -47,6 +47,12 @@ export component MainScreen inherits Rectangle {
     in-out property <length> ancho-lista: 360px;
     in-out property <length> lista-viewport-y: 0px;
 
+    property <length> min-ancho-detalle: 340px;
+    property <length> max-sidebar-dinamico: root.width > 640px ? Math.max(160px, Math.min(360px, root.width - 260px - root.min-ancho-detalle - 8px)) : 230px;
+    property <length> ancho-sidebar-efectivo: root.sidebar-colapsada ? 64px : Math.clamp(root.ancho-sidebar, 160px, root.max-sidebar-dinamico);
+    property <length> max-lista-dinamico: root.width > 640px ? Math.max(260px, Math.min(550px, root.width - root.ancho-sidebar-efectivo - root.min-ancho-detalle - 8px)) : 360px;
+    property <length> ancho-lista-efectivo: Math.clamp(root.ancho-lista, 260px, root.max-lista-dinamico);
+
     callback seleccionar-tipo(string);
     callback seleccionar-categoria(string);
     callback seleccionar-perfil(string);
@@ -161,23 +167,24 @@ export component MainScreen inherits Rectangle {
     HorizontalLayout {
         // PANEL IZQUIERDO: Barra Lateral de Filtros (Redimensionable y Colapsable)
         Rectangle {
-            width: root.sidebar-colapsada ? 64px : root.ancho-sidebar;
+            width: root.ancho-sidebar-efectivo;
             background: Theme.surface;
             border-width: 1px;
             border-color: Theme.border;
             clip: true;
 
             VerticalLayout {
+                width: 100%;
                 padding: 10px;
                 spacing: 12px;
 
                 // Cabecera: Menú Hamburguesa + Estado
                 HorizontalLayout {
-                    alignment: space-between;
                     spacing: 6px;
 
                     // Botón Hamburguesa ☰ para colapsar/expandir
                     TouchArea {
+                        horizontal-stretch: 0;
                         width: 32px;
                         height: 32px;
                         clicked => {
@@ -201,28 +208,39 @@ export component MainScreen inherits Rectangle {
                     }
 
                     if !root.sidebar-colapsada : HorizontalLayout {
+                        horizontal-stretch: 1;
+                        min-width: 0px;
                         spacing: 6px;
-                        alignment: center;
+                        alignment: start;
 
-                        Rectangle {
-                            width: 8px;
-                            height: 8px;
-                            border-radius: 4px;
-                            background: Theme.accent-primary;
+                        VerticalLayout {
+                            horizontal-stretch: 0;
+                            alignment: center;
+                            Rectangle {
+                                width: 8px;
+                                height: 8px;
+                                border-radius: 4px;
+                                background: Theme.accent-primary;
+                            }
                         }
 
                         Text {
+                            horizontal-stretch: 1;
+                            min-width: 0px;
                             text: "Bóveda";
                             color: Theme.text-primary;
                             font-size: 13px;
                             font-weight: 700;
+                            overflow: elide;
+                            horizontal-alignment: left;
                             vertical-alignment: center;
                         }
                     }
 
                     // Botón Bloquear
                     btn-bloquear := TouchArea {
-                        width: root.sidebar-colapsada ? 32px : 72px;
+                        horizontal-stretch: 0;
+                        width: root.sidebar-colapsada ? 32px : 68px;
                         height: 32px;
                         clicked => { root.bloquear-boveda(); }
 
@@ -235,10 +253,12 @@ export component MainScreen inherits Rectangle {
                             HorizontalLayout {
                                 alignment: center;
                                 spacing: 4px;
+                                padding-left: 4px;
+                                padding-right: 4px;
 
                                 AppIcon {
                                     source: @image-url("../assets/icons/lock.svg");
-                                    icon-size: 14px;
+                                    icon-size: 13px;
                                     icon-color: btn-bloquear.has-hover ? Theme.danger : Theme.text-primary;
                                     vertical-alignment: center;
                                 }
@@ -247,6 +267,7 @@ export component MainScreen inherits Rectangle {
                                     color: btn-bloquear.has-hover ? Theme.danger : Theme.text-secondary;
                                     font-size: 11px;
                                     font-weight: 600;
+                                    overflow: elide;
                                     vertical-alignment: center;
                                 }
                             }
@@ -262,10 +283,13 @@ export component MainScreen inherits Rectangle {
                     Rectangle {
                         background: btn-nueva.has-hover ? Theme.accent-hover : Theme.accent-primary;
                         border-radius: Theme.radius-sm;
+                        clip: true;
 
                         HorizontalLayout {
                             alignment: center;
                             spacing: 6px;
+                            padding-left: 8px;
+                            padding-right: 8px;
 
                             AppIcon {
                                 source: @image-url("../assets/icons/add.svg");
@@ -278,6 +302,7 @@ export component MainScreen inherits Rectangle {
                                 font-size: 12px;
                                 font-weight: 700;
                                 color: #FFFFFF;
+                                overflow: elide;
                                 vertical-alignment: center;
                             }
                         }
@@ -292,17 +317,21 @@ export component MainScreen inherits Rectangle {
                     color: Theme.text-muted;
                     font-size: 10px;
                     font-weight: 700;
+                    overflow: elide;
                     horizontal-alignment: left;
                 }
 
                 Flickable {
                     vertical-stretch: 1;
+                    content-width: self.width;
                     content-height: sidebar-content.min-height;
 
                     sidebar-content := VerticalLayout {
+                        width: 100%;
                         spacing: 12px;
 
                         lista-tipos := VerticalLayout {
+                            width: 100%;
                             spacing: 4px;
 
                             for item in tipos-filtro : TouchArea {
@@ -315,13 +344,17 @@ export component MainScreen inherits Rectangle {
                                     border-radius: Theme.radius-sm;
                                     border-width: filtro-tipo-actual == item.id ? 1px : 0px;
                                     border-color: Theme.accent-primary;
+                                    clip: true;
 
                                     HorizontalLayout {
-                                        padding-left: 12px;
-                                        padding-right: 12px;
-                                        spacing: 10px;
+                                        width: 100%;
+                                        height: 100%;
+                                        padding-left: 10px;
+                                        padding-right: 10px;
+                                        spacing: 8px;
 
                                         AppIcon {
+                                            horizontal-stretch: 0;
                                             source: item.id == "LOGIN" ? @image-url("../assets/icons/key.svg") :
                                                     item.id == "TARJETA" ? @image-url("../assets/icons/credit_card.svg") :
                                                     item.id == "CUENTA_BANCARIA" ? @image-url("../assets/icons/account_balance.svg") :
@@ -344,11 +377,14 @@ export component MainScreen inherits Rectangle {
                                             font-size: 12px;
                                             font-weight: filtro-tipo-actual == item.id ? 600 : 400;
                                             horizontal-stretch: 1;
+                                            min-width: 0px;
+                                            overflow: elide;
                                             vertical-alignment: center;
                                             horizontal-alignment: left;
                                         }
 
                                         if !root.sidebar-colapsada : VerticalLayout {
+                                            horizontal-stretch: 0;
                                             alignment: center;
                                             Rectangle {
                                                 background: Theme.border;
@@ -374,6 +410,7 @@ export component MainScreen inherits Rectangle {
                         }
 
                         if categorias-filtro.length > 0 && !root.sidebar-colapsada : VerticalLayout {
+                            width: 100%;
                             spacing: 6px;
 
                             Text {
@@ -381,10 +418,12 @@ export component MainScreen inherits Rectangle {
                                 color: Theme.text-muted;
                                 font-size: 10px;
                                 font-weight: 700;
+                                overflow: elide;
                                 horizontal-alignment: left;
                             }
 
                             lista-cats := VerticalLayout {
+                                width: 100%;
                                 spacing: 4px;
 
                                 for cat in categorias-filtro : TouchArea {
@@ -397,13 +436,17 @@ export component MainScreen inherits Rectangle {
                                         border-radius: Theme.radius-sm;
                                         border-width: filtro-categoria-actual == cat.id ? 1px : 0px;
                                         border-color: Theme.accent-blue;
+                                        clip: true;
 
                                         HorizontalLayout {
-                                            padding-left: 12px;
-                                            padding-right: 12px;
-                                            spacing: 10px;
+                                            width: 100%;
+                                            height: 100%;
+                                            padding-left: 10px;
+                                            padding-right: 10px;
+                                            spacing: 8px;
 
                                             AppIcon {
+                                                horizontal-stretch: 0;
                                                 source: @image-url("../assets/icons/folder.svg");
                                                 icon-size: 14px;
                                                 icon-color: filtro-categoria-actual == cat.id ? Theme.accent-primary : Theme.text-secondary;
@@ -415,11 +458,14 @@ export component MainScreen inherits Rectangle {
                                                 color: filtro-categoria-actual == cat.id ? Theme.text-primary : Theme.text-secondary;
                                                 font-size: 12px;
                                                 horizontal-stretch: 1;
+                                                min-width: 0px;
+                                                overflow: elide;
                                                 vertical-alignment: center;
                                                 horizontal-alignment: left;
                                             }
 
                                             VerticalLayout {
+                                                horizontal-stretch: 0;
                                                 alignment: center;
                                                 Rectangle {
                                                     background: Theme.border;
@@ -459,10 +505,13 @@ export component MainScreen inherits Rectangle {
                         border-width: 1px;
                         border-color: Theme.border;
                         border-radius: Theme.radius-sm;
+                        clip: true;
 
                         HorizontalLayout {
                             alignment: center;
                             spacing: 6px;
+                            padding-left: 8px;
+                            padding-right: 8px;
 
                             AppIcon {
                                 source: @image-url("../assets/icons/settings.svg");
@@ -475,6 +524,7 @@ export component MainScreen inherits Rectangle {
                                 font-size: 11px;
                                 font-weight: 600;
                                 color: Theme.text-secondary;
+                                overflow: elide;
                                 vertical-alignment: center;
                                 horizontal-alignment: left;
                             }
@@ -493,7 +543,8 @@ export component MainScreen inherits Rectangle {
                 mouse-cursor: col-resize;
                 moved => {
                     if !root.sidebar-colapsada {
-                        root.ancho-sidebar = Math.clamp(root.ancho-sidebar + (split-1.mouse-x - split-1.pressed-x), 160px, 360px);
+                        let limite-max = root.width > 640px ? Math.max(160px, Math.min(360px, root.width - root.ancho-lista-efectivo - root.min-ancho-detalle - 8px)) : 360px;
+                        root.ancho-sidebar = Math.clamp(root.ancho-sidebar + (split-1.mouse-x - split-1.pressed-x), 160px, limite-max);
                     }
                 }
             }
@@ -501,7 +552,7 @@ export component MainScreen inherits Rectangle {
 
         // PANEL CENTRAL: Lista Fluida de Entradas con Ola Niagara A-Z
         Rectangle {
-            width: root.ancho-lista;
+            width: root.ancho-lista-efectivo;
             background: Theme.background;
             border-width: 1px;
             border-color: Theme.border;
@@ -690,7 +741,7 @@ export component MainScreen inherits Rectangle {
             split-2 := TouchArea {
                 mouse-cursor: col-resize;
                 moved => {
-                    root.ancho-lista = Math.clamp(root.ancho-lista + (split-2.mouse-x - split-2.pressed-x), 260px, 550px);
+                    root.ancho-lista = Math.clamp(root.ancho-lista + (split-2.mouse-x - split-2.pressed-x), 260px, root.max-lista-dinamico);
                 }
             }
         }
@@ -698,7 +749,9 @@ export component MainScreen inherits Rectangle {
         // PANEL DERECHO: Detalle Completo de la Entrada Seleccionada
         Rectangle {
             horizontal-stretch: 1;
+            min-width: root.min-ancho-detalle;
             background: Theme.surface;
+            clip: true;
 
             VerticalLayout {
                 if texto-notificacion != "" : Rectangle {
