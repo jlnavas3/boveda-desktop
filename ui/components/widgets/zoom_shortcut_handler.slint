@@ -1,0 +1,39 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+export component ZoomShortcutHandler inherits FocusScope {
+    callback aumentar-zoom();
+    callback reducir-zoom();
+    callback restaurar-zoom();
+
+    width: 100%;
+    height: 100%;
+    forward-focus: child-focus;
+
+    key-pressed(event) => {
+        if (event.modifiers.control) {
+            if (event.text == "+" || event.text == "=") {
+                root.aumentar-zoom();
+                return accept;
+            }
+            if (event.text == "-") {
+                root.reducir-zoom();
+                return accept;
+            }
+            if (event.text == "0") {
+                root.restaurar-zoom();
+                return accept;
+            }
+        }
+        return reject;
+    }
+
+    child-focus := FocusScope {
+        width: 100%;
+        height: 100%;
+        @children
+    }
+}

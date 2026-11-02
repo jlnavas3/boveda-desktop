@@ -8,6 +8,7 @@ import { SettingsScreen, PortRuleItem, PortRuleRow, SubdomainRuleItem, Subdomain
 import { SettingsData } from "settings/settings_modal.slint";
 import { EditModal as EditDialog, EntryEditData } from "edit/edit_modal.slint";
 import { DropdownOption } from "components/dropdown_filter.slint";
+import { ZoomShortcutHandler } from "components/widgets/zoom_shortcut_handler.slint";
 
 export { Theme, FilterItem, EntryOverview, EntryDetailData, GeneratorOptions, SettingsData, EntryEditData, DropdownOption, PortRuleItem, PortRuleRow, SubdomainRuleItem, SubdomainRuleRow, HsvColorResult }
 
@@ -151,142 +152,153 @@ export component AppWindow inherits Window {
     callback navegar-apariencia();
     callback abrir-ayuda();
 
-    // Pantalla de Desbloqueo
-    if !boveda-desbloqueada : UnlockScreen {
-        ruta-boveda <=> root.ruta-boveda;
-        error-mensaje: root.error-desbloqueo;
-        cargando: root.desbloqueando;
-        auto-cargar-ultima <=> root.auto-cargar-ultima;
-        biometria-disponible: root.biometria-disponible;
+    // Callbacks desacoplados de Zoom Global (Ctrl +, Ctrl -, Ctrl 0)
+    callback aumentar-zoom();
+    callback reducir-zoom();
+    callback restaurar-zoom();
 
-        intentar-desbloquear(ruta, pass) => {
-            root.intentar-desbloquear(ruta, pass);
+    ZoomShortcutHandler {
+        aumentar-zoom => { root.aumentar-zoom(); }
+        reducir-zoom => { root.reducir-zoom(); }
+        restaurar-zoom => { root.restaurar-zoom(); }
+
+        // Pantalla de Desbloqueo
+        if !boveda-desbloqueada : UnlockScreen {
+            ruta-boveda <=> root.ruta-boveda;
+            error-mensaje: root.error-desbloqueo;
+            cargando: root.desbloqueando;
+            auto-cargar-ultima <=> root.auto-cargar-ultima;
+            biometria-disponible: root.biometria-disponible;
+
+            intentar-desbloquear(ruta, pass) => {
+                root.intentar-desbloquear(ruta, pass);
+            }
+            examinar-archivo => {
+                root.examinar-archivo();
+            }
+            desbloquear-biometria => {
+                root.desbloquear-biometria();
+            }
         }
-        examinar-archivo => {
-            root.examinar-archivo();
+
+        // Pantalla Principal Tri-Panel (Visible si desbloqueada y no está en Ajustes)
+        if boveda-desbloqueada && !mostrar-ajustes : MainScreen {
+            tipos-filtro: root.tipos-filtro;
+            categorias-filtro: root.categorias-filtro;
+            perfiles-filtro: root.perfiles-filtro;
+            etiquetas-filtro: root.etiquetas-filtro;
+            filtro-tipo-actual: root.filtro-tipo-actual;
+            filtro-categoria-actual: root.filtro-categoria-actual;
+            filtro-perfil-actual: root.filtro-perfil-actual;
+            filtro-etiqueta-actual: root.filtro-etiqueta-actual;
+            entrada-seleccionada-id: root.entrada-seleccionada-id;
+            lista-entradas: root.lista-entradas;
+            detalle-actual: root.detalle-actual;
+            texto-notificacion: root.texto-notificacion;
+            mostrar-ola-niagara: root.ajustes-datos.mostrar_ola_niagara;
+            incluir-enie-niagara: root.ajustes-datos.incluir_enie_niagara;
+            lista-viewport-y <=> root.lista-viewport-y;
+            solo-favoritos: root.solo-favoritos;
+            orden-actual: root.orden-actual;
+
+            seleccionar-tipo(t) => { root.seleccionar-tipo(t); }
+            seleccionar-categoria(c) => { root.seleccionar-categoria(c); }
+            seleccionar-perfil(p) => { root.seleccionar-perfil(p); }
+            seleccionar-etiqueta(e) => { root.seleccionar-etiqueta(e); }
+            seleccionar-entrada(id) => { root.seleccionar-entrada(id); }
+            buscar(q) => { root.buscar(q); }
+            bloquear-boveda => { root.bloquear-boveda(); }
+            copiar-campo(v, n) => { root.copiar-campo(v, n); }
+            cerrar-detalle => { root.cerrar-detalle(); }
+            saltar-a-letra(l) => { root.saltar-a-letra(l); }
+
+            abrir-nueva-entrada => { root.abrir-nueva-entrada(); }
+            abrir-ajustes => { root.abrir-ajustes(); }
+            editar-entrada(id) => { root.abrir-editar-entrada(id); }
+            mover-papelera(id) => { root.mover-a-papelera(id); }
+            restaurar-entrada(id) => { root.restaurar-entrada(id); }
+            eliminar-definitivo(id) => { root.eliminar-definitivo(id); }
+            alternar-favorito(id) => { root.alternar-favorito(id); }
+            alternar-anclado(id) => { root.alternar-anclado(id); }
+            copiar-totp(id) => { root.copiar-totp(id); }
+
+            alternar-grupo(c) => { root.alternar-grupo(c); }
+            alternar-solo-favoritos => { root.alternar-solo-favoritos(); }
+            normalizar-titulos => { root.normalizar-titulos(); }
+            crear-nuevo-tipo(t) => { root.crear-nuevo-tipo(t); }
+            cambiar-orden(o) => { root.cambiar-orden(o); }
+            importar-bitwarden => { root.importar-bitwarden(); }
+            importar-csv => { root.importar-csv(); }
+            fusionar-boveda => { root.fusionar-boveda(); }
+            exportar-bvda => { root.exportar-bvda(); }
+            exportar-json => { root.exportar-json(); }
+            exportar-csv => { root.exportar-csv(); }
+            navegar-apariencia => { root.navegar-apariencia(); }
+            abrir-ayuda => { root.abrir-ayuda(); }
         }
-        desbloquear-biometria => {
-            root.desbloquear-biometria();
+
+        // Pantalla Integrada de Ajustes a Todo lo Ancho (Paridad Canónica con Android)
+        if boveda-desbloqueada && mostrar-ajustes : SettingsScreen {
+            width: 100%;
+            height: 100%;
+            datos <=> root.ajustes-datos;
+            mensaje-error: root.ajustes-error;
+            mensaje-exito: root.ajustes-exito;
+            cambiando-clave: root.ajustes-cambiando-clave;
+            filas-puertos: root.ajustes-filas-puertos;
+            filas-subdominios: root.ajustes-filas-subdominios;
+            hex-usuario: root.ajustes-hex-usuario;
+            hex-password: root.ajustes-hex-password;
+            hex-totp: root.ajustes-hex-totp;
+            hex-passkey: root.ajustes-hex-passkey;
+            hex-url: root.ajustes-hex-url;
+            hex-app: root.ajustes-hex-app;
+
+            guardar(d) => { root.guardar-ajustes(d); }
+            restaurar-predeterminados => { root.restaurar-predeterminados(); }
+            restaurar-campo(c) => { root.restaurar-campo(c); }
+            restaurar-seccion(s) => { root.restaurar-seccion(s); }
+            cambiar-clave-maestra(act, nva, conf) => { root.cambiar-clave-maestra(act, nva, conf); }
+            volver => { root.mostrar-ajustes = false; }
+            exportar-json => { root.exportar-json(); }
+            exportar-csv => { root.exportar-csv(); }
+            importar-bitwarden => { root.importar-bitwarden(); }
+            importar-csv => { root.importar-csv(); }
+            fusionar-boveda => { root.fusionar-boveda(); }
+            abrir-generador => { root.abrir-generador("ajustes"); }
+            auditoria-salud => { root.auditoria-salud(); }
+            alternar-biometria(act) => { root.alternar-biometria(act); }
+            agregar-puerto(p, n) => { root.agregar-puerto(p, n); }
+            eliminar-puerto(id) => { root.eliminar-puerto(id); }
+            agregar-subdominio(s) => { root.agregar-subdominio(s); }
+            eliminar-subdominio(id) => { root.eliminar-subdominio(id); }
+            reportar-ancho-chips(w) => { root.reportar-ancho-chips(w); }
+            calcular-hsv(h, s, v) => { return root.calcular-hsv(h, s, v); }
+            aplicar-color-indicador(c, col, hex) => { root.aplicar-color-indicador(c, col, hex); }
         }
-    }
 
-    // Pantalla Principal Tri-Panel (Visible si desbloqueada y no está en Ajustes)
-    if boveda-desbloqueada && !mostrar-ajustes : MainScreen {
-        tipos-filtro: root.tipos-filtro;
-        categorias-filtro: root.categorias-filtro;
-        perfiles-filtro: root.perfiles-filtro;
-        etiquetas-filtro: root.etiquetas-filtro;
-        filtro-tipo-actual: root.filtro-tipo-actual;
-        filtro-categoria-actual: root.filtro-categoria-actual;
-        filtro-perfil-actual: root.filtro-perfil-actual;
-        filtro-etiqueta-actual: root.filtro-etiqueta-actual;
-        entrada-seleccionada-id: root.entrada-seleccionada-id;
-        lista-entradas: root.lista-entradas;
-        detalle-actual: root.detalle-actual;
-        texto-notificacion: root.texto-notificacion;
-        mostrar-ola-niagara: root.ajustes-datos.mostrar_ola_niagara;
-        incluir-enie-niagara: root.ajustes-datos.incluir_enie_niagara;
-        lista-viewport-y <=> root.lista-viewport-y;
-        solo-favoritos: root.solo-favoritos;
-        orden-actual: root.orden-actual;
+        // Diálogo Modal: Edición de Entrada
+        if mostrar-editor : EditDialog {
+            datos <=> root.editor-datos;
+            es-nueva: root.es-nueva-entrada;
 
-        seleccionar-tipo(t) => { root.seleccionar-tipo(t); }
-        seleccionar-categoria(c) => { root.seleccionar-categoria(c); }
-        seleccionar-perfil(p) => { root.seleccionar-perfil(p); }
-        seleccionar-etiqueta(e) => { root.seleccionar-etiqueta(e); }
-        seleccionar-entrada(id) => { root.seleccionar-entrada(id); }
-        buscar(q) => { root.buscar(q); }
-        bloquear-boveda => { root.bloquear-boveda(); }
-        copiar-campo(v, n) => { root.copiar-campo(v, n); }
-        cerrar-detalle => { root.cerrar-detalle(); }
-        saltar-a-letra(l) => { root.saltar-a-letra(l); }
+            guardar(d) => { root.guardar-entrada(d); }
+            abrir-generador(destino) => { root.abrir-generador(destino); }
+            cancelar => { root.mostrar-editor = false; }
+        }
 
-        abrir-nueva-entrada => { root.abrir-nueva-entrada(); }
-        abrir-ajustes => { root.abrir-ajustes(); }
-        editar-entrada(id) => { root.abrir-editar-entrada(id); }
-        mover-papelera(id) => { root.mover-a-papelera(id); }
-        restaurar-entrada(id) => { root.restaurar-entrada(id); }
-        eliminar-definitivo(id) => { root.eliminar-definitivo(id); }
-        alternar-favorito(id) => { root.alternar-favorito(id); }
-        alternar-anclado(id) => { root.alternar-anclado(id); }
-        copiar-totp(id) => { root.copiar-totp(id); }
+        // Diálogo Modal: Generador de Contraseñas
+        if mostrar-generador : GeneratorDialog {
+            options <=> root.generador-opciones;
+            contrasena-generada: root.generador-resultado;
+            fuerza-puntuacion: root.generador-fuerza-puntuacion;
+            fuerza-etiqueta: root.generador-fuerza-etiqueta;
+            mostrar-boton-aplicar: root.generador-destino != "";
 
-        alternar-grupo(c) => { root.alternar-grupo(c); }
-        alternar-solo-favoritos => { root.alternar-solo-favoritos(); }
-        normalizar-titulos => { root.normalizar-titulos(); }
-        crear-nuevo-tipo(t) => { root.crear-nuevo-tipo(t); }
-        cambiar-orden(o) => { root.cambiar-orden(o); }
-        importar-bitwarden => { root.importar-bitwarden(); }
-        importar-csv => { root.importar-csv(); }
-        fusionar-boveda => { root.fusionar-boveda(); }
-        exportar-bvda => { root.exportar-bvda(); }
-        exportar-json => { root.exportar-json(); }
-        exportar-csv => { root.exportar-csv(); }
-        navegar-apariencia => { root.navegar-apariencia(); }
-        abrir-ayuda => { root.abrir-ayuda(); }
-    }
-
-    // Pantalla Integrada de Ajustes a Todo lo Ancho (Paridad Canónica con Android)
-    if boveda-desbloqueada && mostrar-ajustes : SettingsScreen {
-        width: 100%;
-        height: 100%;
-        datos <=> root.ajustes-datos;
-        mensaje-error: root.ajustes-error;
-        mensaje-exito: root.ajustes-exito;
-        cambiando-clave: root.ajustes-cambiando-clave;
-        filas-puertos: root.ajustes-filas-puertos;
-        filas-subdominios: root.ajustes-filas-subdominios;
-        hex-usuario: root.ajustes-hex-usuario;
-        hex-password: root.ajustes-hex-password;
-        hex-totp: root.ajustes-hex-totp;
-        hex-passkey: root.ajustes-hex-passkey;
-        hex-url: root.ajustes-hex-url;
-        hex-app: root.ajustes-hex-app;
-
-        guardar(d) => { root.guardar-ajustes(d); }
-        restaurar-predeterminados => { root.restaurar-predeterminados(); }
-        restaurar-campo(c) => { root.restaurar-campo(c); }
-        restaurar-seccion(s) => { root.restaurar-seccion(s); }
-        cambiar-clave-maestra(act, nva, conf) => { root.cambiar-clave-maestra(act, nva, conf); }
-        volver => { root.mostrar-ajustes = false; }
-        exportar-json => { root.exportar-json(); }
-        exportar-csv => { root.exportar-csv(); }
-        importar-bitwarden => { root.importar-bitwarden(); }
-        importar-csv => { root.importar-csv(); }
-        fusionar-boveda => { root.fusionar-boveda(); }
-        abrir-generador => { root.abrir-generador("ajustes"); }
-        auditoria-salud => { root.auditoria-salud(); }
-        alternar-biometria(act) => { root.alternar-biometria(act); }
-        agregar-puerto(p, n) => { root.agregar-puerto(p, n); }
-        eliminar-puerto(id) => { root.eliminar-puerto(id); }
-        agregar-subdominio(s) => { root.agregar-subdominio(s); }
-        eliminar-subdominio(id) => { root.eliminar-subdominio(id); }
-        reportar-ancho-chips(w) => { root.reportar-ancho-chips(w); }
-        calcular-hsv(h, s, v) => { return root.calcular-hsv(h, s, v); }
-        aplicar-color-indicador(c, col, hex) => { root.aplicar-color-indicador(c, col, hex); }
-    }
-
-    // Diálogo Modal: Edición de Entrada
-    if mostrar-editor : EditDialog {
-        datos <=> root.editor-datos;
-        es-nueva: root.es-nueva-entrada;
-
-        guardar(d) => { root.guardar-entrada(d); }
-        abrir-generador(destino) => { root.abrir-generador(destino); }
-        cancelar => { root.mostrar-editor = false; }
-    }
-
-    // Diálogo Modal: Generador de Contraseñas
-    if mostrar-generador : GeneratorDialog {
-        options <=> root.generador-opciones;
-        contrasena-generada: root.generador-resultado;
-        fuerza-puntuacion: root.generador-fuerza-puntuacion;
-        fuerza-etiqueta: root.generador-fuerza-etiqueta;
-        mostrar-boton-aplicar: root.generador-destino != "";
-
-        regenerar(opt) => { root.regenerar-contrasena(opt); }
-        copiar(p) => { root.copiar-campo(p, "Contraseña Generada"); }
-        aplicar(p) => { root.aplicar-contrasena(p); }
-        cerrar => { root.mostrar-generador = false; }
+            regenerar(opt) => { root.regenerar-contrasena(opt); }
+            copiar(p) => { root.copiar-campo(p, "Contraseña Generada"); }
+            aplicar(p) => { root.aplicar-contrasena(p); }
+            cerrar => { root.mostrar-generador = false; }
+        }
     }
 }

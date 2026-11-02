@@ -19,10 +19,11 @@ use boveda_core::crypto::{
     PasswordGeneratorConfig, PerfilArgon2,
 };
 use boveda_core::gui::{
-    agregar_puerto_a_str, agregar_subdominio_a_str, edit_data_a_entrada, eliminar_puerto_de_str,
-    eliminar_subdominio_de_str, entrada_a_edit_data, hsv_a_rgb, parse_puertos_filas_con_ancho,
-    parse_subdominios_filas_con_ancho, resolver_tema, AppWindow, ClipboardManager, EntryDetailData,
-    EntryEditData, GeneratorOptions, GuiVaultState, HsvColorResult, ModoTema, SettingsData, Theme,
+    agregar_puerto_a_str, agregar_subdominio_a_str, aplicar_zoom_ventana, edit_data_a_entrada,
+    eliminar_puerto_de_str, eliminar_subdominio_de_str, entrada_a_edit_data, hsv_a_rgb,
+    parse_puertos_filas_con_ancho, parse_subdominios_filas_con_ancho, resolver_tema, AppWindow,
+    ClipboardManager, EntryDetailData, EntryEditData, GeneratorOptions, GuiVaultState,
+    HsvColorResult, ModoTema, SettingsData, Theme, ZoomState,
 };
 
 /// Refresca y sincroniza reactivamente todos los modelos visuales de Slint desde el estado en memoria.
@@ -1265,15 +1266,75 @@ fn main() -> Result<(), slint::PlatformError> {
         }
     });
 
-    // 27. Temporizador periódico para refrescar códigos TOTP en vivo
+    // 26b. Gestión desacoplada de Zoom Global (Ctrl +, Ctrl -, Ctrl 0) y Auto-Escalado por Resolución
+    let zoom_state = Arc::new(Mutex::new(ZoomState::default()));
+
+    let ui_weak = ui.as_weak();
+    let zoom_clone = Arc::clone(&zoom_state);
+    let ui_notify = ui.as_weak();
+    ui.on_aumentar_zoom(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut zs = zoom_clone.lock().unwrap();
+            let factor = zs.aumentar_zoom();
+            let pct = zs.porcentaje_usuario();
+            drop(zs);
+            aplicar_zoom_ventana(ui.window(), factor);
+            ui.set_texto_notificacion(format!("🔍 Zoom de interfaz: {pct}%").into());
+            limpiar_notificacion_despues(&ui_notify, 2);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let zoom_clone = Arc::clone(&zoom_state);
+    let ui_notify = ui.as_weak();
+    ui.on_reducir_zoom(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut zs = zoom_clone.lock().unwrap();
+            let factor = zs.reducir_zoom();
+            let pct = zs.porcentaje_usuario();
+            drop(zs);
+            aplicar_zoom_ventana(ui.window(), factor);
+            ui.set_texto_notificacion(format!("🔍 Zoom de interfaz: {pct}%").into());
+            limpiar_notificacion_despues(&ui_notify, 2);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let zoom_clone = Arc::clone(&zoom_state);
+    let ui_notify = ui.as_weak();
+    ui.on_restaurar_zoom(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut zs = zoom_clone.lock().unwrap();
+            let factor = zs.restaurar_zoom();
+            let pct = zs.porcentaje_usuario();
+            drop(zs);
+            aplicar_zoom_ventana(ui.window(), factor);
+            ui.set_texto_notificacion(format!("🔍 Zoom restaurado: {pct}%").into());
+            limpiar_notificacion_despues(&ui_notify, 2);
+        }
+    });
+
+    // 27. Temporizador periódico para refrescar códigos TOTP en vivo y verificar auto-adaptación de resolución
     let timer_totp = slint::Timer::default();
     let ui_totp = ui.as_weak();
     let state_totp = Arc::clone(&state);
+    let zoom_timer = Arc::clone(&zoom_state);
     timer_totp.start(
         slint::TimerMode::Repeated,
         Duration::from_secs(1),
         move || {
             if let Some(ui) = ui_totp.upgrade() {
+                // Auto-adaptación de escala según resolución física de la ventana
+                let phys_size = ui.window().size();
+                if phys_size.width > 0 && phys_size.height > 0 {
+                    let mut zs = zoom_timer.lock().unwrap();
+                    if zs.actualizar_resolucion(phys_size.width, phys_size.height) {
+                        let factor = zs.factor_final();
+                        drop(zs);
+                        aplicar_zoom_ventana(ui.window(), factor);
+                    }
+                }
+
                 if ui.get_boveda_desbloqueada() {
                     let st = state_totp.lock().unwrap();
                     let entradas = st.obtener_entradas_filtradas();

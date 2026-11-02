@@ -55,6 +55,33 @@ pub mod niagara {
     pub const INCLUIR_ENIE: bool = true;
 }
 
+pub mod escalado_ventana {
+    /// Resolución base de referencia de diseño (Full HD 1920x1080 = factor 1.0).
+    pub const ANCHO_REFERENCIA_FHD: u32 = 1920;
+    pub const ALTO_REFERENCIA_FHD: u32 = 1080;
+
+    /// Umbrales de resolución horizontal para auto-adaptación.
+    pub const UMBRAL_ANCHO_HD: u32 = 1366;
+    pub const UMBRAL_ANCHO_QHD: u32 = 2500;
+    pub const UMBRAL_ANCHO_UHD_4K: u32 = 3400;
+
+    /// Factores de escala base automáticos según la resolución física.
+    pub const ESCALA_AUTO_HD_720P: f32 = 0.75;
+    pub const ESCALA_AUTO_FHD_1080P: f32 = 1.00;
+    pub const ESCALA_AUTO_QHD_1440P: f32 = 1.25;
+    pub const ESCALA_AUTO_UHD_2160P: f32 = 1.75;
+
+    /// Parámetros del multiplicador de zoom manual del usuario (Ctrl +, Ctrl -, Ctrl 0).
+    pub const MULTIPLICADOR_USUARIO_DEFECTO: f32 = 1.00;
+    pub const MULTIPLICADOR_USUARIO_MIN: f32 = 0.60;
+    pub const MULTIPLICADOR_USUARIO_MAX: f32 = 2.00;
+    pub const PASO_ZOOM_USUARIO: f32 = 0.10;
+
+    /// Límites absolutos de seguridad del factor de escala combinado enviado a Slint.
+    pub const FACTOR_FINAL_MIN: f32 = 0.50;
+    pub const FACTOR_FINAL_MAX: f32 = 3.00;
+}
+
 pub mod normalizacion_titulos {
     pub const PREFIJOS_SUBDOMINIOS: &[&str] = &[
         "account", "accounts", "access", "login", "signin", "auth", "sso",

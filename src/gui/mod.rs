@@ -10,6 +10,7 @@ pub mod clipboard;
 pub mod color_hsv;
 pub mod service_grouper;
 pub mod state;
+pub mod zoom;
 
 pub use clipboard::ClipboardManager;
 pub use color_hsv::{hex_a_hsv, hsv_a_rgb, rgb_a_hsv};
@@ -22,3 +23,4 @@ pub use state::{
     subtitulo_segun_tipo, ColoresTemaResueltos, GuiVaultState, IndicadoresEntrada, ModoTema,
     PaletaAcentoInfo, PALETAS_ACENTO_OFICIALES,
 };
+pub use zoom::{aplicar_zoom_ventana, calcular_escala_automatica, ZoomState};
