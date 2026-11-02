@@ -86,6 +86,8 @@ export component EntryItem inherits Rectangle {
     }
 
     touch := TouchArea {
+        width: 100%;
+        height: 100%;
         pointer-event(event) => {
             if (event.button == PointerEventButton.right && event.kind == PointerEventKind.down) {
                 root.abrir-menu-contextual(root.entrada.id, touch.mouse-x, touch.mouse-y);
@@ -96,6 +98,8 @@ export component EntryItem inherits Rectangle {
         }
 
         HorizontalLayout {
+            width: 100%;
+            height: 100%;
             padding-left: entrada.es_hijo_grupo ? (Theme.estilo-indicadores == "lateral" ? 22px : 26px) : (Theme.estilo-indicadores == "lateral" ? 10px : 14px);
             padding-right: 14px;
             spacing: 12px;

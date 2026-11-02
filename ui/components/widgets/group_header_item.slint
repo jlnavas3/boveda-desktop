@@ -23,9 +23,13 @@ export component GroupHeaderItem inherits Rectangle {
     border-color: root.expandido ? Theme.accent-primary.transparentize(50%) : Theme.border;
 
     touch := TouchArea {
+        width: 100%;
+        height: 100%;
         clicked => { root.alternar(); }
 
         HorizontalLayout {
+            width: 100%;
+            height: 100%;
             padding-left: 14px;
             padding-right: 14px;
             spacing: 12px;
