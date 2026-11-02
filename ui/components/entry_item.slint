@@ -53,6 +53,7 @@ export component EntryItem inherits Rectangle {
     border-width: 1px;
     border-color: seleccionado ? Theme.accent-primary : (entrada.es_hijo_grupo ? Theme.accent-primary.transparentize(60%) : Theme.border);
     height: 64px;
+    clip: true;
 
     // Divisor sutil interno de 1px único en la parte superior para ítems agrupados
     if entrada.es_hijo_grupo : Rectangle {
@@ -118,13 +119,13 @@ export component EntryItem inherits Rectangle {
 
             VerticalLayout {
                 horizontal-stretch: 1;
+                min-width: 0px;
                 spacing: 4px;
                 alignment: center;
 
                 // Fila 1 (Superior)
                 HorizontalLayout {
                     spacing: 8px;
-                    alignment: space-between;
 
                     // Izquierda: Título (limpio y prominente)
                     Text {
@@ -141,6 +142,7 @@ export component EntryItem inherits Rectangle {
 
                     // Derecha: TOTP activo en monospace + cuenta regresiva + Estrella favorito
                     HorizontalLayout {
+                        horizontal-stretch: 0;
                         spacing: 6px;
                         alignment: end;
 
@@ -183,7 +185,6 @@ export component EntryItem inherits Rectangle {
                 // Fila 2 (Inferior)
                 HorizontalLayout {
                     spacing: 8px;
-                    alignment: space-between;
 
                     // Izquierda: Subtítulo (usuario / detalle)
                     Text {
@@ -199,6 +200,7 @@ export component EntryItem inherits Rectangle {
 
                     // Derecha: Indicadores de color alineados al borde derecho del contenedor
                     if Theme.estilo-indicadores == "iconos" : IndicatorIcons {
+                        horizontal-stretch: 0;
                         tiene-usuario: root.entrada.tiene_usuario;
                         tiene-password: root.entrada.tiene_password;
                         tiene-totp: root.entrada.tiene_totp;
@@ -209,6 +211,7 @@ export component EntryItem inherits Rectangle {
                     }
 
                     if Theme.estilo-indicadores == "puntos" : IndicatorDots {
+                        horizontal-stretch: 0;
                         tiene-usuario: root.entrada.tiene_usuario;
                         tiene-password: root.entrada.tiene_password;
                         tiene-totp: root.entrada.tiene_totp;

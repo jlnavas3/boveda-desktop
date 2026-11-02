@@ -246,29 +246,44 @@ pub fn filtrar_entradas(
         .collect()
 }
 
-/// Encuentra el ID de la primera entrada que comienza por la letra dada (para salto Niagara A-Z).
-pub fn encontrar_id_por_letra(entradas: &[EntryOverview], letra: char) -> Option<String> {
-    let target = letra.to_ascii_lowercase();
-    entradas.iter().find_map(|e| {
-        let t = e.titulo.chars().next()?;
-        if t.to_ascii_lowercase() == target {
-            Some(e.id.to_string())
-        } else {
-            None
-        }
-    })
+fn normalizar_inicial_alfabetica(c: char) -> char {
+    let lower = c.to_lowercase().next().unwrap_or(c);
+    match lower {
+        'á' | 'à' | 'ä' | 'â' => 'a',
+        'é' | 'è' | 'ë' | 'ê' => 'e',
+        'í' | 'ì' | 'ï' | 'î' => 'i',
+        'ó' | 'ò' | 'ö' | 'ô' => 'o',
+        'ú' | 'ù' | 'ü' | 'û' => 'u',
+        other => other,
+    }
 }
 
-/// Encuentra el índice (0-based) de la primera entrada que comienza por la letra dada (para scroll en lista).
+fn coincide_con_letra(titulo: &str, target: char) -> bool {
+    titulo
+        .trim()
+        .chars()
+        .next()
+        .map(|c| normalizar_inicial_alfabetica(c) == target)
+        .unwrap_or(false)
+}
+
+/// Encuentra el ID de la primera entrada o cabecera de grupo que comienza por la letra dada (para salto Niagara A-Z).
+pub fn encontrar_id_por_letra(entradas: &[EntryOverview], letra: char) -> Option<String> {
+    let target = normalizar_inicial_alfabetica(letra);
+    entradas
+        .iter()
+        .find(|e| !e.anclado && !e.es_hijo_grupo && coincide_con_letra(&e.titulo, target))
+        .or_else(|| entradas.iter().find(|e| coincide_con_letra(&e.titulo, target)))
+        .map(|e| e.id.to_string())
+}
+
+/// Encuentra el índice (0-based) de la primera entrada o cabecera de grupo que comienza por la letra dada (para scroll en lista).
 pub fn encontrar_indice_por_letra(entradas: &[EntryOverview], letra: char) -> Option<usize> {
-    let target = letra.to_ascii_lowercase();
-    entradas.iter().position(|e| {
-        e.titulo
-            .chars()
-            .next()
-            .map(|c| c.to_ascii_lowercase() == target)
-            .unwrap_or(false)
-    })
+    let target = normalizar_inicial_alfabetica(letra);
+    entradas
+        .iter()
+        .position(|e| !e.anclado && !e.es_hijo_grupo && coincide_con_letra(&e.titulo, target))
+        .or_else(|| entradas.iter().position(|e| coincide_con_letra(&e.titulo, target)))
 }
 
 /// Genera la lista de categorías con conteos reactivos para el panel lateral.

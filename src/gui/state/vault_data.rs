@@ -321,10 +321,27 @@ impl GuiVaultState {
 
     pub fn obtener_detalle_entrada(&self, id: &str) -> Option<EntryDetailData> {
         let boveda = self.boveda.as_ref()?;
-        let e = boveda.entradas.iter().find(|entry| entry.id == id)?;
         let ocultar_u = boveda.configuracion.as_ref().map(|c| c.ocultar_usuario).unwrap_or(false);
         let ocultar_p = boveda.configuracion.as_ref().map(|c| c.ocultar_contrasena).unwrap_or(true);
-        Some(construir_detalle_entrada(e, boveda, ocultar_u, ocultar_p))
+
+        if let Some(e) = boveda.entradas.iter().find(|entry| entry.id == id) {
+            return Some(construir_detalle_entrada(e, boveda, ocultar_u, ocultar_p));
+        }
+
+        if let Some(clave_grupo) = id.strip_prefix("grp:") {
+            let e = boveda
+                .entradas
+                .iter()
+                .filter(|entry| entry.eliminada_en == 0)
+                .find(|entry| {
+                    let primer_url = entry.urls.first().map(|s| s.as_str()).unwrap_or("");
+                    let serv = crate::gui::service_grouper::extraer_nombre_servicio(primer_url, &entry.titulo);
+                    serv.eq_ignore_ascii_case(clave_grupo)
+                })?;
+            return Some(construir_detalle_entrada(e, boveda, ocultar_u, ocultar_p));
+        }
+
+        None
     }
 
     pub fn encontrar_id_por_letra(&self, letra: char) -> Option<String> {

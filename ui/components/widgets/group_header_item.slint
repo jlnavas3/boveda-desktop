@@ -11,16 +11,20 @@ export component GroupHeaderItem inherits Rectangle {
     in property <string> titulo: "Servicio";
     in property <int> conteo: 0;
     in property <bool> expandido: false;
+    in property <bool> seleccionado: false;
     callback alternar();
 
     height: 64px;
-    background: touch.has-hover ? Theme.surface-hover : Theme.surface;
+    clip: true;
+    background: root.seleccionado ? Theme.surface-selected :
+                (touch.has-hover ? Theme.surface-hover : Theme.surface);
     border-top-left-radius: Theme.radio-tarjetas;
     border-top-right-radius: Theme.radio-tarjetas;
     border-bottom-left-radius: root.expandido ? 0px : Theme.radio-tarjetas;
     border-bottom-right-radius: root.expandido ? 0px : Theme.radio-tarjetas;
     border-width: Theme.grosor-borde;
-    border-color: root.expandido ? Theme.accent-primary.transparentize(50%) : Theme.border;
+    border-color: root.seleccionado ? Theme.accent-primary :
+                  (root.expandido ? Theme.accent-primary.transparentize(50%) : Theme.border);
 
     touch := TouchArea {
         width: 100%;
@@ -30,48 +34,50 @@ export component GroupHeaderItem inherits Rectangle {
         HorizontalLayout {
             width: 100%;
             height: 100%;
-            padding-left: 14px;
-            padding-right: 14px;
-            spacing: 12px;
-            alignment: space-between;
+            padding-left: 12px;
+            padding-right: 12px;
+            spacing: 10px;
 
-            // Izquierda: Círculo de avatar + Nombre de Servicio + Badge de conteo
-            HorizontalLayout {
-                spacing: 12px;
-                alignment: start;
+            // Izquierda: Círculo de avatar estilizado (36px x 36px)
+            VerticalLayout {
+                horizontal-stretch: 0;
+                alignment: center;
+                Rectangle {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 18px;
+                    background: Theme.accent-primary.transparentize(85%);
 
-                // Círculo de avatar estilizado (36px x 36px) como en Android
-                VerticalLayout {
-                    alignment: center;
-                    Rectangle {
-                        width: 36px;
-                        height: 36px;
-                        border-radius: 18px;
-                        background: Theme.accent-primary.transparentize(85%);
-
-                        AppIcon {
-                            source: root.titulo == "Anclados" ? @image-url("../../assets/icons/pin.svg") : @image-url("../../assets/icons/folder.svg");
-                            icon-size: 18px;
-                            icon-color: Theme.accent-primary;
-                            horizontal-alignment: center;
-                            vertical-alignment: center;
-                        }
-                    }
-                }
-
-                // Título del Servicio en Negrita
-                VerticalLayout {
-                    alignment: center;
-                    Text {
-                        text: root.titulo;
-                        color: Theme.text-primary;
-                        font-size: 13px;
-                        font-weight: 700;
+                    AppIcon {
+                        source: root.titulo == "Anclados" ? @image-url("../../assets/icons/pin.svg") : @image-url("../../assets/icons/folder.svg");
+                        icon-size: 18px;
+                        icon-color: Theme.accent-primary;
+                        horizontal-alignment: center;
                         vertical-alignment: center;
                     }
                 }
+            }
 
-                // Badge tipo chip con la cantidad de cuentas
+            // Centro: Título del Servicio en Negrita (elide dinámico para no empujar badge ni chevron)
+            Text {
+                horizontal-stretch: 1;
+                min-width: 0px;
+                text: root.titulo;
+                color: Theme.text-primary;
+                font-size: 13px;
+                font-weight: 700;
+                overflow: elide;
+                horizontal-alignment: left;
+                vertical-alignment: center;
+            }
+
+            // Derecha: Badge de cantidad de cuentas + Chevron expandir/colapsar
+            HorizontalLayout {
+                horizontal-stretch: 0;
+                spacing: 8px;
+                alignment: end;
+
+                // Badge tipo chip con la cantidad de cuentas alineado a la derecha junto al chevron
                 VerticalLayout {
                     alignment: center;
                     Rectangle {
@@ -98,16 +104,16 @@ export component GroupHeaderItem inherits Rectangle {
                         }
                     }
                 }
-            }
 
-            // Derecha: Chevron expandir / colapsar
-            VerticalLayout {
-                alignment: center;
-                AppIcon {
-                    source: root.expandido ? @image-url("../../assets/icons/expand_less.svg") : @image-url("../../assets/icons/expand_more.svg");
-                    icon-size: 20px;
-                    icon-color: root.expandido ? Theme.accent-primary : Theme.text-secondary;
-                    vertical-alignment: center;
+                // Chevron expandir / colapsar
+                VerticalLayout {
+                    alignment: center;
+                    AppIcon {
+                        source: root.expandido ? @image-url("../../assets/icons/expand_less.svg") : @image-url("../../assets/icons/expand_more.svg");
+                        icon-size: 20px;
+                        icon-color: root.expandido ? Theme.accent-primary : Theme.text-secondary;
+                        vertical-alignment: center;
+                    }
                 }
             }
         }

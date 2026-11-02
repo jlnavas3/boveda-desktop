@@ -625,7 +625,11 @@ export component MainScreen inherits Rectangle {
                                     titulo: entrada.titulo;
                                     conteo: entrada.grupo_conteo;
                                     expandido: entrada.grupo_expandido;
-                                    alternar => { root.alternar-grupo(entrada.clave_grupo); }
+                                    seleccionado: entrada.id == entrada-seleccionada-id;
+                                    alternar => {
+                                        root.alternar-grupo(entrada.clave_grupo);
+                                        root.seleccionar-entrada(entrada.id);
+                                    }
                                 }
                                 if !entrada.es_cabecera_grupo : EntryItem {
                                     entrada: entrada;
@@ -717,10 +721,10 @@ export component MainScreen inherits Rectangle {
                 EntryDetail {
                     entrada: detalle-actual;
                     copiar-campo(v, n) => { root.copiar-campo(v, n); }
-                    editar => { root.editar-entrada(root.entrada-seleccionada-id); }
-                    mover-papelera => { root.mover-papelera(root.entrada-seleccionada-id); }
-                    restaurar => { root.restaurar-entrada(root.entrada-seleccionada-id); }
-                    eliminar-definitivo => { root.eliminar-definitivo(root.entrada-seleccionada-id); }
+                    editar => { root.editar-entrada(detalle-actual.id); }
+                    mover-papelera => { root.mover-papelera(detalle-actual.id); }
+                    restaurar => { root.restaurar-entrada(detalle-actual.id); }
+                    eliminar-definitivo => { root.eliminar-definitivo(detalle-actual.id); }
                     cerrar => { root.cerrar-detalle(); }
                 }
             }

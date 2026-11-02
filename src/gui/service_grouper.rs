@@ -181,6 +181,7 @@ pub fn aplicar_agrupamiento_servicios(
 
     // Procesar no_ancladas agrupando juntos los ítems del mismo servicio
     let mut grupos_procesados: HashSet<String> = HashSet::new();
+    let mut bloques_alfabeticos: Vec<(String, Vec<EntryOverview>)> = Vec::new();
 
     for e in &no_ancladas {
         let servicio = if e.servicio.is_empty() {
@@ -198,6 +199,7 @@ pub fn aplicar_agrupamiento_servicios(
         if conteo >= 2 {
             grupos_procesados.insert(servicio.clone());
             let expandido = grupos_expandidos.contains(&servicio);
+            let mut bloque = Vec::with_capacity(if expandido { conteo + 1 } else { 1 });
 
             let cabecera = EntryOverview {
                 id: SharedString::from(format!("grp:{}", servicio)),
@@ -224,7 +226,7 @@ pub fn aplicar_agrupamiento_servicios(
                 es_hijo_grupo: false,
                 es_ultimo_hijo_grupo: false,
             };
-            resultado.push(cabecera);
+            bloque.push(cabecera);
 
             // Si el grupo está expandido, agregamos todos sus hijos contiguos
             if expandido {
@@ -247,9 +249,11 @@ pub fn aplicar_agrupamiento_servicios(
                     hijo.es_hijo_grupo = true;
                     hijo.es_ultimo_hijo_grupo = idx == total_hijos - 1;
                     hijo.clave_grupo = SharedString::from(&servicio);
-                    resultado.push(hijo);
+                    bloque.push(hijo);
                 }
             }
+
+            bloques_alfabeticos.push((servicio.to_lowercase(), bloque));
         } else {
             // Entrada individual (suelta)
             let mut solitaria = e.clone();
@@ -257,8 +261,15 @@ pub fn aplicar_agrupamiento_servicios(
             solitaria.es_hijo_grupo = false;
             solitaria.es_ultimo_hijo_grupo = false;
             solitaria.clave_grupo = SharedString::from("");
-            resultado.push(solitaria);
+            bloques_alfabeticos.push((solitaria.titulo.to_lowercase(), vec![solitaria]));
         }
+    }
+
+    // Ordenar bloques (grupos y entradas sueltas) estrictamente por su título visible en la lista
+    bloques_alfabeticos.sort_by(|a, b| a.0.cmp(&b.0));
+
+    for (_, bloque) in bloques_alfabeticos {
+        resultado.extend(bloque);
     }
 
     resultado
@@ -379,5 +390,39 @@ mod tests {
         assert!(res_expandido[2].es_hijo_grupo);
         assert!(res_expandido[2].es_ultimo_hijo_grupo);
         assert!(!res_expandido[3].es_hijo_grupo);
+    }
+
+    #[test]
+    fn test_orden_alfabetico_de_grupos_por_nombre_servicio() {
+        let e1 = EntryOverview {
+            id: SharedString::from("1"),
+            titulo: SharedString::from("Agencia Tributaria"),
+            servicio: SharedString::from("Gob"),
+            ..Default::default()
+        };
+
+        let e2 = EntryOverview {
+            id: SharedString::from("2"),
+            titulo: SharedString::from("Aeropost"),
+            servicio: SharedString::from("Aeropost"),
+            ..Default::default()
+        };
+
+        let e3 = EntryOverview {
+            id: SharedString::from("3"),
+            titulo: SharedString::from("Ministerio"),
+            servicio: SharedString::from("Gob"),
+            ..Default::default()
+        };
+
+        let entradas = vec![e1, e2, e3];
+        let expandidos = HashSet::new();
+        let res = aplicar_agrupamiento_servicios(&entradas, true, false, &expandidos);
+
+        assert_eq!(res.len(), 2);
+        assert_eq!(res[0].titulo.as_str(), "Aeropost");
+        assert!(!res[0].es_cabecera_grupo);
+        assert_eq!(res[1].titulo.as_str(), "Gob");
+        assert!(res[1].es_cabecera_grupo);
     }
 }

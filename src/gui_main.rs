@@ -339,14 +339,27 @@ fn main() -> Result<(), slint::PlatformError> {
         if let Some(ui) = ui_weak.upgrade() {
             if let Some(c) = letra.chars().next() {
                 let mut st = state_clone.lock().unwrap();
-                let indice = st.encontrar_indice_por_letra(c);
-                if let Some(id) = st.encontrar_id_por_letra(c) {
+                let entradas = st.obtener_entradas_filtradas();
+                let indice = boveda_core::gui::state::filter_engine::encontrar_indice_por_letra(&entradas, c);
+                if let Some(id) = boveda_core::gui::state::filter_engine::encontrar_id_por_letra(&entradas, c) {
                     st.entrada_seleccionada_id = Some(id.clone());
                     refrescar_ui(&ui, &mut st, Some(&id));
                 }
                 if let Some(idx) = indice {
-                    // Cada tarjeta mide 64px + 6px de espaciado = 70px
-                    let scroll_y = (idx as f32) * 70.0;
+                    // Calcular desplazamiento exacto considerando grupos expandidos (64px unidos vs 70px separados)
+                    let scroll_y: f32 = entradas
+                        .iter()
+                        .take(idx)
+                        .map(|e| {
+                            if (e.es_cabecera_grupo && e.grupo_expandido)
+                                || (e.es_hijo_grupo && !e.es_ultimo_hijo_grupo)
+                            {
+                                64.0
+                            } else {
+                                70.0
+                            }
+                        })
+                        .sum();
                     ui.set_lista_viewport_y(-scroll_y);
                 }
             }
