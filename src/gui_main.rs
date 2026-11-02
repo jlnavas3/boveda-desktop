@@ -30,6 +30,8 @@ use boveda_core::gui::{
 fn refrescar_ui(ui: &AppWindow, st: &mut GuiVaultState, id_preferido: Option<&str>) {
     let tipos = st.obtener_resumen_tipos();
     let categorias = st.obtener_resumen_categorias();
+    let tipos_dropdown = st.obtener_opciones_tipos_dropdown();
+    let categorias_dropdown = st.obtener_opciones_categorias_dropdown();
     let perfiles = st.obtener_resumen_perfiles();
     let etiquetas = st.obtener_resumen_etiquetas();
     let entradas = st.obtener_entradas_filtradas();
@@ -52,6 +54,8 @@ fn refrescar_ui(ui: &AppWindow, st: &mut GuiVaultState, id_preferido: Option<&st
 
     ui.set_tipos_filtro(ModelRc::new(VecModel::from(tipos)));
     ui.set_categorias_filtro(ModelRc::new(VecModel::from(categorias)));
+    ui.set_tipos_dropdown(ModelRc::new(VecModel::from(tipos_dropdown)));
+    ui.set_categorias_dropdown(ModelRc::new(VecModel::from(categorias_dropdown)));
     ui.set_perfiles_filtro(ModelRc::new(VecModel::from(perfiles)));
     ui.set_etiquetas_filtro(ModelRc::new(VecModel::from(etiquetas)));
     ui.set_lista_entradas(ModelRc::new(VecModel::from(entradas)));
@@ -281,6 +285,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let mut st = state_clone.lock().unwrap();
             st.filtro_tipo = tipo.to_string();
             ui.set_filtro_tipo_actual(tipo);
+            ui.set_lista_viewport_y(0.0);
             refrescar_ui(&ui, &mut st, None);
         }
     });
@@ -293,6 +298,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let mut st = state_clone.lock().unwrap();
             st.filtro_categoria = cat.to_string();
             ui.set_filtro_categoria_actual(cat);
+            ui.set_lista_viewport_y(0.0);
             refrescar_ui(&ui, &mut st, None);
         }
     });
@@ -305,6 +311,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let mut st = state_clone.lock().unwrap();
             st.filtro_perfil = perf.to_string();
             ui.set_filtro_perfil_actual(perf);
+            ui.set_lista_viewport_y(0.0);
             refrescar_ui(&ui, &mut st, None);
         }
     });
@@ -317,6 +324,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let mut st = state_clone.lock().unwrap();
             st.filtro_etiqueta = tag.to_string();
             ui.set_filtro_etiqueta_actual(tag);
+            ui.set_lista_viewport_y(0.0);
             refrescar_ui(&ui, &mut st, None);
         }
     });
@@ -328,6 +336,7 @@ fn main() -> Result<(), slint::PlatformError> {
         if let Some(ui) = ui_weak.upgrade() {
             let mut st = state_clone.lock().unwrap();
             st.termino_busqueda = termino.to_string();
+            ui.set_lista_viewport_y(0.0);
             refrescar_ui(&ui, &mut st, None);
         }
     });

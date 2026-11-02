@@ -21,6 +21,8 @@ export struct FilterItem {
 export component MainScreen inherits Rectangle {
     in property <[FilterItem]> tipos-filtro: [];
     in property <[FilterItem]> categorias-filtro: [];
+    in property <[DropdownOption]> tipos-dropdown: [];
+    in property <[DropdownOption]> categorias-dropdown: [];
     in property <[DropdownOption]> perfiles-filtro: [];
     in property <[DropdownOption]> etiquetas-filtro: [];
 
@@ -336,7 +338,12 @@ export component MainScreen inherits Rectangle {
 
                             for item in tipos-filtro : TouchArea {
                                 height: 32px;
-                                clicked => { root.seleccionar-tipo(item.id); }
+                                clicked => {
+                                    if root.filtro-categoria-actual != "TODAS" {
+                                        root.seleccionar-categoria("TODAS");
+                                    }
+                                    root.seleccionar-tipo(item.id);
+                                }
 
                                 Rectangle {
                                     background: filtro-tipo-actual == item.id ? Theme.surface-selected :
@@ -428,7 +435,12 @@ export component MainScreen inherits Rectangle {
 
                                 for cat in categorias-filtro : TouchArea {
                                     height: 30px;
-                                    clicked => { root.seleccionar-categoria(cat.id); }
+                                    clicked => {
+                                        if root.filtro-tipo-actual != "TODOS" {
+                                            root.seleccionar-tipo("TODOS");
+                                        }
+                                        root.seleccionar-categoria(cat.id);
+                                    }
 
                                     Rectangle {
                                         background: filtro-categoria-actual == cat.id ? Theme.surface-selected :
@@ -595,28 +607,15 @@ export component MainScreen inherits Rectangle {
                     }
                 }
 
-                // Barra Superior de Filtros Rápidos (Dropdowns con PopupWindow nativo)
-                FilterBar {
+                // Barra Superior de Filtros Rápidos (solo visible si existen opciones reales para filtrar)
+                if root.tipos-dropdown.length > 1 || root.perfiles-filtro.length > 1 || root.categorias-dropdown.length > 1 || root.etiquetas-filtro.length > 1 || root.filtro-tipo-actual != "TODOS" || root.filtro-perfil-actual != "TODOS" || root.filtro-categoria-actual != "TODAS" || root.filtro-etiqueta-actual != "TODAS" : FilterBar {
                     filtro-tipo: root.filtro-tipo-actual;
                     filtro-perfil: root.filtro-perfil-actual;
                     filtro-categoria: root.filtro-categoria-actual;
                     filtro-etiqueta: root.filtro-etiqueta-actual;
-                    opciones-tipos: [
-                        { id: "TODOS", nombre: "Todos los tipos", icono: "🗂", conteo: 0 },
-                        { id: "LOGIN", nombre: "Cuentas Web (Login)", icono: "🔐", conteo: 0 },
-                        { id: "TARJETA", nombre: "Tarjetas Bancarias", icono: "💳", conteo: 0 },
-                        { id: "WIFI", nombre: "Redes Wi-Fi", icono: "📶", conteo: 0 },
-                        { id: "SERVIDOR", nombre: "Servidores SSH", icono: "🖥", conteo: 0 },
-                        { id: "CUENTA_BANCARIA", nombre: "Cuentas Bancarias", icono: "🏦", conteo: 0 },
-                        { id: "IDENTIDAD", nombre: "Documentos de Identidad", icono: "🪪", conteo: 0 },
-                        { id: "WALLET", nombre: "Cripto Wallets", icono: "🪙", conteo: 0 },
-                        { id: "CONTACTO", nombre: "Contactos Seguros", icono: "👤", conteo: 0 },
-                        { id: "NOTA", nombre: "Notas Seguras", icono: "📝", conteo: 0 }
-                    ];
+                    opciones-tipos: root.tipos-dropdown;
                     opciones-perfiles: root.perfiles-filtro;
-                    opciones-categorias: [
-                        { id: "TODAS", nombre: "Todas las categorías", icono: "📁", conteo: 0 }
-                    ];
+                    opciones-categorias: root.categorias-dropdown;
                     opciones-etiquetas: root.etiquetas-filtro;
 
                     seleccionar-tipo(t) => { root.seleccionar-tipo(t); }
@@ -646,6 +645,8 @@ export component MainScreen inherits Rectangle {
 
                     if lista-entradas.length == 0 : VerticalLayout {
                         horizontal-stretch: 1;
+                        vertical-stretch: 1;
+                        height: 100%;
                         alignment: center;
                         spacing: 8px;
 
@@ -660,6 +661,8 @@ export component MainScreen inherits Rectangle {
 
                     if lista-entradas.length > 0 : lista-flickable := Flickable {
                         horizontal-stretch: 1;
+                        vertical-stretch: 1;
+                        height: 100%;
                         content-width: self.width;
                         content-y <=> root.lista-viewport-y;
                         content-height: items-layout.min-height;

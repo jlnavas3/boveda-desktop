@@ -442,7 +442,47 @@ fn formatear_fecha(timestamp_ms: i64) -> String {
         .unwrap_or_else(|| "Fecha inválida".to_string())
 }
 
-/// Genera la lista de perfiles / identidades con conteos para el filtro rápido.
+/// Genera la lista de opciones de Tipos de Entrada para la FilterBar superior (solo incluye tipos que existen en las entradas).
+pub fn calcular_opciones_tipos_dropdown(boveda: &ContenidoBoveda) -> Vec<DropdownOption> {
+    let resumen = calcular_resumen_tipos(boveda);
+    resumen
+        .into_iter()
+        .filter(|item| item.id.as_str() == "TODOS" || (item.id.as_str() != "PAPELERA" && item.conteo > 0))
+        .map(|item| DropdownOption {
+            id: item.id,
+            nombre: item.nombre,
+            icono: item.icono,
+            conteo: item.conteo,
+        })
+        .collect()
+}
+
+/// Genera la lista de opciones de Categorías para la FilterBar superior (solo incluye categorías asignadas a alguna entrada activa).
+pub fn calcular_opciones_categorias_dropdown(boveda: &ContenidoBoveda) -> Vec<DropdownOption> {
+    let resumen = calcular_resumen_categorias(boveda);
+    let total_con_categoria: i32 = resumen.iter().map(|c| c.conteo).sum();
+    let mut lista = vec![DropdownOption {
+        id: SharedString::from("TODAS"),
+        nombre: SharedString::from("Todas las categorías"),
+        icono: SharedString::from("📁"),
+        conteo: total_con_categoria,
+    }];
+
+    for cat in resumen {
+        if cat.conteo > 0 {
+            lista.push(DropdownOption {
+                id: cat.id,
+                nombre: cat.nombre,
+                icono: cat.icono,
+                conteo: cat.conteo,
+            });
+        }
+    }
+
+    lista
+}
+
+/// Genera la lista de perfiles / identidades con conteos para el filtro rápido (solo incluye perfiles presentes en entradas activas).
 pub fn calcular_resumen_perfiles(boveda: &ContenidoBoveda) -> Vec<DropdownOption> {
     let mut lista = vec![DropdownOption {
         id: SharedString::from("TODOS"),
@@ -458,12 +498,14 @@ pub fn calcular_resumen_perfiles(boveda: &ContenidoBoveda) -> Vec<DropdownOption
             .filter(|e| e.eliminada_en == 0 && e.perfil_id.as_deref() == Some(&p.id))
             .count() as i32;
 
-        lista.push(DropdownOption {
-            id: SharedString::from(&p.id),
-            nombre: SharedString::from(&p.nombre),
-            icono: SharedString::from(if p.icono.is_empty() { "👤" } else { &p.icono }),
-            conteo,
-        });
+        if conteo > 0 {
+            lista.push(DropdownOption {
+                id: SharedString::from(&p.id),
+                nombre: SharedString::from(&p.nombre),
+                icono: SharedString::from(if p.icono.is_empty() { "👤" } else { &p.icono }),
+                conteo,
+            });
+        }
     }
 
     lista

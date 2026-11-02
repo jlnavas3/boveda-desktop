@@ -31,6 +31,8 @@ export component AppWindow inherits Window {
     // Datos de la Bóveda en Memoria
     in-out property <[FilterItem]> tipos-filtro: [];
     in-out property <[FilterItem]> categorias-filtro: [];
+    in-out property <[DropdownOption]> tipos-dropdown: [];
+    in-out property <[DropdownOption]> categorias-dropdown: [];
     in-out property <[DropdownOption]> perfiles-filtro: [];
     in-out property <[DropdownOption]> etiquetas-filtro: [];
     in-out property <string> filtro-tipo-actual: "TODOS";
@@ -185,6 +187,8 @@ export component AppWindow inherits Window {
         if boveda-desbloqueada && !mostrar-ajustes : MainScreen {
             tipos-filtro: root.tipos-filtro;
             categorias-filtro: root.categorias-filtro;
+            tipos-dropdown: root.tipos-dropdown;
+            categorias-dropdown: root.categorias-dropdown;
             perfiles-filtro: root.perfiles-filtro;
             etiquetas-filtro: root.etiquetas-filtro;
             filtro-tipo-actual: root.filtro-tipo-actual;

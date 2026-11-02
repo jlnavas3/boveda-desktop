@@ -14,6 +14,7 @@ use zeroize::Zeroizing;
 use crate::crypto::{empaquetar_boveda, escribir_atomico, BvdaError, PerfilArgon2};
 use crate::gui::service_grouper::aplicar_agrupamiento_servicios;
 use crate::gui::state::filter_engine::{
+    calcular_opciones_categorias_dropdown, calcular_opciones_tipos_dropdown,
     calcular_resumen_categorias, calcular_resumen_etiquetas, calcular_resumen_perfiles,
     calcular_resumen_tipos, construir_detalle_entrada, encontrar_id_por_letra,
     encontrar_indice_por_letra, filtrar_entradas,
@@ -315,6 +316,20 @@ impl GuiVaultState {
     pub fn obtener_resumen_tipos(&self) -> Vec<FilterItem> {
         match &self.boveda {
             Some(b) => calcular_resumen_tipos(b),
+            None => Vec::new(),
+        }
+    }
+
+    pub fn obtener_opciones_tipos_dropdown(&self) -> Vec<DropdownOption> {
+        match &self.boveda {
+            Some(b) => calcular_opciones_tipos_dropdown(b),
+            None => Vec::new(),
+        }
+    }
+
+    pub fn obtener_opciones_categorias_dropdown(&self) -> Vec<DropdownOption> {
+        match &self.boveda {
+            Some(b) => calcular_opciones_categorias_dropdown(b),
             None => Vec::new(),
         }
     }

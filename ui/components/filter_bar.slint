@@ -31,8 +31,8 @@ export component FilterBar inherits Rectangle {
         spacing: 6px;
         alignment: start;
 
-        // 1. Filtro de Tipos de Entrada
-        DropdownFilter {
+        // 1. Filtro de Tipos de Entrada (solo visible si existen entradas con tipos en la bóveda)
+        if root.opciones-tipos.length > 1 || root.filtro-tipo != "TODOS" : DropdownFilter {
             icon-source: root.filtro-tipo == "LOGIN" ? @image-url("../assets/icons/key.svg") :
                          root.filtro-tipo == "TARJETA" ? @image-url("../assets/icons/credit_card.svg") :
                          root.filtro-tipo == "WIFI" ? @image-url("../assets/icons/wifi.svg") :
@@ -49,8 +49,8 @@ export component FilterBar inherits Rectangle {
             seleccionar(id) => { root.seleccionar-tipo(id); }
         }
 
-        // 2. Filtro de Perfiles / Identidades
-        DropdownFilter {
+        // 2. Filtro de Perfiles / Identidades (solo visible si existen entradas con perfiles)
+        if root.opciones-perfiles.length > 1 || root.filtro-perfil != "TODOS" : DropdownFilter {
             icon-source: @image-url("../assets/icons/person.svg");
             titulo: "Filtrar por Perfil / Identidad";
             seleccion-id: root.filtro-perfil;
@@ -58,8 +58,8 @@ export component FilterBar inherits Rectangle {
             seleccionar(id) => { root.seleccionar-perfil(id); }
         }
 
-        // 3. Filtro de Categorías / Colecciones
-        DropdownFilter {
+        // 3. Filtro de Categorías / Colecciones (solo visible si existen entradas con categorías)
+        if root.opciones-categorias.length > 1 || root.filtro-categoria != "TODAS" : DropdownFilter {
             icon-source: @image-url("../assets/icons/folder.svg");
             titulo: "Filtrar por Categoría";
             seleccion-id: root.filtro-categoria;
@@ -67,8 +67,8 @@ export component FilterBar inherits Rectangle {
             seleccionar(id) => { root.seleccionar-categoria(id); }
         }
 
-        // 4. Filtro de Etiquetas
-        DropdownFilter {
+        // 4. Filtro de Etiquetas (solo visible si existen entradas con etiquetas)
+        if root.opciones-etiquetas.length > 1 || root.filtro-etiqueta != "TODAS" : DropdownFilter {
             icon-source: @image-url("../assets/icons/list.svg");
             titulo: "Filtrar por Etiqueta";
             seleccion-id: root.filtro-etiqueta;
