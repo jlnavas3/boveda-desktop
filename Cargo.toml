@@ -1,6 +1,6 @@
 [package]
 name = "boveda-local-desktop"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 authors = ["Jose Luis Navas"]
 description = "Cliente de escritorio soberano en Rust para Bóveda Local (Windows y Linux)"
