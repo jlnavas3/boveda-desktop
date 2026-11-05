@@ -1,5 +1,6 @@
 # --- Compilación de Rust y artefactos ---
 /target/
+dist/
 *.rs.bk
 *.orig
 core.*
