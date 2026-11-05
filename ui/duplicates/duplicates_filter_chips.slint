@@ -1,0 +1,50 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+
+export component DuplicatesFilterChips inherits HorizontalLayout {
+    in property <string> filtro-activo: "TODOS";
+    callback seleccionar-filtro(string);
+
+    width: 100%;
+    height: 32px;
+    spacing: 6px;
+
+    for chip in [
+        { id: "TODOS", label: "Todos" },
+        { id: "IDENTICOS", label: "Idénticos" },
+        { id: "MISMA_CUENTA", label: "Misma cuenta" },
+        { id: "VARIANTES", label: "Variantes URL" },
+        { id: "PASSKEY", label: "Con Passkey" },
+        { id: "TOTP", label: "Con 2FA" },
+        { id: "APPS_ANDROID", label: "Apps Android" },
+        { id: "SITIOS_WEB", label: "Sitios Web" },
+    ] : chip-touch := TouchArea {
+        horizontal-stretch: 1;
+        height: 30px;
+        mouse-cursor: pointer;
+        clicked => { root.seleccionar-filtro(chip.id); }
+
+        Rectangle {
+            background: root.filtro-activo == chip.id ? Theme.accent-primary.transparentize(82%) :
+                        chip-touch.has-hover ? Theme.surface-hover : Theme.background;
+            border-radius: Theme.radius-sm;
+            border-width: 1px;
+            border-color: root.filtro-activo == chip.id ? Theme.accent-primary : Theme.border;
+
+            Text {
+                text: chip.label;
+                color: root.filtro-activo == chip.id ? Theme.accent-primary : Theme.text-secondary;
+                font-size: 10px;
+                font-weight: root.filtro-activo == chip.id ? 700 : 600;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+        }
+    }
+}

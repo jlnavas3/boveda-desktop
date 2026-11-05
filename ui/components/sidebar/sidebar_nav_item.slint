@@ -1,0 +1,106 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "../widgets/app_icon.slint";
+
+export component SidebarNavItem inherits TouchArea {
+    in property <image> icono;
+    in property <string> texto: "";
+    in property <int> conteo: -1;
+    in property <bool> activo: false;
+    in property <bool> colapsada: false;
+    in property <bool> alerta: false;
+    in property <bool> mostrar-boton-extra: false;
+    callback accion-extra();
+
+    width: 100%;
+    height: 30px;
+    mouse-cursor: pointer;
+
+    Rectangle {
+        background: root.activo ? Theme.surface-selected :
+                    root.has-hover ? Theme.surface-hover : Colors.transparent;
+        border-radius: Theme.radius-sm;
+        border-width: root.activo && !Theme.menu-lateral-sin-bordes ? 1px : 0px;
+        border-color: root.alerta ? Theme.accent-amber : Theme.accent-primary;
+        clip: true;
+
+        HorizontalLayout {
+            width: 100%;
+            height: 100%;
+            padding-left: 10px;
+            padding-right: 8px;
+            spacing: 8px;
+
+            AppIcon {
+                horizontal-stretch: 0;
+                source: root.icono;
+                icon-size: 15px;
+                icon-color: root.alerta ? Theme.accent-amber :
+                            root.activo ? Theme.accent-primary : Theme.text-secondary;
+                vertical-alignment: center;
+            }
+
+            if !root.colapsada : Text {
+                horizontal-stretch: 1;
+                min-width: 0px;
+                text: root.texto;
+                color: root.activo ? Theme.text-primary : Theme.text-secondary;
+                font-size: 12px;
+                font-weight: root.activo ? 600 : 400;
+                overflow: elide;
+                vertical-alignment: center;
+                horizontal-alignment: left;
+            }
+
+            if !root.colapsada && root.mostrar-boton-extra : btn-extra := TouchArea {
+                horizontal-stretch: 0;
+                width: 44px;
+                height: 20px;
+                clicked => { root.accion-extra(); }
+
+                Rectangle {
+                    background: btn-extra.has-hover ? Theme.danger.transparentize(80%) : Theme.background;
+                    border-radius: 4px;
+                    border-width: 1px;
+                    border-color: Theme.danger.transparentize(40%);
+
+                    Text {
+                        text: "Vaciar";
+                        color: Theme.danger;
+                        font-size: 9px;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+
+            if !root.colapsada && root.conteo >= 0 : VerticalLayout {
+                horizontal-stretch: 0;
+                alignment: center;
+                Rectangle {
+                    background: root.alerta && root.conteo > 0 ? Theme.accent-amber.transparentize(80%) : Theme.border;
+                    border-radius: Theme.radius-sm;
+                    height: 18px;
+                    HorizontalLayout {
+                        padding-left: 6px;
+                        padding-right: 6px;
+                        alignment: center;
+                        Text {
+                            text: root.conteo;
+                            color: root.alerta && root.conteo > 0 ? Theme.accent-amber : Theme.text-secondary;
+                            font-size: 10px;
+                            font-weight: 600;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

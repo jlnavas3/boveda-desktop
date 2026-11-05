@@ -20,6 +20,7 @@ export component ListOverflowMenu inherits PopupWindow {
     callback importar-bitwarden();
     callback importar-csv();
     callback fusionar-boveda();
+    callback abrir-sincronizacion-p2p();
     callback exportar-bvda();
     callback exportar-json();
     callback exportar-csv();
@@ -180,6 +181,20 @@ export component ListOverflowMenu inherits PopupWindow {
                             padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
                             AppIcon { source: @image-url("../../assets/icons/edit.svg"); icon-size: 14px; icon-color: Theme.text-primary; vertical-alignment: center; }
                             Text { text: "Normalizar títulos..."; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.abrir-sincronizacion-p2p(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                            AppIcon { source: @image-url("../../assets/icons/qr_code.svg"); icon-size: 14px; icon-color: Theme.accent-primary; vertical-alignment: center; }
+                            Text { text: "Sincronización P2P móvil..."; color: Theme.accent-primary; font-size: 11px; font-weight: 700; vertical-alignment: center; }
                         }
                     }
                 }
@@ -407,6 +422,20 @@ export component ListOverflowMenu inherits PopupWindow {
                             padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
                             AppIcon { source: @image-url("../../assets/icons/folder.svg"); icon-size: 13px; icon-color: Theme.text-primary; vertical-alignment: center; }
                             Text { text: "Fusionar bóveda (.bvda)"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
+                        }
+                    }
+                }
+
+                TouchArea {
+                    height: 28px;
+                    clicked => { root.abrir-sincronizacion-p2p(); }
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+                        HorizontalLayout {
+                            padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                            AppIcon { source: @image-url("../../assets/icons/qr_code.svg"); icon-size: 13px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                            Text { text: "Sincronización P2P (Móvil)"; color: Theme.text-primary; font-size: 11px; vertical-alignment: center; }
                         }
                     }
                 }

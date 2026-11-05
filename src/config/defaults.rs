@@ -118,6 +118,14 @@ pub mod normalizacion_titulos {
     }
 }
 
+pub mod menu_lateral {
+    pub const MOSTRAR_CABECERA: bool = true;
+    pub const MOSTRAR_PIE: bool = true;
+    pub const MOSTRAR_BOTON_BLOQUEAR: bool = true;
+    pub const AGRUPAR_ITEMS: bool = false;
+    pub const SIN_BORDES: bool = false;
+}
+
 /// Genera los valores predeterminados canónicos en la estructura `SettingsData` de Slint.
 pub fn valores_predeterminados() -> SettingsData {
     let prefijos = normalizacion_titulos::PREFIJOS_SUBDOMINIOS.join(", ");
@@ -145,6 +153,11 @@ pub fn valores_predeterminados() -> SettingsData {
         incluir_enie_niagara: niagara::INCLUIR_ENIE,
         prefijos_subdominios: prefijos.into(),
         puertos_homelab: puertos_str.trim().into(),
+        menu_lateral_mostrar_cabecera: menu_lateral::MOSTRAR_CABECERA,
+        menu_lateral_mostrar_pie: menu_lateral::MOSTRAR_PIE,
+        menu_lateral_mostrar_boton_bloquear: menu_lateral::MOSTRAR_BOTON_BLOQUEAR,
+        menu_lateral_agrupar_items: menu_lateral::AGRUPAR_ITEMS,
+        menu_lateral_sin_bordes: menu_lateral::SIN_BORDES,
     }
 }
 

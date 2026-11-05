@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
 import { Theme } from "../../theme.slint";
 
 export component ServerForm inherits VerticalLayout {
@@ -5,6 +11,7 @@ export component ServerForm inherits VerticalLayout {
     in-out property <string> puerto: "22";
     in-out property <string> usuario: "";
     in-out property <string> password: "";
+    in-out property <string> clave-publica: "";
 
     spacing: 10px;
 
@@ -70,12 +77,30 @@ export component ServerForm inherits VerticalLayout {
         spacing: 4px;
         Text { text: "Contraseña o Clave Privada SSH"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
         Rectangle {
-            height: 60px; background: Theme.background;
+            height: 54px; background: Theme.background;
             border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
             HorizontalLayout {
                 padding: 6px;
                 TextInput {
                     text <=> root.password;
+                    color: Theme.text-primary; font-size: 11px;
+                    wrap: word-wrap;
+                }
+            }
+        }
+    }
+
+    // Clave Pública SSH
+    VerticalLayout {
+        spacing: 4px;
+        Text { text: "Clave Pública SSH (ssh-ed25519 / ssh-rsa)"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        Rectangle {
+            height: 46px; background: Theme.background;
+            border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+            HorizontalLayout {
+                padding: 6px;
+                TextInput {
+                    text <=> root.clave-publica;
                     color: Theme.text-primary; font-size: 11px;
                     wrap: word-wrap;
                 }

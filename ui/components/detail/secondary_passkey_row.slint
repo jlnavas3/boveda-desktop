@@ -1,0 +1,147 @@
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "../widgets/app_icon.slint";
+
+export struct SecondaryPasskeyItem {
+    cred_id: string,
+    rp_id: string,
+    rp_name: string,
+    usuario: string,
+    fecha: string,
+}
+
+export component SecondaryPasskeyRow inherits Rectangle {
+    in property <SecondaryPasskeyItem> item;
+
+    callback promover(string);
+    callback eliminar(string);
+
+    background: Theme.surface;
+    border-width: Theme.grosor-borde;
+    border-color: Theme.color-ind-passkey.transparentize(65%);
+    border-radius: Theme.curvatura-esquinas;
+    clip: true;
+
+    Rectangle {
+        x: 0px;
+        y: 0px;
+        width: 4.5px;
+        height: parent.height;
+        background: Theme.color-ind-passkey;
+    }
+
+    VerticalLayout {
+        width: 100%;
+        padding-left: 14px;
+        padding-right: 10px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        spacing: 4px;
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: space-between;
+
+            HorizontalLayout {
+                horizontal-stretch: 1;
+                min-width: 0px;
+                spacing: 6px;
+                alignment: start;
+
+                AppIcon {
+                    horizontal-stretch: 0;
+                    source: @image-url("../../assets/icons/fingerprint.svg");
+                    icon-size: 14px;
+                    icon-color: Theme.color-ind-passkey;
+                    vertical-alignment: center;
+                }
+
+                Text {
+                    horizontal-stretch: 1;
+                    min-width: 0px;
+                    text: root.item.rp_name != "" ? root.item.rp_name : root.item.rp_id;
+                    color: Theme.text-primary;
+                    font-size: 13px;
+                    font-weight: 600;
+                    overflow: elide;
+                    vertical-alignment: center;
+                    horizontal-alignment: left;
+                }
+            }
+
+            HorizontalLayout {
+                horizontal-stretch: 0;
+                spacing: 4px;
+                alignment: end;
+
+                // Establecer como passkey principal
+                btn-promover := TouchArea {
+                    width: 76px;
+                    height: 24px;
+                    clicked => { root.promover(root.item.cred_id); }
+
+                    Rectangle {
+                        background: btn-promover.has-hover ? Theme.accent-primary.transparentize(82%) : Theme.background;
+                        border-width: 1px;
+                        border-color: btn-promover.has-hover ? Theme.accent-primary : Theme.border;
+                        border-radius: Theme.radius-sm;
+
+                        HorizontalLayout {
+                            alignment: center;
+                            spacing: 4px;
+                            padding-left: 6px;
+                            padding-right: 6px;
+
+                            AppIcon {
+                                source: @image-url("../../assets/icons/restart.svg");
+                                icon-size: 12px;
+                                icon-color: Theme.accent-primary;
+                                vertical-alignment: center;
+                            }
+                            Text {
+                                text: "Principal";
+                                color: Theme.accent-primary;
+                                font-size: 10px;
+                                font-weight: 600;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+
+                // Eliminar passkey secundaria
+                btn-eliminar := TouchArea {
+                    width: 24px;
+                    height: 24px;
+                    clicked => { root.eliminar(root.item.cred_id); }
+
+                    Rectangle {
+                        background: btn-eliminar.has-hover ? Theme.danger.transparentize(80%) : Colors.transparent;
+                        border-radius: Theme.radius-sm;
+                        AppIcon {
+                            source: @image-url("../../assets/icons/delete.svg");
+                            icon-size: 13px;
+                            icon-color: btn-eliminar.has-hover ? Theme.danger : Theme.text-muted;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: space-between;
+
+            Text {
+                horizontal-stretch: 1;
+                min-width: 0px;
+                text: (root.item.usuario != "" ? root.item.usuario : root.item.rp_id) + (root.item.fecha != "" ? "  •  " + root.item.fecha : "");
+                color: Theme.text-secondary;
+                font-size: 11px;
+                overflow: elide;
+                horizontal-alignment: left;
+            }
+        }
+    }
+}

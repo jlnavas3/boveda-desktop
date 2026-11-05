@@ -9,10 +9,24 @@
 use slint::SharedString;
 
 use crate::crypto::totp;
+use crate::gui::profiles::{es_mismo_documento, resolver_perfil_para_entrada};
 use crate::gui::service_grouper::extraer_nombre_servicio;
 use crate::gui::state::indicator_detector::detectar_indicadores;
-use crate::gui::{DropdownOption, EntryDetailData, EntryOverview, FilterItem};
+pub use crate::gui::state::detail::construir_detalle_entrada;
+use crate::gui::{DropdownOption, EntryOverview, FilterItem};
 use crate::models::{ContenidoBoveda, Entrada, TipoEntrada};
+
+fn parse_hex_color(hex: &str) -> slint::Color {
+    let clean = hex.trim().trim_start_matches('#');
+    if clean.len() == 6 {
+        let r = u8::from_str_radix(&clean[0..2], 16).unwrap_or(59);
+        let g = u8::from_str_radix(&clean[2..4], 16).unwrap_or(130);
+        let b = u8::from_str_radix(&clean[4..6], 16).unwrap_or(246);
+        slint::Color::from_argb_u8(255, r, g, b)
+    } else {
+        slint::Color::from_argb_u8(255, 59, 130, 246)
+    }
+}
 
 /// Genera un subtítulo informativo contextualizado según el tipo de credencial.
 pub fn subtitulo_segun_tipo(e: &Entrada) -> String {
@@ -134,15 +148,29 @@ pub fn filtrar_entradas(
     let termino = termino_busqueda.trim().to_lowercase();
     let en_papelera = filtro_tipo == "PAPELERA";
 
-    let mut filtradas: Vec<&Entrada> = boveda
-        .entradas
-        .iter()
-        .filter(|e| if en_papelera { e.eliminada_en > 0 } else { e.eliminada_en == 0 })
+    // Si se consulta la papelera, unificamos entradas activas marcadas como eliminadas con boveda.papelera
+    let fuentes_entradas: Vec<&Entrada> = if en_papelera {
+        boveda
+            .papelera
+            .iter()
+            .chain(boveda.entradas.iter().filter(|e| e.eliminada_en > 0))
+            .collect()
+    } else {
+        boveda.entradas.iter().filter(|e| e.eliminada_en == 0).collect()
+    };
+
+    let mut filtradas: Vec<&Entrada> = fuentes_entradas
+        .into_iter()
         .filter(|e| {
-            if filtro_tipo == "TODOS" || filtro_tipo == "PAPELERA" {
-                true
-            } else {
-                e.tipo.as_str().eq_ignore_ascii_case(filtro_tipo)
+            match filtro_tipo {
+                "TODOS" | "PAPELERA" => true,
+                "FAVORITOS" => e.favorito,
+                "TOTP" => {
+                    !e.secreto_totp.as_deref().unwrap_or("").trim().is_empty()
+                        || !e.totps_secundarios.is_empty()
+                }
+                "PASSKEY" | "PASSKEYS" => e.tipo == TipoEntrada::Passkey,
+                _ => e.tipo.as_str().eq_ignore_ascii_case(filtro_tipo),
             }
         })
         .filter(|e| {
@@ -156,7 +184,9 @@ pub fn filtrar_entradas(
             if filtro_perfil == "TODOS" {
                 true
             } else {
-                e.perfil_id.as_deref() == Some(filtro_perfil)
+                resolver_perfil_para_entrada(e, &boveda.perfiles)
+                    .map(|p| p.id == filtro_perfil)
+                    .unwrap_or(false)
             }
         })
         .filter(|e| {
@@ -178,13 +208,17 @@ pub fn filtrar_entradas(
         })
         .collect();
 
-    // Ordenación
-    filtradas.sort_by(|a, b| {
-        if fijar_anclados_arriba && a.anclado != b.anclado {
-            return b.anclado.cmp(&a.anclado);
-        }
-        a.titulo.to_lowercase().cmp(&b.titulo.to_lowercase())
-    });
+    // Ordenación real desacoplada según el criterio configurado en la bóveda
+    let criterio_orden = boveda
+        .configuracion
+        .as_ref()
+        .map(|c| c.criterio_ordenacion.as_str())
+        .unwrap_or("NOMBRE_AZ");
+    crate::gui::state::sorting::ordenar_entradas_referencias(
+        &mut filtradas,
+        criterio_orden,
+        fijar_anclados_arriba,
+    );
 
     filtradas
         .into_iter()
@@ -217,6 +251,39 @@ pub fn filtrar_entradas(
             let primer_url = e.urls.first().map(|s| s.as_str()).unwrap_or("");
             let servicio = extraer_nombre_servicio(primer_url, &e.titulo);
 
+            let perfil_asociado = resolver_perfil_para_entrada(e, &boveda.perfiles);
+            let mut mostrar_chip_perfil = false;
+            let mut nombre_perfil = SharedString::default();
+            let mut color_perfil = slint::Color::from_argb_u8(255, 59, 130, 246);
+            let mut es_documento_perfil = false;
+
+            if let Some(p) = perfil_asociado {
+                let u_norm = e.usuario.trim().to_lowercase();
+                let coincide_correo = !u_norm.is_empty()
+                    && ((!p.correo_principal.is_empty()
+                        && p.correo_principal.trim().to_lowercase() == u_norm)
+                        || p.correos_secundarios
+                            .iter()
+                            .any(|c| c.trim().to_lowercase() == u_norm));
+
+                let coincide_doc = match &p.numero_documento {
+                    Some(doc) if !doc.trim().is_empty() => {
+                        (!u_norm.is_empty() && es_mismo_documento(doc, &u_norm))
+                            || e.campos_personalizados.iter().any(|cp| {
+                                !cp.valor.trim().is_empty() && es_mismo_documento(doc, &cp.valor)
+                            })
+                    }
+                    _ => false,
+                };
+
+                if coincide_correo || coincide_doc {
+                    mostrar_chip_perfil = true;
+                    nombre_perfil = SharedString::from(&p.nombre);
+                    color_perfil = parse_hex_color(p.color_hex.as_deref().unwrap_or("#3B82F6"));
+                    es_documento_perfil = coincide_doc;
+                }
+            }
+
             EntryOverview {
                 id: SharedString::from(&e.id),
                 titulo: SharedString::from(&e.titulo),
@@ -241,6 +308,11 @@ pub fn filtrar_entradas(
                 grupo_expandido: false,
                 es_hijo_grupo: false,
                 es_ultimo_hijo_grupo: false,
+                seleccionada_lote: false,
+                mostrar_chip_perfil,
+                nombre_perfil,
+                color_perfil,
+                es_documento_perfil,
             }
         })
         .collect()
@@ -311,11 +383,13 @@ pub fn calcular_resumen_categorias(boveda: &ContenidoBoveda) -> Vec<FilterItem> 
 /// Genera la lista de tipos de entrada con sus conteos reactivos.
 pub fn calcular_resumen_tipos(boveda: &ContenidoBoveda) -> Vec<FilterItem> {
     let entradas_activas: Vec<&Entrada> = boveda.entradas.iter().filter(|e| e.eliminada_en == 0).collect();
-    let en_papelera = boveda.entradas.iter().filter(|e| e.eliminada_en > 0).count() as i32;
+    let en_papelera = (boveda.papelera.len()
+        + boveda.entradas.iter().filter(|e| e.eliminada_en > 0).count()) as i32;
 
     let tipos = [
         ("TODOS", "Todas las entradas", "📋", entradas_activas.len() as i32),
         ("LOGIN", "Contraseñas", "🔑", entradas_activas.iter().filter(|e| e.tipo == TipoEntrada::Login).count() as i32),
+        ("PASSKEY", "Llaves de acceso", "🪪", entradas_activas.iter().filter(|e| e.tipo == TipoEntrada::Passkey).count() as i32),
         ("TARJETA", "Tarjetas", "💳", entradas_activas.iter().filter(|e| e.tipo == TipoEntrada::Tarjeta).count() as i32),
         ("CUENTA_BANCARIA", "Cuentas Bancarias", "🏦", entradas_activas.iter().filter(|e| e.tipo == TipoEntrada::CuentaBancaria).count() as i32),
         ("SERVIDOR", "Servidores / SSH", "🖥", entradas_activas.iter().filter(|e| e.tipo == TipoEntrada::Servidor).count() as i32),
@@ -336,110 +410,6 @@ pub fn calcular_resumen_tipos(boveda: &ContenidoBoveda) -> Vec<FilterItem> {
             conteo: *conteo,
         })
         .collect()
-}
-
-/// Construye el modelo detallado reactivo EntryDetailData para la ficha de visualización.
-pub fn construir_detalle_entrada(
-    e: &Entrada,
-    boveda: &ContenidoBoveda,
-    ocultar_usuario: bool,
-    ocultar_contrasena: bool,
-) -> EntryDetailData {
-    let cat_nombre = e.categorias.first().and_then(|id| {
-        boveda.categorias.iter().find(|c| &c.id == id).map(|c| c.nombre.as_str())
-    }).unwrap_or("Sin categoría");
-
-    let totp_codigo = if let Some(ref sec) = e.secreto_totp {
-        if let Ok(bytes) = totp::decodificar_base32(sec) {
-            let seg_actual = chrono::Utc::now().timestamp() as u64;
-            let periodo = if e.totp_periodo > 0 { e.totp_periodo as u64 } else { 30 };
-            let digitos = if e.totp_digitos > 0 { e.totp_digitos as usize } else { 6 };
-            let restantes = totp::segundos_restantes_totp(seg_actual, periodo);
-            if let Ok(cod) = totp::codigo_totp(&bytes, seg_actual, digitos, periodo) {
-                format!("{} ({}s)", totp::formatear_codigo_totp(&cod), restantes)
-            } else {
-                String::new()
-            }
-        } else {
-            String::new()
-        }
-    } else {
-        String::new()
-    };
-
-    let mut d = EntryDetailData {
-        id: SharedString::from(&e.id),
-        titulo: SharedString::from(&e.titulo),
-        tipo: SharedString::from(e.tipo.as_str()),
-        favorito: e.favorito,
-        papelera: e.eliminada_en > 0,
-        creada_en: SharedString::from(formatear_fecha(e.creada_en)),
-        modificada_en: SharedString::from(formatear_fecha(e.modificada_en)),
-        categoria_nombre: SharedString::from(cat_nombre),
-        perfil_nombre: SharedString::from(""),
-        usuario: SharedString::from(if ocultar_usuario { "••••••••" } else { &e.usuario }),
-        password: SharedString::from(if ocultar_contrasena { "••••••••" } else { &e.contrasena }),
-        url: SharedString::from(e.urls.first().cloned().unwrap_or_default()),
-        totp_codigo: SharedString::from(totp_codigo),
-        notas: SharedString::from(&e.notas),
-        tiene_datos: true,
-        ..Default::default()
-    };
-
-    if let Some(ref t) = e.datos_tarjeta {
-        d.tarjeta_numero = SharedString::from(&t.numero);
-        d.tarjeta_titular = SharedString::from(&t.titular);
-        d.tarjeta_vencimiento = SharedString::from(&t.vencimiento);
-        d.tarjeta_cvv = SharedString::from(&t.cvv);
-        d.tarjeta_pin = SharedString::from(&t.pin);
-    }
-    if let Some(ref w) = e.datos_wifi {
-        d.wifi_ssid = SharedString::from(&w.ssid);
-        d.wifi_password = SharedString::from(&w.contrasena);
-        d.wifi_seguridad = SharedString::from(&w.tipo_seguridad);
-    }
-    if let Some(ref s) = e.datos_servidor {
-        d.servidor_host = SharedString::from(&s.host);
-        d.servidor_puerto = SharedString::from(&s.puerto);
-        d.servidor_usuario = SharedString::from(&s.usuario);
-        d.servidor_password = SharedString::from(&s.clave_privada);
-    }
-    if let Some(ref b) = e.datos_cuenta_bancaria {
-        d.banco_iban = SharedString::from(&b.numero_cuenta);
-        d.banco_cuenta = SharedString::from(&b.numero_cuenta);
-        d.banco_bic = SharedString::from(&b.swift_bic);
-        d.banco_entidad = SharedString::from(&b.banco);
-    }
-    if let Some(ref wl) = e.datos_wallet {
-        d.wallet_red = SharedString::from(&wl.red);
-        d.wallet_direccion = SharedString::from(&wl.direccion_publica);
-        d.wallet_semilla = SharedString::from(&wl.frase_semilla);
-    }
-    if let Some(ref id) = e.datos_identidad {
-        d.identidad_nombre_completo = SharedString::from(&id.nombre_completo);
-        d.identidad_tipo_doc = SharedString::from(&id.tipo_documento);
-        d.identidad_numero_doc = SharedString::from(&id.numero);
-    }
-    if let Some(ref c) = e.datos_contacto {
-        d.contacto_email = SharedString::from(&c.correo);
-        d.contacto_telefono = SharedString::from(if !c.telefono_secundario.is_empty() {
-            &c.telefono_secundario
-        } else {
-            &e.usuario
-        });
-        d.contacto_empresa = SharedString::from(&c.empresa);
-    }
-
-    d
-}
-
-fn formatear_fecha(timestamp_ms: i64) -> String {
-    if timestamp_ms <= 0 {
-        return "Desconocida".to_string();
-    }
-    chrono::DateTime::from_timestamp_millis(timestamp_ms)
-        .map(|dt| dt.format("%d/%m/%Y %H:%M").to_string())
-        .unwrap_or_else(|| "Fecha inválida".to_string())
 }
 
 /// Genera la lista de opciones de Tipos de Entrada para la FilterBar superior (solo incluye tipos que existen en las entradas).
@@ -495,7 +465,12 @@ pub fn calcular_resumen_perfiles(boveda: &ContenidoBoveda) -> Vec<DropdownOption
         let conteo = boveda
             .entradas
             .iter()
-            .filter(|e| e.eliminada_en == 0 && e.perfil_id.as_deref() == Some(&p.id))
+            .filter(|e| {
+                e.eliminada_en == 0
+                    && resolver_perfil_para_entrada(e, &boveda.perfiles)
+                        .map(|res| res.id == p.id)
+                        .unwrap_or(false)
+            })
             .count() as i32;
 
         if conteo > 0 {

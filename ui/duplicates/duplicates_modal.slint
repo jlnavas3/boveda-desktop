@@ -1,0 +1,159 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
+import { DuplicatesFilterChips } from "duplicates_filter_chips.slint";
+import { DuplicateGroupCard, DuplicateGroupItem } from "duplicate_group_card.slint";
+
+export { DuplicateGroupItem }
+
+export component DuplicatesModal inherits Rectangle {
+    in property <string> filtro-activo: "TODOS";
+    in property <[DuplicateGroupItem]> grupos: [];
+
+    callback seleccionar-filtro(string);
+    callback unificar-grupo(string);
+    callback unificar-todos();
+    callback cerrar();
+
+    width: 100%;
+    height: 100%;
+    background: #000000B0;
+
+    TouchArea {
+        width: 100%;
+        height: 100%;
+    }
+
+    Rectangle {
+        width: Math.min(820px, root.width - 48px);
+        height: Math.min(580px, root.height - 48px);
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        background: Theme.surface;
+        border-radius: Theme.radius-lg;
+        border-width: 1px;
+        border-color: Theme.border;
+        clip: true;
+
+        VerticalLayout {
+            padding: 18px;
+            spacing: 12px;
+
+            // Cabecera + Botón de Limpieza Masiva Sin Pérdida
+            HorizontalLayout {
+                alignment: space-between;
+                spacing: 12px;
+
+                VerticalLayout {
+                    spacing: 3px;
+                    Text {
+                        text: "Detector y Unificador de Duplicados";
+                        color: Theme.text-primary;
+                        font-size: 16px;
+                        font-weight: 800;
+                    }
+                    Text {
+                        text: "La unificación conserva todas las contraseñas anteriores, Passkeys secundarias, códigos 2FA y enlaces.";
+                        color: Theme.text-secondary;
+                        font-size: 11px;
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: end;
+
+                    if root.grupos.length > 0 : btn-all := TouchArea {
+                        width: 175px;
+                        height: 32px;
+                        mouse-cursor: pointer;
+                        clicked => { root.unificar-todos(); }
+
+                        Rectangle {
+                            background: btn-all.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                            border-radius: Theme.radius-sm;
+
+                            Text {
+                                text: "Unificar todos (" + root.grupos.length + " grupos)";
+                                color: #FFFFFF;
+                                font-size: 11px;
+                                font-weight: 700;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    btn-close := TouchArea {
+                        width: 32px;
+                        height: 32px;
+                        mouse-cursor: pointer;
+                        clicked => { root.cerrar(); }
+
+                        Rectangle {
+                            background: btn-close.has-hover ? Theme.surface-hover : Theme.background;
+                            border-radius: Theme.radius-sm;
+                            border-width: 1px;
+                            border-color: Theme.border;
+
+                            AppIcon {
+                                source: @image-url("../assets/icons/close.svg");
+                                icon-size: 14px;
+                                icon-color: Theme.text-primary;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            DuplicatesFilterChips {
+                filtro-activo: root.filtro-activo;
+                seleccionar-filtro(f) => { root.seleccionar-filtro(f); }
+            }
+
+            if root.grupos.length == 0 : VerticalLayout {
+                vertical-stretch: 1;
+                alignment: center;
+                spacing: 8px;
+
+                Text {
+                    text: "✓ No se encontraron grupos duplicados con este filtro";
+                    color: Theme.accent-primary;
+                    font-size: 14px;
+                    font-weight: 700;
+                    horizontal-alignment: center;
+                }
+                Text {
+                    text: "Tu bóveda está limpia y libre de entradas redundantes.";
+                    color: Theme.text-muted;
+                    font-size: 12px;
+                    horizontal-alignment: center;
+                }
+            }
+
+            if root.grupos.length > 0 : Flickable {
+                vertical-stretch: 1;
+                content-width: self.width;
+                content-height: cards-layout.min-height;
+
+                cards-layout := VerticalLayout {
+                    width: 100%;
+                    spacing: 10px;
+                    alignment: start;
+
+                    for grp in root.grupos : DuplicateGroupCard {
+                        grupo: grp;
+                        unificar-grupo(ids) => { root.unificar-grupo(ids); }
+                    }
+                }
+            }
+        }
+    }
+}

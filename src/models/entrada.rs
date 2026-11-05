@@ -101,6 +101,16 @@ pub struct Entrada {
     pub adjuntos: Vec<AdjuntoBoveda>,
     #[serde(default)]
     pub titulo_personalizado: bool,
+
+    // Metadatos esenciales de sincronización
+    #[serde(default = "default_revision")]
+    pub revision: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "hex_option_serde")]
+    pub last_sync_hash: Option<[u8; 32]>,
+}
+
+fn default_revision() -> u64 {
+    1
 }
 
 fn default_totp_digitos() -> i32 {
@@ -155,6 +165,52 @@ impl Default for Entrada {
             fecha_caducidad: None,
             adjuntos: Vec::new(),
             titulo_personalizado: false,
+            revision: 1,
+            last_sync_hash: None,
+        }
+    }
+}
+
+mod hex_option_serde {
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(val: &Option<[u8; 32]>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match val {
+            Some(bytes) => {
+                let mut s = String::with_capacity(64);
+                for b in bytes {
+                    use std::fmt::Write;
+                    let _ = write!(s, "{:02x}", b);
+                }
+                serializer.serialize_str(&s)
+            }
+            None => serializer.serialize_none(),
+        }
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<[u8; 32]>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let opt = Option::<String>::deserialize(deserializer)?;
+        match opt {
+            Some(hex) => {
+                if hex.len() != 64 {
+                    return Err(serde::de::Error::custom(
+                        "last_sync_hash debe tener 64 caracteres hexadecimales",
+                    ));
+                }
+                let mut bytes = [0u8; 32];
+                for i in 0..32 {
+                    bytes[i] = u8::from_str_radix(&hex[i * 2..i * 2 + 2], 16)
+                        .map_err(serde::de::Error::custom)?;
+                }
+                Ok(Some(bytes))
+            }
+            None => Ok(None),
         }
     }
 }

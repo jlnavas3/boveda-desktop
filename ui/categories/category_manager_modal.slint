@@ -1,0 +1,187 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
+import { FilterItem } from "../components/sidebar/main_sidebar.slint";
+import { CategoryRowItem } from "category_row_item.slint";
+
+export component CategoryManagerModal inherits Rectangle {
+    in property <[FilterItem]> categorias: [];
+
+    property <string> id-editando: "";
+    property <string> nombre-input: "";
+    property <string> icono-input: "📁";
+
+    callback guardar-categoria(string, string, string);
+    callback eliminar-categoria(string);
+    callback cerrar();
+
+    width: 100%;
+    height: 100%;
+    background: #000000B0;
+
+    TouchArea {
+        width: 100%;
+        height: 100%;
+    }
+
+    Rectangle {
+        width: Math.min(640px, root.width - 48px);
+        height: Math.min(520px, root.height - 48px);
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        background: Theme.surface;
+        border-radius: Theme.radius-lg;
+        border-width: 1px;
+        border-color: Theme.border;
+        clip: true;
+
+        VerticalLayout {
+            padding: 18px;
+            spacing: 12px;
+
+            HorizontalLayout {
+                alignment: space-between;
+                Text {
+                    text: "Gestión de Categorías";
+                    color: Theme.text-primary;
+                    font-size: 16px;
+                    font-weight: 800;
+                    vertical-alignment: center;
+                }
+
+                btn-close := TouchArea {
+                    width: 32px;
+                    height: 32px;
+                    mouse-cursor: pointer;
+                    clicked => { root.cerrar(); }
+
+                    Rectangle {
+                        background: btn-close.has-hover ? Theme.surface-hover : Theme.background;
+                        border-radius: Theme.radius-sm;
+                        border-width: 1px;
+                        border-color: Theme.border;
+
+                        AppIcon {
+                            source: @image-url("../assets/icons/close.svg");
+                            icon-size: 14px;
+                            icon-color: Theme.text-primary;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            // Formulario de creación / edición de categoría
+            Rectangle {
+                background: Theme.background;
+                border-radius: Theme.radius-sm;
+                border-width: 1px;
+                border-color: Theme.border;
+
+                HorizontalLayout {
+                    padding: 10px;
+                    spacing: 8px;
+
+                    Rectangle {
+                        width: 48px;
+                        height: 32px;
+                        background: Theme.surface;
+                        border-radius: Theme.radius-sm;
+                        border-width: 1px;
+                        border-color: Theme.border;
+
+                        TextInput {
+                            width: 100%;
+                            height: 100%;
+                            text <=> root.icono-input;
+                            color: Theme.text-primary;
+                            font-size: 14px;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    Rectangle {
+                        horizontal-stretch: 1;
+                        height: 32px;
+                        background: Theme.surface;
+                        border-radius: Theme.radius-sm;
+                        border-width: 1px;
+                        border-color: Theme.border;
+
+                        HorizontalLayout {
+                            padding-left: 10px;
+                            padding-right: 10px;
+                            TextInput {
+                                width: 100%;
+                                height: 100%;
+                                text <=> root.nombre-input;
+                                color: Theme.text-primary;
+                                font-size: 12px;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    btn-save := TouchArea {
+                        width: 110px;
+                        height: 32px;
+                        mouse-cursor: pointer;
+                        clicked => {
+                            if root.nombre-input != "" {
+                                root.guardar-categoria(root.id-editando, root.nombre-input, root.icono-input);
+                                root.id-editando = "";
+                                root.nombre-input = "";
+                                root.icono-input = "📁";
+                            }
+                        }
+
+                        Rectangle {
+                            background: btn-save.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                            border-radius: Theme.radius-sm;
+
+                            Text {
+                                text: root.id-editando == "" ? "+ Crear" : "✓ Actualizar";
+                                color: #FFFFFF;
+                                font-size: 11px;
+                                font-weight: 700;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            Flickable {
+                vertical-stretch: 1;
+                content-width: self.width;
+                content-height: list-cat.min-height;
+
+                list-cat := VerticalLayout {
+                    width: 100%;
+                    spacing: 6px;
+                    alignment: start;
+
+                    for cat in root.categorias : CategoryRowItem {
+                        categoria: cat;
+                        editar-categoria(id, nom, ico) => {
+                            root.id-editando = id;
+                            root.nombre-input = nom;
+                            root.icono-input = ico;
+                        }
+                        eliminar-categoria(id) => {
+                            root.eliminar-categoria(id);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

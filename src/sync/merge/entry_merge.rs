@@ -245,6 +245,10 @@ pub fn fusionar_entradas(principal: &Entrada, secundarias: &[Entrada]) -> Entrad
         fecha_caducidad: principal.fecha_caducidad.or_else(|| secundarias.iter().find_map(|s| s.fecha_caducidad)),
         adjuntos: principal.adjuntos.clone(),
         titulo_personalizado: principal.titulo_personalizado,
+        revision: principal
+            .revision
+            .max(secundarias.iter().map(|s| s.revision).max().unwrap_or(1)),
+        last_sync_hash: principal.last_sync_hash,
     }
 }
 

@@ -1,0 +1,221 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "../widgets/app_icon.slint";
+
+export component SelectionBottomBar inherits Rectangle {
+    in property <int> conteo-seleccionadas: 0;
+    in property <bool> en-papelera: false;
+
+    callback lote-favorito();
+    callback lote-anclar();
+    callback lote-renombrar();
+    callback lote-categorias();
+    callback lote-unificar();
+    callback lote-salud();
+    callback lote-exportar();
+    callback lote-papelera();
+    callback lote-restaurar();
+    callback lote-eliminar-definitivo();
+
+    height: 68px;
+    background: Theme.surface;
+    border-radius: Theme.radius-md;
+    border-width: 1px;
+    border-color: Theme.accent-primary;
+
+    VerticalLayout {
+        padding: 6px;
+        spacing: 4px;
+        alignment: center;
+
+        if !root.en-papelera : HorizontalLayout {
+            spacing: 4px;
+            alignment: space-between;
+
+            btn-fav := TouchArea {
+                horizontal-stretch: 1;
+                height: 26px;
+                clicked => { root.lote-favorito(); }
+                Rectangle {
+                    background: btn-fav.has-hover ? Theme.surface-hover : Theme.background;
+                    border-radius: Theme.radius-sm;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    HorizontalLayout {
+                        spacing: 4px; alignment: center;
+                        AppIcon { source: @image-url("../../assets/icons/star.svg"); icon-size: 12px; icon-color: #F59E0B; vertical-alignment: center; }
+                        Text { text: "Fav"; color: Theme.text-primary; font-size: 10px; font-weight: 600; overflow: elide; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            btn-pin := TouchArea {
+                horizontal-stretch: 1;
+                height: 26px;
+                clicked => { root.lote-anclar(); }
+                Rectangle {
+                    background: btn-pin.has-hover ? Theme.surface-hover : Theme.background;
+                    border-radius: Theme.radius-sm;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    HorizontalLayout {
+                        spacing: 4px; alignment: center;
+                        AppIcon { source: @image-url("../../assets/icons/pin.svg"); icon-size: 12px; icon-color: Theme.accent-primary; vertical-alignment: center; }
+                        Text { text: "Anclar"; color: Theme.text-primary; font-size: 10px; font-weight: 600; overflow: elide; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            btn-ren := TouchArea {
+                horizontal-stretch: 1;
+                height: 26px;
+                clicked => { root.lote-renombrar(); }
+                Rectangle {
+                    background: btn-ren.has-hover ? Theme.surface-hover : Theme.background;
+                    border-radius: Theme.radius-sm;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    HorizontalLayout {
+                        spacing: 4px; alignment: center;
+                        AppIcon { source: @image-url("../../assets/icons/edit.svg"); icon-size: 12px; icon-color: Theme.text-primary; vertical-alignment: center; }
+                        Text { text: "Nombre"; color: Theme.text-primary; font-size: 10px; font-weight: 600; overflow: elide; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            btn-cat := TouchArea {
+                horizontal-stretch: 1;
+                height: 26px;
+                clicked => { root.lote-categorias(); }
+                Rectangle {
+                    background: btn-cat.has-hover ? Theme.surface-hover : Theme.background;
+                    border-radius: Theme.radius-sm;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    HorizontalLayout {
+                        spacing: 4px; alignment: center;
+                        AppIcon { source: @image-url("../../assets/icons/folder.svg"); icon-size: 12px; icon-color: Theme.accent-blue; vertical-alignment: center; }
+                        Text { text: "Categoría"; color: Theme.text-primary; font-size: 10px; font-weight: 600; overflow: elide; vertical-alignment: center; }
+                    }
+                }
+            }
+        }
+
+        if !root.en-papelera : HorizontalLayout {
+            spacing: 4px;
+            alignment: space-between;
+
+            if root.conteo-seleccionadas >= 2 : btn-uni := TouchArea {
+                horizontal-stretch: 1;
+                height: 26px;
+                clicked => { root.lote-unificar(); }
+                Rectangle {
+                    background: btn-uni.has-hover ? Theme.accent-primary.transparentize(80%) : Theme.background;
+                    border-radius: Theme.radius-sm;
+                    border-width: 1px;
+                    border-color: Theme.accent-primary;
+                    HorizontalLayout {
+                        spacing: 4px; alignment: center;
+                        AppIcon { source: @image-url("../../assets/icons/build.svg"); icon-size: 12px; icon-color: Theme.accent-primary; vertical-alignment: center; }
+                        Text { text: "Unificar"; color: Theme.accent-primary; font-size: 10px; font-weight: 700; overflow: elide; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            btn-sal := TouchArea {
+                horizontal-stretch: 1;
+                height: 26px;
+                clicked => { root.lote-salud(); }
+                Rectangle {
+                    background: btn-sal.has-hover ? Theme.surface-hover : Theme.background;
+                    border-radius: Theme.radius-sm;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    HorizontalLayout {
+                        spacing: 4px; alignment: center;
+                        AppIcon { source: @image-url("../../assets/icons/shield.svg"); icon-size: 12px; icon-color: Theme.text-secondary; vertical-alignment: center; }
+                        Text { text: "Salud"; color: Theme.text-primary; font-size: 10px; font-weight: 600; overflow: elide; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            btn-exp := TouchArea {
+                horizontal-stretch: 1;
+                height: 26px;
+                clicked => { root.lote-exportar(); }
+                Rectangle {
+                    background: btn-exp.has-hover ? Theme.surface-hover : Theme.background;
+                    border-radius: Theme.radius-sm;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    HorizontalLayout {
+                        spacing: 4px; alignment: center;
+                        AppIcon { source: @image-url("../../assets/icons/file_download.svg"); icon-size: 12px; icon-color: Theme.text-secondary; vertical-alignment: center; }
+                        Text { text: "Exportar"; color: Theme.text-primary; font-size: 10px; font-weight: 600; overflow: elide; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            btn-del := TouchArea {
+                horizontal-stretch: 1;
+                height: 26px;
+                clicked => { root.lote-papelera(); }
+                Rectangle {
+                    background: btn-del.has-hover ? Theme.danger.transparentize(82%) : Theme.background;
+                    border-radius: Theme.radius-sm;
+                    border-width: 1px;
+                    border-color: Theme.danger;
+                    HorizontalLayout {
+                        spacing: 4px; alignment: center;
+                        AppIcon { source: @image-url("../../assets/icons/delete.svg"); icon-size: 12px; icon-color: Theme.danger; vertical-alignment: center; }
+                        Text { text: "Papelera"; color: Theme.danger; font-size: 10px; font-weight: 700; overflow: elide; vertical-alignment: center; }
+                    }
+                }
+            }
+        }
+
+        if root.en-papelera : HorizontalLayout {
+            spacing: 8px;
+            alignment: space-between;
+
+            btn-rest := TouchArea {
+                horizontal-stretch: 1;
+                height: 36px;
+                clicked => { root.lote-restaurar(); }
+                Rectangle {
+                    background: btn-rest.has-hover ? Theme.accent-primary.transparentize(80%) : Theme.background;
+                    border-radius: Theme.radius-sm;
+                    border-width: 1px;
+                    border-color: Theme.accent-primary;
+                    HorizontalLayout {
+                        spacing: 6px; alignment: center;
+                        AppIcon { source: @image-url("../../assets/icons/restart.svg"); icon-size: 14px; icon-color: Theme.accent-primary; vertical-alignment: center; }
+                        Text { text: "Restaurar seleccionadas"; color: Theme.accent-primary; font-size: 11px; font-weight: 700; overflow: elide; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            btn-kill := TouchArea {
+                horizontal-stretch: 1;
+                height: 36px;
+                clicked => { root.lote-eliminar-definitivo(); }
+                Rectangle {
+                    background: btn-kill.has-hover ? Theme.danger.transparentize(80%) : Theme.background;
+                    border-radius: Theme.radius-sm;
+                    border-width: 1px;
+                    border-color: Theme.danger;
+                    HorizontalLayout {
+                        spacing: 6px; alignment: center;
+                        AppIcon { source: @image-url("../../assets/icons/delete.svg"); icon-size: 14px; icon-color: Theme.danger; vertical-alignment: center; }
+                        Text { text: "Eliminar definitivo"; color: Theme.danger; font-size: 11px; font-weight: 700; overflow: elide; vertical-alignment: center; }
+                    }
+                }
+            }
+        }
+    }
+}

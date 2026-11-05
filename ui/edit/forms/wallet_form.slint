@@ -1,9 +1,16 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
 import { Theme } from "../../theme.slint";
 
 export component WalletForm inherits VerticalLayout {
     in-out property <string> red: "Bitcoin";
     in-out property <string> direccion: "";
     in-out property <string> semilla: "";
+    in-out property <string> clave-privada: "";
 
     spacing: 10px;
 
@@ -50,12 +57,12 @@ export component WalletForm inherits VerticalLayout {
         }
     }
 
-    // Frase Semilla / Clave Privada
+    // Frase Semilla (Seed Phrase BIP-39)
     VerticalLayout {
         spacing: 4px;
-        Text { text: "Frase Semilla (Seed Phrase) o Clave Privada"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        Text { text: "Frase Semilla (Seed Phrase 12/24 palabras)"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
         Rectangle {
-            height: 60px; background: Theme.background;
+            height: 54px; background: Theme.background;
             border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
             HorizontalLayout {
                 padding: 6px;
@@ -63,6 +70,24 @@ export component WalletForm inherits VerticalLayout {
                     text <=> root.semilla;
                     color: Theme.accent-amber; font-size: 11px;
                     wrap: word-wrap;
+                }
+            }
+        }
+    }
+
+    // Clave Privada Individual
+    VerticalLayout {
+        spacing: 4px;
+        Text { text: "Clave Privada Individual (Hex / WIF)"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        Rectangle {
+            height: 36px; background: Theme.background;
+            border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+            HorizontalLayout {
+                padding-left: 8px; padding-right: 8px;
+                TextInput {
+                    text <=> root.clave-privada;
+                    color: Theme.text-primary; font-size: 11px;
+                    vertical-alignment: center; single-line: true;
                 }
             }
         }

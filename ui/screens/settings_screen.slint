@@ -32,6 +32,7 @@ export component SettingsScreen inherits Rectangle {
     in property <string> hex-passkey: "#8B5CF6";
     in property <string> hex-url: "#06B6D4";
     in property <string> hex-app: "#16A34A";
+    in property <string> registro-eventos: "Sesión iniciada con cifrado autenticado AES-256-GCM y derivación Argon2id.";
 
     callback guardar(SettingsData);
     callback restaurar-predeterminados();
@@ -44,6 +45,10 @@ export component SettingsScreen inherits Rectangle {
     callback importar-bitwarden();
     callback importar-csv();
     callback fusionar-boveda();
+    callback generar-kit-emergencia();
+    callback vaciar-papelera();
+    callback abrir-gestor-categorias();
+    callback abrir-gestor-perfiles();
     callback abrir-generador();
     callback auditoria-salud();
     callback alternar-biometria(bool);
@@ -54,6 +59,10 @@ export component SettingsScreen inherits Rectangle {
     callback reportar-ancho-chips(float);
     callback calcular-hsv(float, float, float) -> HsvColorResult;
     callback aplicar-color-indicador(string, color, string);
+    callback aumentar-zoom();
+    callback reducir-zoom();
+    callback restaurar-zoom();
+    callback buscar-ajuste(string);
 
     property <bool> modal-color-abierto: false;
     property <string> modal-color-clave: "";
@@ -65,9 +74,9 @@ export component SettingsScreen inherits Rectangle {
     property <float> modal-color-s: 0.84;
     property <float> modal-color-v: 0.92;
 
-    property <int> categoria-activa: 1;
-    property <int> subseccion-activa: 1;
-    property <string> termino-busqueda: "";
+    in-out property <int> categoria-activa: 1;
+    in-out property <int> subseccion-activa: 1;
+    in-out property <string> termino-busqueda: "";
 
     property <[MainCategory]> categorias: [
         { id: 1, titulo: "Seguridad", icono: "shield", badge: "5" },
@@ -143,6 +152,7 @@ export component SettingsScreen inherits Rectangle {
         // BARRA SUPERIOR INTEGRADA ESTILO KDE PLASMA
         SettingsTopBar {
             termino-busqueda <=> root.termino-busqueda;
+            buscar(q) => { root.buscar-ajuste(q); }
             volver => { root.volver(); }
             restaurar-predeterminados => { root.restaurar-predeterminados(); }
             guardar => { root.guardar(root.datos); }
@@ -214,6 +224,7 @@ export component SettingsScreen inherits Rectangle {
                 hex-passkey: root.hex-passkey;
                 hex-url: root.hex-url;
                 hex-app: root.hex-app;
+                registro-eventos: root.registro-eventos;
 
                 restaurar-campo(c) => { root.restaurar-campo(c); }
                 restaurar-seccion(s) => { root.restaurar-seccion(s); }
@@ -223,6 +234,10 @@ export component SettingsScreen inherits Rectangle {
                 importar-bitwarden => { root.importar-bitwarden(); }
                 importar-csv => { root.importar-csv(); }
                 fusionar-boveda => { root.fusionar-boveda(); }
+                generar-kit-emergencia => { root.generar-kit-emergencia(); }
+                vaciar-papelera => { root.vaciar-papelera(); }
+                abrir-gestor-categorias => { root.abrir-gestor-categorias(); }
+                abrir-gestor-perfiles => { root.abrir-gestor-perfiles(); }
                 abrir-generador => { root.abrir-generador(); }
                 auditoria-salud => { root.auditoria-salud(); }
                 alternar-biometria(act) => { root.alternar-biometria(act); }
@@ -231,6 +246,9 @@ export component SettingsScreen inherits Rectangle {
                 agregar-subdominio(s) => { root.agregar-subdominio(s); }
                 eliminar-subdominio(id) => { root.eliminar-subdominio(id); }
                 reportar-ancho-chips(w) => { root.reportar-ancho-chips(w); }
+                aumentar-zoom => { root.aumentar-zoom(); }
+                reducir-zoom => { root.reducir-zoom(); }
+                restaurar-zoom => { root.restaurar-zoom(); }
                 abrir-selector-color(c) => {
                     root.modal-color-clave = c;
                     root.modal-color-abierto = true;

@@ -6,24 +6,29 @@
 
 import { Theme } from "../../theme.slint";
 import { AppIcon } from "app_icon.slint";
+import { SelectableAvatar } from "../selection/selectable_avatar.slint";
 
 export component GroupHeaderItem inherits Rectangle {
     in property <string> titulo: "Servicio";
     in property <int> conteo: 0;
     in property <bool> expandido: false;
     in property <bool> seleccionado: false;
+    in property <bool> seleccionado-lote: false;
+    in property <bool> modo-seleccion: false;
     callback alternar();
+    callback alternar-seleccion-grupo();
 
     height: 64px;
     clip: true;
-    background: root.seleccionado ? Theme.surface-selected :
+    background: root.seleccionado-lote ? Theme.accent-primary.transparentize(84%) :
+                root.seleccionado ? Theme.surface-selected :
                 (touch.has-hover ? Theme.surface-hover : Theme.surface);
     border-top-left-radius: Theme.radio-tarjetas;
     border-top-right-radius: Theme.radio-tarjetas;
     border-bottom-left-radius: root.expandido ? 0px : Theme.radio-tarjetas;
     border-bottom-right-radius: root.expandido ? 0px : Theme.radio-tarjetas;
     border-width: Theme.grosor-borde;
-    border-color: root.seleccionado ? Theme.accent-primary :
+    border-color: (root.seleccionado || root.seleccionado-lote) ? Theme.accent-primary :
                   (root.expandido ? Theme.accent-primary.transparentize(50%) : Theme.border);
 
     touch := TouchArea {
@@ -38,23 +43,16 @@ export component GroupHeaderItem inherits Rectangle {
             padding-right: 12px;
             spacing: 10px;
 
-            // Izquierda: Círculo de avatar estilizado (36px x 36px)
+            // Izquierda: Círculo de avatar seleccionable (selecciona todas las entradas del grupo)
             VerticalLayout {
                 horizontal-stretch: 0;
                 alignment: center;
-                Rectangle {
-                    width: 36px;
-                    height: 36px;
-                    border-radius: 18px;
-                    background: Theme.accent-primary.transparentize(85%);
-
-                    AppIcon {
-                        source: root.titulo == "Anclados" ? @image-url("../../assets/icons/pin.svg") : @image-url("../../assets/icons/folder.svg");
-                        icon-size: 18px;
-                        icon-color: Theme.accent-primary;
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                    }
+                SelectableAvatar {
+                    seleccionado-lote: root.seleccionado-lote;
+                    modo-seleccion: root.modo-seleccion;
+                    hover-externo: touch.has-hover;
+                    icono-base: root.titulo == "Anclados" ? @image-url("../../assets/icons/pin.svg") : @image-url("../../assets/icons/folder.svg");
+                    alternar-seleccion => { root.alternar-seleccion-grupo(); }
                 }
             }
 

@@ -1,39 +1,128 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
 import { Theme } from "../../theme.slint";
+import { DropdownOption } from "../../components/dropdown_filter.slint";
 
 export component CategorySelector inherits VerticalLayout {
     in-out property <string> categoria-id: "";
+    in-out property <string> perfil-id: "";
+    in property <[DropdownOption]> opciones-categorias: [];
+    in property <[DropdownOption]> opciones-perfiles: [];
 
-    spacing: 6px;
+    spacing: 8px;
 
-    HorizontalLayout {
-        alignment: space-between;
-        Text { text: "Categoría / Colección"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
-        Text { text: "Asignación rápida"; color: Theme.text-muted; font-size: 10px; }
+    VerticalLayout {
+        spacing: 4px;
+        HorizontalLayout {
+            alignment: space-between;
+            Text { text: "Categoría / Colección"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Text { text: "Asignación a carpeta de la bóveda"; color: Theme.text-muted; font-size: 10px; }
+        }
+
+        Flickable {
+            height: 30px;
+            content-width: cats-row.min-width;
+            cats-row := HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+
+                TouchArea {
+                    height: 28px;
+                    width: 72px;
+                    clicked => { root.categoria-id = ""; }
+                    Rectangle {
+                        background: root.categoria-id == "" ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                        border-width: 1px;
+                        border-color: root.categoria-id == "" ? Theme.accent-primary : Theme.border;
+                        border-radius: Theme.radius-sm;
+                        Text {
+                            text: "Ninguna";
+                            color: root.categoria-id == "" ? Theme.accent-primary : Theme.text-secondary;
+                            font-size: 11px; font-weight: 600;
+                            horizontal-alignment: center; vertical-alignment: center;
+                        }
+                    }
+                }
+
+                for cat in root.opciones-categorias : TouchArea {
+                    height: 28px;
+                    width: cat.id == "TODAS" ? 0px : txt-cat.preferred-width + 18px;
+                    visible: cat.id != "TODAS";
+                    clicked => {
+                        if cat.id != "TODAS" {
+                            root.categoria-id = cat.id;
+                        }
+                    }
+                    Rectangle {
+                        background: root.categoria-id == cat.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                        border-width: 1px;
+                        border-color: root.categoria-id == cat.id ? Theme.accent-primary : Theme.border;
+                        border-radius: Theme.radius-sm;
+                        txt-cat := Text {
+                            text: cat.nombre;
+                            color: root.categoria-id == cat.id ? Theme.accent-primary : Theme.text-secondary;
+                            font-size: 11px; font-weight: 600;
+                            horizontal-alignment: center; vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    HorizontalLayout {
-        spacing: 6px;
-        for cat in [
-            { id: "", nombre: "Ninguna" },
-            { id: "personal", nombre: "Personal" },
-            { id: "trabajo", nombre: "Trabajo" },
-            { id: "finanzas", nombre: "Finanzas" },
-            { id: "servidores", nombre: "Servidores" }
-        ]: TouchArea {
-            height: 28px;
-            clicked => { root.categoria-id = cat.id; }
-            Rectangle {
-                background: root.categoria-id == cat.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
-                border-width: 1px;
-                border-color: root.categoria-id == cat.id ? Theme.accent-primary : Theme.border;
-                border-radius: Theme.radius-sm;
-                HorizontalLayout {
-                    padding-left: 8px; padding-right: 8px;
-                    Text {
-                        text: cat.nombre;
-                        color: root.categoria-id == cat.id ? Theme.accent-primary : Theme.text-secondary;
-                        font-size: 11px; font-weight: 600;
-                        vertical-alignment: center;
+    if root.opciones-perfiles.length > 1 : VerticalLayout {
+        spacing: 4px;
+        Text { text: "Perfil / Identidad asociada"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+
+        Flickable {
+            height: 30px;
+            content-width: prof-row.min-width;
+            prof-row := HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+
+                TouchArea {
+                    height: 28px;
+                    width: 80px;
+                    clicked => { root.perfil-id = ""; }
+                    Rectangle {
+                        background: root.perfil-id == "" ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                        border-width: 1px;
+                        border-color: root.perfil-id == "" ? Theme.accent-primary : Theme.border;
+                        border-radius: Theme.radius-sm;
+                        Text {
+                            text: "Sin perfil";
+                            color: root.perfil-id == "" ? Theme.accent-primary : Theme.text-secondary;
+                            font-size: 11px; font-weight: 600;
+                            horizontal-alignment: center; vertical-alignment: center;
+                        }
+                    }
+                }
+
+                for p in root.opciones-perfiles : TouchArea {
+                    height: 28px;
+                    width: p.id == "TODOS" ? 0px : txt-prof.preferred-width + 18px;
+                    visible: p.id != "TODOS";
+                    clicked => {
+                        if p.id != "TODOS" {
+                            root.perfil-id = p.id;
+                        }
+                    }
+                    Rectangle {
+                        background: root.perfil-id == p.id ? Theme.accent-primary.transparentize(85%) : Theme.background;
+                        border-width: 1px;
+                        border-color: root.perfil-id == p.id ? Theme.accent-primary : Theme.border;
+                        border-radius: Theme.radius-sm;
+                        txt-prof := Text {
+                            text: p.nombre;
+                            color: root.perfil-id == p.id ? Theme.accent-primary : Theme.text-secondary;
+                            font-size: 11px; font-weight: 600;
+                            horizontal-alignment: center; vertical-alignment: center;
+                        }
                     }
                 }
             }

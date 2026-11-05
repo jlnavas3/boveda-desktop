@@ -13,7 +13,9 @@ export component ContextMenu inherits PopupWindow {
     in property <bool> tiene-totp: false;
     in property <bool> tiene-password: true;
     in property <bool> tiene-usuario: true;
+    in property <bool> es-seleccionada-lote: false;
 
+    callback alternar-seleccion();
     callback copiar-usuario();
     callback copiar-password();
     callback copiar-totp();
@@ -37,6 +39,22 @@ export component ContextMenu inherits PopupWindow {
         VerticalLayout {
             padding: 6px;
             spacing: 2px;
+
+            TouchArea {
+                height: 28px;
+                clicked => { root.alternar-seleccion(); }
+                Rectangle {
+                    background: parent.has-hover ? Theme.surface-hover : transparent;
+                    border-radius: Theme.radius-sm;
+                    HorizontalLayout {
+                        padding-left: 10px; padding-right: 10px; spacing: 8px; alignment: start;
+                        AppIcon { source: @image-url("../../assets/icons/check.svg"); icon-size: 14px; icon-color: Theme.accent-primary; vertical-alignment: center; }
+                        Text { text: root.es-seleccionada-lote ? "Quitar de selección" : "Seleccionar entrada"; color: Theme.accent-primary; font-size: 11px; font-weight: 600; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            Rectangle { height: 1px; background: Theme.border; }
 
             if root.tiene-usuario : TouchArea {
                 height: 28px;

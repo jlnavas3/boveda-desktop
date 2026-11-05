@@ -1,0 +1,83 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+
+export component SubAccountsCategories inherits VerticalLayout {
+    callback abrir-gestor-categorias();
+    callback abrir-gestor-perfiles();
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Categorías y Perfiles de Cuentas";
+        descripcion: "Organización jerárquica de tus credenciales mediante carpetas temáticas e identidades personales o laborales.";
+    }
+
+    SettingBlock {
+        titulo: "Gestor de Categorías";
+        descripcion: "Crea nuevas categorías con ícono personalizado, renombra carpetas existentes o elimina categorías obsoletas.";
+        mostrar-restaurar: false;
+
+        HorizontalLayout {
+            alignment: start;
+            btn-cat := TouchArea {
+                width: 210px;
+                height: 34px;
+                mouse-cursor: pointer;
+                clicked => { root.abrir-gestor-categorias(); }
+
+                Rectangle {
+                    border-radius: Theme.radius-sm;
+                    background: btn-cat.has-hover ? Theme.accent-hover : Theme.accent-primary;
+
+                    Text {
+                        text: "Abrir Gestor de Categorías";
+                        color: #FFFFFF;
+                        font-size: 12px;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+
+    SettingBlock {
+        titulo: "Gestor de Perfiles e Identidades";
+        descripcion: "Administra tus perfiles (Personal, Trabajo, Homelab) con correo y documento asociados para filtrar tus cuentas.";
+        mostrar-restaurar: false;
+
+        HorizontalLayout {
+            alignment: start;
+            btn-perf := TouchArea {
+                width: 210px;
+                height: 34px;
+                mouse-cursor: pointer;
+                clicked => { root.abrir-gestor-perfiles(); }
+
+                Rectangle {
+                    border-radius: Theme.radius-sm;
+                    background: btn-perf.has-hover ? Theme.surface-hover : Theme.background;
+                    border-width: 1px;
+                    border-color: Theme.accent-primary;
+
+                    Text {
+                        text: "Abrir Gestor de Perfiles";
+                        color: Theme.accent-primary;
+                        font-size: 12px;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

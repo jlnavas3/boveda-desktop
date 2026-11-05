@@ -1,0 +1,307 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
+
+export struct ProfileManagerItem {
+    id: string,
+    nombre: string,
+    correo: string,
+    correos_secundarios: string,
+    tipo_documento: string,
+    documento: string,
+    preferencia_identificador: string,
+    conteo: int,
+    conteo_docs: int,
+    conteo_tarjetas: int,
+    conteo_cuentas: int,
+    conteo_contactos: int,
+}
+
+export component ProfileRowItem inherits Rectangle {
+    in property <ProfileManagerItem> perfil;
+    callback editar-perfil(ProfileManagerItem);
+    callback eliminar-perfil(string);
+
+    width: 100%;
+    height: 76px;
+    background: Theme.surface;
+    border-radius: Theme.radius-md;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    HorizontalLayout {
+        padding-left: 14px;
+        padding-right: 14px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        spacing: 12px;
+        alignment: space-between;
+
+        // Avatar / Icono Perfil
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 38px;
+                height: 38px;
+                border-radius: 19px;
+                background: Theme.surface-hover;
+                border-width: 1px;
+                border-color: Theme.border;
+
+                AppIcon {
+                    source: @image-url("../assets/icons/person.svg");
+                    icon-size: 18px;
+                    icon-color: Theme.accent-primary;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
+
+        // Datos del Perfil (Nombre, Conteo, Correo, Documento, Insignias)
+        VerticalLayout {
+            horizontal-stretch: 1;
+            alignment: center;
+            spacing: 3px;
+
+            // Fila 1: Nombre + Pill de Conteo
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: start;
+
+                Text {
+                    text: root.perfil.nombre;
+                    color: Theme.text-primary;
+                    font-size: 13px;
+                    font-weight: 700;
+                    vertical-alignment: center;
+                }
+
+                Rectangle {
+                    height: 18px;
+                    border-radius: 9px;
+                    background: Theme.accent-primary.transparentize(85%);
+
+                    HorizontalLayout {
+                        padding-left: 8px;
+                        padding-right: 8px;
+                        alignment: center;
+
+                        Text {
+                            text: root.perfil.conteo + (root.perfil.conteo == 1 ? " cuenta" : " cuentas");
+                            color: Theme.accent-primary;
+                            font-size: 10px;
+                            font-weight: 700;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            // Fila 2: Correo e Identificación
+            HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+
+                Text {
+                    text: root.perfil.correo != "" ? root.perfil.correo : "Sin correo";
+                    color: Theme.text-secondary;
+                    font-size: 11px;
+                    vertical-alignment: center;
+                }
+
+                if root.perfil.documento != "" : Text {
+                    text: "· " + (root.perfil.tipo_documento != "" ? root.perfil.tipo_documento : "CI") + ": " + root.perfil.documento;
+                    color: Theme.text-muted;
+                    font-size: 11px;
+                    vertical-alignment: center;
+                }
+            }
+
+            // Fila 3: Insignias de Elementos Vinculados (Documentos, Tarjetas, Cuentas, Contactos)
+            HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+
+                if root.perfil.conteo_docs > 0 : Rectangle {
+                    height: 18px;
+                    border-radius: 9px;
+                    background: Theme.surface-hover;
+                    border-width: 1px;
+                    border-color: Theme.border;
+
+                    HorizontalLayout {
+                        padding-left: 6px;
+                        padding-right: 6px;
+                        spacing: 4px;
+                        alignment: center;
+
+                        AppIcon {
+                            source: @image-url("../assets/icons/badge.svg");
+                            icon-size: 11px;
+                            icon-color: Theme.text-muted;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: root.perfil.conteo_docs;
+                            color: Theme.text-muted;
+                            font-size: 10px;
+                            font-weight: 600;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                if root.perfil.conteo_tarjetas > 0 : Rectangle {
+                    height: 18px;
+                    border-radius: 9px;
+                    background: Theme.surface-hover;
+                    border-width: 1px;
+                    border-color: Theme.border;
+
+                    HorizontalLayout {
+                        padding-left: 6px;
+                        padding-right: 6px;
+                        spacing: 4px;
+                        alignment: center;
+
+                        AppIcon {
+                            source: @image-url("../assets/icons/credit_card.svg");
+                            icon-size: 11px;
+                            icon-color: Theme.text-muted;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: root.perfil.conteo_tarjetas;
+                            color: Theme.text-muted;
+                            font-size: 10px;
+                            font-weight: 600;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                if root.perfil.conteo_cuentas > 0 : Rectangle {
+                    height: 18px;
+                    border-radius: 9px;
+                    background: Theme.surface-hover;
+                    border-width: 1px;
+                    border-color: Theme.border;
+
+                    HorizontalLayout {
+                        padding-left: 6px;
+                        padding-right: 6px;
+                        spacing: 4px;
+                        alignment: center;
+
+                        AppIcon {
+                            source: @image-url("../assets/icons/account_balance.svg");
+                            icon-size: 11px;
+                            icon-color: Theme.text-muted;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: root.perfil.conteo_cuentas;
+                            color: Theme.text-muted;
+                            font-size: 10px;
+                            font-weight: 600;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                if root.perfil.conteo_contactos > 0 : Rectangle {
+                    height: 18px;
+                    border-radius: 9px;
+                    background: Theme.surface-hover;
+                    border-width: 1px;
+                    border-color: Theme.border;
+
+                    HorizontalLayout {
+                        padding-left: 6px;
+                        padding-right: 6px;
+                        spacing: 4px;
+                        alignment: center;
+
+                        AppIcon {
+                            source: @image-url("../assets/icons/person.svg");
+                            icon-size: 11px;
+                            icon-color: Theme.text-muted;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: root.perfil.conteo_contactos;
+                            color: Theme.text-muted;
+                            font-size: 10px;
+                            font-weight: 600;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Acciones: Editar y Eliminar
+        HorizontalLayout {
+            spacing: 6px;
+            alignment: end;
+
+            VerticalLayout {
+                alignment: center;
+                btn-edit := TouchArea {
+                    width: 32px;
+                    height: 32px;
+                    mouse-cursor: pointer;
+                    clicked => {
+                        root.editar-perfil(root.perfil);
+                    }
+
+                    Rectangle {
+                        background: btn-edit.has-hover ? Theme.surface-hover : Theme.background;
+                        border-radius: 16px;
+                        border-width: 1px;
+                        border-color: Theme.border;
+
+                        AppIcon {
+                            source: @image-url("../assets/icons/edit.svg");
+                            icon-size: 14px;
+                            icon-color: btn-edit.has-hover ? Theme.accent-primary : Theme.text-secondary;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                btn-del := TouchArea {
+                    width: 32px;
+                    height: 32px;
+                    mouse-cursor: pointer;
+                    clicked => { root.eliminar-perfil(root.perfil.id); }
+
+                    Rectangle {
+                        background: btn-del.has-hover ? Theme.danger.transparentize(80%) : Theme.background;
+                        border-radius: 16px;
+                        border-width: 1px;
+                        border-color: btn-del.has-hover ? Theme.danger : Theme.border;
+
+                        AppIcon {
+                            source: @image-url("../assets/icons/delete.svg");
+                            icon-size: 14px;
+                            icon-color: Theme.danger;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

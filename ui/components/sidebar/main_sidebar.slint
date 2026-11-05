@@ -1,0 +1,432 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "../widgets/app_icon.slint";
+import { SidebarSectionHeader } from "sidebar_section_header.slint";
+import { SidebarNavItem } from "sidebar_nav_item.slint";
+import { SidebarFooterBadge } from "sidebar_footer_badge.slint";
+import { DropdownOption } from "../dropdown_filter.slint";
+
+export struct FilterItem {
+    id: string,
+    nombre: string,
+    icono: string,
+    conteo: int,
+}
+
+export component MainSidebar inherits Rectangle {
+    in property <[FilterItem]> tipos-filtro: [];
+    in property <[FilterItem]> categorias-filtro: [];
+    in property <[DropdownOption]> perfiles-filtro: [];
+    in property <string> filtro-tipo-actual: "TODOS";
+    in property <string> filtro-categoria-actual: "TODAS";
+    in property <string> filtro-perfil-actual: "TODOS";
+    in property <bool> solo-favoritos: false;
+
+    // Contadores reactivos fieles a Android
+    in property <int> conteo-favoritos: 0;
+    in property <int> conteo-salud-alertas: 0;
+    in property <int> conteo-duplicados: 0;
+    in property <int> conteo-papelera: 0;
+    in property <int> conteo-perfiles: 0;
+    in property <int> conteo-categorias: 0;
+    in property <int> conteo-totp: 0;
+    in property <int> conteo-passkeys: 0;
+    in property <int> conteo-titulos-sucios: 0;
+    in property <int> conteo-historial-generador: 0;
+    in property <string> perfil-argon2-nombre: "ESTÁNDAR";
+
+    in-out property <bool> sidebar-colapsada: false;
+
+    callback bloquear-boveda();
+    callback abrir-nueva-entrada();
+    callback seleccionar-tipo(string);
+    callback seleccionar-categoria(string);
+    callback seleccionar-perfil(string);
+    callback alternar-solo-favoritos();
+    callback abrir-salud();
+    callback abrir-duplicados();
+    callback abrir-normalizador-titulos();
+    callback abrir-gestor-categorias();
+    callback abrir-gestor-perfiles();
+    callback abrir-generador();
+    callback abrir-escaner-qr();
+    callback abrir-historial-claves();
+    callback vaciar-papelera();
+    callback abrir-ajustes();
+
+    background: Theme.surface;
+    border-width: Theme.menu-lateral-sin-bordes ? 0px : 1px;
+    border-color: Theme.border;
+    clip: true;
+
+    VerticalLayout {
+        width: 100%;
+        padding: 10px;
+        spacing: 10px;
+
+        // 1. Cabecera (Mostrar Cabecera de Bóveda)
+        if Theme.menu-lateral-mostrar-cabecera : HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            TouchArea {
+                width: 32px;
+                height: 32px;
+                mouse-cursor: pointer;
+                clicked => { root.sidebar-colapsada = !root.sidebar-colapsada; }
+
+                Rectangle {
+                    background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                    border-radius: Theme.radius-sm;
+                    border-width: 1px;
+                    border-color: Theme.border;
+
+                    AppIcon {
+                        source: @image-url("../../assets/icons/menu.svg");
+                        icon-size: 16px;
+                        icon-color: Theme.text-primary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+
+            if !root.sidebar-colapsada : VerticalLayout {
+                horizontal-stretch: 1;
+                min-width: 0px;
+                spacing: 1px;
+                alignment: center;
+
+                Text {
+                    text: "Bóveda local";
+                    color: Theme.text-primary;
+                    font-size: 13px;
+                    font-weight: 700;
+                    overflow: elide;
+                }
+
+                HorizontalLayout {
+                    spacing: 4px;
+                    alignment: start;
+                    VerticalLayout {
+                        alignment: center;
+                        Rectangle {
+                            width: 6px;
+                            height: 6px;
+                            border-radius: 3px;
+                            background: #10B981; // Verde esmeralda boveda cifrada
+                        }
+                    }
+                    Text {
+                        text: "Bóveda cifrada";
+                        color: Theme.text-muted;
+                        font-size: 10px;
+                        font-weight: 500;
+                    }
+                }
+            }
+        }
+
+        // 2. Botón Nueva Entrada
+        btn-nueva := TouchArea {
+            height: 34px;
+            mouse-cursor: pointer;
+            clicked => { root.abrir-nueva-entrada(); }
+
+            Rectangle {
+                background: btn-nueva.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                border-radius: Theme.radius-sm;
+                clip: true;
+
+                HorizontalLayout {
+                    alignment: center;
+                    spacing: 6px;
+                    padding-left: 8px;
+                    padding-right: 8px;
+
+                    AppIcon {
+                        source: @image-url("../../assets/icons/add.svg");
+                        icon-size: 15px;
+                        icon-color: #FFFFFF;
+                        vertical-alignment: center;
+                    }
+                    if !root.sidebar-colapsada : Text {
+                        text: "Nueva Entrada";
+                        font-size: 12px;
+                        font-weight: 700;
+                        color: #FFFFFF;
+                        overflow: elide;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+
+        Rectangle { height: 1px; background: Theme.border; }
+
+        // 3. Cuerpo Desplazable de Secciones del Menú Lateral (Fiel a Android MenuLateral.kt)
+        Flickable {
+            vertical-stretch: 1;
+            content-width: self.width;
+            content-height: sidebar-content.min-height;
+
+            sidebar-content := VerticalLayout {
+                width: 100%;
+                spacing: 12px;
+
+                // BLOQUE 1: ACCESOS CANÓNICOS DEL DRAWER DE ANDROID (ITEMS_PREDETERMINADOS)
+                VerticalLayout {
+                    width: 100%;
+                    spacing: 3px;
+
+                    if !root.sidebar-colapsada && Theme.menu-lateral-agrupar-items : SidebarSectionHeader {
+                        titulo: "HERRAMIENTAS Y AUDITORÍA";
+                        mostrar-accion: false;
+                    }
+
+                    // 1. Generar contraseñas (04-HER-GEN)
+                    SidebarNavItem {
+                        icono: @image-url("../../assets/icons/key.svg");
+                        texto: "Generar contraseñas";
+                        conteo: -1;
+                        colapsada: root.sidebar-colapsada;
+                        clicked => { root.abrir-generador(); }
+                    }
+
+                    // 2. Sincronización P2P (04-HER-QRS)
+                    SidebarNavItem {
+                        icono: @image-url("../../assets/icons/qr_code.svg");
+                        texto: "Sincronización P2P";
+                        conteo: -1;
+                        colapsada: root.sidebar-colapsada;
+                        clicked => { root.abrir-escaner-qr(); }
+                    }
+
+                    // 3. Historial de contraseñas (04-HER-HST)
+                    SidebarNavItem {
+                        icono: @image-url("../../assets/icons/restart.svg");
+                        texto: "Historial de contraseñas";
+                        conteo: root.conteo-historial-generador > 0 ? root.conteo-historial-generador : -1;
+                        colapsada: root.sidebar-colapsada;
+                        clicked => { root.abrir-historial-claves(); }
+                    }
+
+                    // 4. Salud (03-LST-SLD)
+                    SidebarNavItem {
+                        icono: @image-url("../../assets/icons/shield.svg");
+                        texto: "Salud";
+                        conteo: root.conteo-salud-alertas > 0 ? root.conteo-salud-alertas : -1;
+                        alerta: root.conteo-salud-alertas > 0;
+                        colapsada: root.sidebar-colapsada;
+                        clicked => { root.abrir-salud(); }
+                    }
+
+                    // 5. Duplicados (03-LST-DUP)
+                    SidebarNavItem {
+                        icono: @image-url("../../assets/icons/copy.svg");
+                        texto: "Duplicados";
+                        conteo: root.conteo-duplicados > 0 ? root.conteo-duplicados : -1;
+                        alerta: root.conteo-duplicados > 0;
+                        colapsada: root.sidebar-colapsada;
+                        clicked => { root.abrir-duplicados(); }
+                    }
+
+                    // 6. Papelera (03-LST-PAP)
+                    SidebarNavItem {
+                        icono: @image-url("../../assets/icons/delete.svg");
+                        texto: "Papelera";
+                        conteo: root.conteo-papelera > 0 ? root.conteo-papelera : -1;
+                        colapsada: root.sidebar-colapsada;
+                        mostrar-boton-extra: root.conteo-papelera > 0;
+                        accion-extra => { root.vaciar-papelera(); }
+                        clicked => {
+                            if root.filtro-categoria-actual != "TODAS" {
+                                root.seleccionar-categoria("TODAS");
+                            }
+                            root.seleccionar-tipo("PAPELERA");
+                        }
+                    }
+
+                    // 7. Perfiles (03-LST-IDE)
+                    SidebarNavItem {
+                        icono: @image-url("../../assets/icons/person.svg");
+                        texto: "Perfiles";
+                        conteo: root.conteo-perfiles > 0 ? root.conteo-perfiles : -1;
+                        colapsada: root.sidebar-colapsada;
+                        clicked => { root.abrir-gestor-perfiles(); }
+                    }
+
+                    // 8. Categorías (03-LST-CAT)
+                    SidebarNavItem {
+                        icono: @image-url("../../assets/icons/folder.svg");
+                        texto: "Categorías";
+                        conteo: root.conteo-categorias > 0 ? root.conteo-categorias : -1;
+                        colapsada: root.sidebar-colapsada;
+                        clicked => { root.abrir-gestor-categorias(); }
+                    }
+
+                    // 9. Ajustes (00-AJU)
+                    SidebarNavItem {
+                        icono: @image-url("../../assets/icons/settings.svg");
+                        texto: "Ajustes";
+                        conteo: -1;
+                        colapsada: root.sidebar-colapsada;
+                        clicked => { root.abrir-ajustes(); }
+                    }
+                }
+
+                Rectangle { height: 1px; background: Theme.border; }
+
+                // BLOQUE 2: VISTAS Y FILTROS DEL EXPLORADOR
+                VerticalLayout {
+                    width: 100%;
+                    spacing: 3px;
+
+                    if !root.sidebar-colapsada : SidebarSectionHeader {
+                        titulo: "VISTAS Y FILTROS";
+                        mostrar-accion: false;
+                    }
+
+                    SidebarNavItem {
+                        icono: @image-url("../../assets/icons/list.svg");
+                        texto: "Todas las entradas";
+                        conteo: -1;
+                        activo: root.filtro-tipo-actual == "TODOS" && root.filtro-categoria-actual == "TODAS" && !root.solo-favoritos;
+                        colapsada: root.sidebar-colapsada;
+                        clicked => {
+                            root.seleccionar-categoria("TODAS");
+                            root.seleccionar-tipo("TODOS");
+                        }
+                    }
+
+                    SidebarNavItem {
+                        icono: @image-url("../../assets/icons/star.svg");
+                        texto: "Favoritos";
+                        conteo: root.conteo-favoritos;
+                        activo: root.solo-favoritos || root.filtro-tipo-actual == "FAVORITOS";
+                        colapsada: root.sidebar-colapsada;
+                        clicked => {
+                            root.seleccionar-tipo("FAVORITOS");
+                        }
+                    }
+
+                    SidebarNavItem {
+                        icono: @image-url("../../assets/icons/timer.svg");
+                        texto: "Autenticador 2FA";
+                        conteo: root.conteo-totp;
+                        activo: root.filtro-tipo-actual == "TOTP";
+                        colapsada: root.sidebar-colapsada;
+                        clicked => {
+                            root.seleccionar-tipo("TOTP");
+                        }
+                    }
+
+                    SidebarNavItem {
+                        icono: @image-url("../../assets/icons/fingerprint.svg");
+                        texto: "Llaves de Acceso";
+                        conteo: root.conteo-passkeys;
+                        activo: root.filtro-tipo-actual == "PASSKEY";
+                        colapsada: root.sidebar-colapsada;
+                        clicked => {
+                            root.seleccionar-tipo("PASSKEY");
+                        }
+                    }
+
+                    SidebarNavItem {
+                        icono: @image-url("../../assets/icons/edit.svg");
+                        texto: "Normalizar Títulos";
+                        conteo: root.conteo-titulos-sucios > 0 ? root.conteo-titulos-sucios : -1;
+                        alerta: root.conteo-titulos-sucios > 0;
+                        colapsada: root.sidebar-colapsada;
+                        clicked => { root.abrir-normalizador-titulos(); }
+                    }
+                }
+
+                // BLOQUE 3: TIPOS DE ENTRADA
+                if !root.sidebar-colapsada : VerticalLayout {
+                    width: 100%;
+                    spacing: 3px;
+
+                    SidebarSectionHeader {
+                        titulo: "TIPOS DE ENTRADA";
+                        mostrar-accion: false;
+                    }
+
+                    for item in root.tipos-filtro : SidebarNavItem {
+                        visible: item.id != "PAPELERA" && item.id != "PASSKEY";
+                        icono: item.id == "LOGIN" ? @image-url("../../assets/icons/key.svg") :
+                               item.id == "PASSKEY" ? @image-url("../../assets/icons/fingerprint.svg") :
+                               item.id == "TARJETA" ? @image-url("../../assets/icons/credit_card.svg") :
+                               item.id == "CUENTA_BANCARIA" ? @image-url("../../assets/icons/account_balance.svg") :
+                               item.id == "SERVIDOR" ? @image-url("../../assets/icons/computer.svg") :
+                               item.id == "WIFI" ? @image-url("../../assets/icons/wifi.svg") :
+                               item.id == "WALLET" ? @image-url("../../assets/icons/wallet.svg") :
+                               item.id == "IDENTIDAD" ? @image-url("../../assets/icons/badge.svg") :
+                               item.id == "CONTACTO" ? @image-url("../../assets/icons/person.svg") :
+                               item.id == "NOTA" ? @image-url("../../assets/icons/note.svg") :
+                               @image-url("../../assets/icons/folder.svg");
+                        texto: item.nombre;
+                        conteo: item.conteo;
+                        activo: root.filtro-tipo-actual == item.id && root.filtro-categoria-actual == "TODAS";
+                        colapsada: root.sidebar-colapsada;
+                        clicked => {
+                            if root.filtro-categoria-actual != "TODAS" {
+                                root.seleccionar-categoria("TODAS");
+                            }
+                            root.seleccionar-tipo(item.id);
+                        }
+                    }
+                }
+            }
+        }
+
+        Rectangle { height: 1px; background: Theme.border; }
+
+        // 4. Pie de Blindaje Argon2id (Mostrar Pie de Seguridad)
+        if Theme.menu-lateral-mostrar-pie : SidebarFooterBadge {
+            perfil-argon2: root.perfil-argon2-nombre;
+            colapsada: root.sidebar-colapsada;
+        }
+
+        // 5. Botón Bloquear Aplicación (Abajo al fondo)
+        if Theme.menu-lateral-mostrar-boton-bloquear : btn-bloquear := TouchArea {
+            height: 38px;
+            mouse-cursor: pointer;
+            clicked => { root.bloquear-boveda(); }
+
+            Rectangle {
+                background: btn-bloquear.has-hover ? Theme.danger.transparentize(80%) : Theme.surface-hover;
+                border-width: 1px;
+                border-color: btn-bloquear.has-hover ? Theme.danger : Theme.border;
+                border-radius: Theme.radius-sm;
+
+                HorizontalLayout {
+                    alignment: center;
+                    spacing: 8px;
+                    padding-left: 10px;
+                    padding-right: 10px;
+
+                    AppIcon {
+                        source: @image-url("../../assets/icons/lock.svg");
+                        icon-size: 15px;
+                        icon-color: btn-bloquear.has-hover ? Theme.danger : Theme.text-primary;
+                        vertical-alignment: center;
+                    }
+                    if !root.sidebar-colapsada : Text {
+                        text: "Bloquear aplicación";
+                        color: btn-bloquear.has-hover ? Theme.danger : Theme.text-primary;
+                        font-size: 12px;
+                        font-weight: 600;
+                        overflow: elide;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,56 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "../widgets/app_icon.slint";
+
+export component SelectableAvatar inherits Rectangle {
+    in property <bool> seleccionado-lote: false;
+    in property <bool> modo-seleccion: false;
+    in property <bool> hover-externo: false;
+    in property <image> icono-base: @image-url("../../assets/icons/key.svg");
+    callback alternar-seleccion();
+
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
+    background: root.seleccionado-lote ? Theme.accent-primary :
+                (ta.has-hover || root.modo-seleccion || root.hover-externo) ? Theme.accent-primary.transparentize(82%) :
+                Theme.accent-primary.transparentize(88%);
+    border-width: (root.seleccionado-lote || ta.has-hover || root.modo-seleccion) ? 1.5px : 0px;
+    border-color: Theme.accent-primary;
+
+    ta := TouchArea {
+        width: 100%;
+        height: 100%;
+        mouse-cursor: pointer;
+        clicked => { root.alternar-seleccion(); }
+
+        if root.seleccionado-lote : AppIcon {
+            source: @image-url("../../assets/icons/check.svg");
+            icon-size: 16px;
+            icon-color: #FFFFFF;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+
+        if !root.seleccionado-lote && (ta.has-hover || root.modo-seleccion) : AppIcon {
+            source: @image-url("../../assets/icons/check.svg");
+            icon-size: 14px;
+            icon-color: Theme.accent-primary.transparentize(ta.has-hover ? 0% : 45%);
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+
+        if !root.seleccionado-lote && !ta.has-hover && !root.modo-seleccion : AppIcon {
+            source: root.icono-base;
+            icon-size: 15px;
+            icon-color: Theme.accent-primary;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+}

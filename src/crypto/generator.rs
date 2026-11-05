@@ -164,9 +164,10 @@ pub fn calcular_fuerza_contrasena(pass: &str) -> (i32, &'static str) {
     let len = pass.len();
 
     // Longitud
-    if len >= 8 { puntuacion += 15; }
-    if len >= 12 { puntuacion += 20; }
-    if len >= 16 { puntuacion += 25; }
+    if len >= 8 { puntuacion += 20; }
+    if len >= 10 { puntuacion += 15; }
+    if len >= 12 { puntuacion += 15; }
+    if len >= 16 { puntuacion += 20; }
     if len >= 20 { puntuacion += 15; }
 
     // Variedad de caracteres

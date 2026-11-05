@@ -1,0 +1,125 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
+import { FilterItem } from "../components/sidebar/main_sidebar.slint";
+
+export component CategoryRowItem inherits Rectangle {
+    in property <FilterItem> categoria;
+    callback editar-categoria(string, string, string);
+    callback eliminar-categoria(string);
+
+    width: 100%;
+    height: 44px;
+    background: Theme.background;
+    border-radius: Theme.radius-sm;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        spacing: 10px;
+        alignment: space-between;
+
+        HorizontalLayout {
+            horizontal-stretch: 1;
+            spacing: 10px;
+            alignment: start;
+
+            Text {
+                text: root.categoria.icono;
+                font-size: 15px;
+                vertical-alignment: center;
+            }
+
+            Text {
+                text: root.categoria.nombre;
+                color: Theme.text-primary;
+                font-size: 13px;
+                font-weight: 600;
+                vertical-alignment: center;
+            }
+
+            Rectangle {
+                height: 18px;
+                border-radius: 4px;
+                background: Theme.surface;
+                HorizontalLayout {
+                    padding-left: 6px;
+                    padding-right: 6px;
+                    alignment: center;
+                    Text {
+                        text: root.categoria.conteo + " cuentas";
+                        color: Theme.text-muted;
+                        font-size: 10px;
+                        font-weight: 600;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 6px;
+            alignment: end;
+
+            VerticalLayout {
+                alignment: center;
+                btn-edit := TouchArea {
+                    width: 64px;
+                    height: 26px;
+                    mouse-cursor: pointer;
+                    clicked => {
+                        root.editar-categoria(root.categoria.id, root.categoria.nombre, root.categoria.icono);
+                    }
+
+                    Rectangle {
+                        background: btn-edit.has-hover ? Theme.surface-hover : Theme.surface;
+                        border-radius: Theme.radius-sm;
+                        border-width: 1px;
+                        border-color: Theme.border;
+
+                        Text {
+                            text: "Renombrar";
+                            color: Theme.text-secondary;
+                            font-size: 10px;
+                            font-weight: 600;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                btn-del := TouchArea {
+                    width: 28px;
+                    height: 26px;
+                    mouse-cursor: pointer;
+                    clicked => { root.eliminar-categoria(root.categoria.id); }
+
+                    Rectangle {
+                        background: btn-del.has-hover ? Theme.danger.transparentize(80%) : Theme.surface;
+                        border-radius: Theme.radius-sm;
+                        border-width: 1px;
+                        border-color: btn-del.has-hover ? Theme.danger : Theme.border;
+
+                        AppIcon {
+                            source: @image-url("../assets/icons/delete.svg");
+                            icon-size: 13px;
+                            icon-color: Theme.danger;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

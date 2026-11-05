@@ -7,26 +7,62 @@
 //! Módulos de estado reactivo y micro-diseño para la interfaz Slint de Bóveda Local.
 
 pub mod biometrics;
+pub mod categories;
+pub mod detail;
+pub mod duplicates;
 pub mod edit_mapper;
+pub mod emergency_kit;
 pub mod filter_engine;
+pub mod health;
 pub mod indicator_detector;
+pub mod profiles;
 pub mod rules_mapper;
+pub mod selection;
+pub mod settings_search;
+pub mod sorting;
 pub mod theme_manager;
+pub mod titles;
 pub mod vault_data;
 
 pub use biometrics::*;
+pub use categories::{eliminar_categoria_boveda, guardar_o_crear_categoria};
+pub use detail::{
+    construir_detalle_entrada, eliminar_contrasena_historial, eliminar_passkey_secundaria,
+    eliminar_totp_secundario, formatear_bloques_4x4, promover_passkey_secundaria,
+    promover_totp_secundario, restaurar_contrasena_historial,
+};
+pub use duplicates::{
+    contar_entradas_secundarias_duplicadas, detectar_grupos_duplicados, unificar_grupo_duplicado,
+    unificar_todos_los_duplicados, FiltroDuplicados,
+};
 pub use edit_mapper::{edit_data_a_entrada, entrada_a_edit_data};
+pub use emergency_kit::generar_kit_emergencia_texto;
 pub use filter_engine::{encontrar_id_por_letra, encontrar_indice_por_letra, subtitulo_segun_tipo};
+pub use health::{
+    analizar_salud_boveda, contar_problemas_salud_boveda_canonico, es_contrasena_comun,
+    rotar_contrasena_rapida, PestanaSalud,
+};
 pub use indicator_detector::{detectar_indicadores, IndicadoresEntrada};
+pub use profiles::{eliminar_perfil_boveda, guardar_o_crear_perfil, listar_perfiles_items};
 pub use rules_mapper::{
     agregar_puerto_a_str, agregar_subdominio_a_str, eliminar_puerto_de_str,
     eliminar_subdominio_de_str, parse_puertos_filas, parse_puertos_filas_con_ancho,
     parse_puertos_items, parse_subdominios_filas, parse_subdominios_filas_con_ancho,
     parse_subdominios_items,
 };
+pub use selection::{
+    alternar_anclado_lote, alternar_favorito_lote, alternar_ignorar_salud_lote,
+    analizar_discrepancias_unificacion, asignar_categorias_lote, procesar_papelera_lote,
+    renombrar_lote, unificar_entradas_seleccionadas, EstadoSeleccionLista,
+};
+pub use settings_search::buscar_subseccion_ajustes;
+pub use sorting::{ordenar_entradas_referencias, CriterioOrdenacion};
 pub use theme_manager::{
     obtener_paleta_acento, resolver_tema, ColoresTemaResueltos, ModoTema, PaletaAcentoInfo,
     PALETAS_ACENTO_OFICIALES,
+};
+pub use titles::{
+    aplicar_normalizacion_titulos, previsualizar_normalizacion_titulos, FormatoTitulo,
 };
 pub use vault_data::GuiVaultState;
 
@@ -314,25 +350,12 @@ mod tests {
                 titulo: "Apple iCloud".into(),
                 subtitulo: "user@apple.com".into(),
                 tipo: "LOGIN".into(),
-                favorito: false,
-                anclado: false,
                 categoria_id: "general".into(),
                 tiene_usuario: true,
                 tiene_password: true,
-                tiene_totp: false,
-                tiene_passkey: false,
                 tiene_url: true,
-                tiene_app: false,
-                tiene_notas: false,
-                totp_codigo: "".into(),
-                totp_restante: 0,
                 servicio: "Apple".into(),
-                es_cabecera_grupo: false,
-                clave_grupo: "".into(),
-                grupo_conteo: 0,
-                grupo_expandido: false,
-                es_hijo_grupo: false,
-                es_ultimo_hijo_grupo: false,
+                ..Default::default()
             },
             EntryOverview {
                 id: "2".into(),
@@ -340,49 +363,30 @@ mod tests {
                 subtitulo: "octocat".into(),
                 tipo: "LOGIN".into(),
                 favorito: true,
-                anclado: false,
                 categoria_id: "dev".into(),
                 tiene_usuario: true,
                 tiene_password: true,
                 tiene_totp: true,
-                tiene_passkey: false,
                 tiene_url: true,
-                tiene_app: false,
                 tiene_notas: true,
                 totp_codigo: "123 456".into(),
                 totp_restante: 18,
                 servicio: "Github".into(),
-                es_cabecera_grupo: false,
-                clave_grupo: "".into(),
-                grupo_conteo: 0,
-                grupo_expandido: false,
-                es_hijo_grupo: false,
-                es_ultimo_hijo_grupo: false,
+                ..Default::default()
             },
             EntryOverview {
                 id: "3".into(),
                 titulo: "Google Workspace".into(),
                 subtitulo: "admin@corp.com".into(),
                 tipo: "LOGIN".into(),
-                favorito: false,
-                anclado: false,
                 categoria_id: "trabajo".into(),
                 tiene_usuario: true,
-                tiene_password: false,
                 tiene_totp: true,
-                tiene_passkey: false,
                 tiene_url: true,
-                tiene_app: false,
-                tiene_notas: false,
                 totp_codigo: "789 012".into(),
                 totp_restante: 25,
                 servicio: "Google".into(),
-                es_cabecera_grupo: false,
-                clave_grupo: "".into(),
-                grupo_conteo: 0,
-                grupo_expandido: false,
-                es_hijo_grupo: false,
-                es_ultimo_hijo_grupo: false,
+                ..Default::default()
             },
         ];
 
@@ -390,5 +394,220 @@ mod tests {
         assert_eq!(encontrar_indice_por_letra(&entradas, 'a'), Some(0));
         assert_eq!(encontrar_indice_por_letra(&entradas, 'G'), Some(1));
         assert_eq!(encontrar_indice_por_letra(&entradas, 'Z'), None);
+    }
+
+    #[test]
+    fn test_fases_1_2_3_paridad_android() {
+        use crate::models::cambio_contrasena::CambioContrasena;
+        use crate::models::passkey::DatosPasskey;
+        use crate::models::totp_secundario::TotpSecundario;
+
+        // Fase 1: Credenciales alternativas y Llave de acceso
+        let mut e1 = Entrada {
+            id: "id-1".to_string(),
+            titulo: "GitHub".to_string(),
+            usuario: "jln".to_string(),
+            contrasena: "PassActual!".to_string(),
+            historial_contrasenas: vec![CambioContrasena {
+                contrasena: "PassAntigua!".to_string(),
+                cambiada_en: 1700000000000,
+            }],
+            passkey: Some(DatosPasskey {
+                cred_id: "cred-main".to_string(),
+                rp_id: "github.com".to_string(),
+                rp_name: "GitHub".to_string(),
+                user_handle: "uh-1".to_string(),
+                algoritmo: "ES256".to_string(),
+                creada_en: 1700000000000,
+                usuario: "jln".to_string(),
+                clave_privada: "pk1".to_string(),
+            }),
+            passkeys_secundarias: vec![DatosPasskey {
+                cred_id: "cred-sec".to_string(),
+                rp_id: "github.com".to_string(),
+                rp_name: "GitHub Alt".to_string(),
+                user_handle: "uh-2".to_string(),
+                algoritmo: "ES256".to_string(),
+                creada_en: 1700000000000,
+                usuario: "jln-alt".to_string(),
+                clave_privada: "pk2".to_string(),
+            }],
+            secreto_totp: Some("JBSWY3DPEHPK3PXP".to_string()),
+            totps_secundarios: vec![TotpSecundario {
+                id: "totp-sec-1".to_string(),
+                secreto: "HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ".to_string(),
+                emisor: "GitHub Sec".to_string(),
+                digitos: 6,
+                periodo: 30,
+                algoritmo: "HmacSHA1".to_string(),
+                agregado_en: 1700000000000,
+            }],
+            ..Default::default()
+        };
+
+        assert!(restaurar_contrasena_historial(&mut e1, "PassAntigua!"));
+        assert_eq!(e1.contrasena, "PassAntigua!");
+        assert_eq!(e1.historial_contrasenas[0].contrasena, "PassActual!");
+
+        assert!(promover_passkey_secundaria(&mut e1, "cred-sec"));
+        assert_eq!(e1.passkey.as_ref().unwrap().cred_id, "cred-sec");
+        assert_eq!(e1.passkeys_secundarias[0].cred_id, "cred-main");
+
+        assert!(promover_totp_secundario(&mut e1, "totp-sec-1"));
+        assert_eq!(e1.secreto_totp.as_deref(), Some("HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ"));
+
+        // Fase 2: Selección múltiple y unificación sin pérdida
+        let e2 = Entrada {
+            id: "id-2".to_string(),
+            titulo: "GitHub Secondary".to_string(),
+            usuario: "jln2".to_string(),
+            contrasena: "PassSegundaCuenta!".to_string(),
+            ..Default::default()
+        };
+        let mut boveda = ContenidoBoveda {
+            entradas: vec![e1, e2],
+            ..Default::default()
+        };
+        let mut sel = EstadoSeleccionLista::new();
+        sel.alternar_id("id-1");
+        sel.alternar_id("id-2");
+        assert_eq!(sel.conteo(), 2);
+
+        let id_unificado = unificar_entradas_seleccionadas(
+            &mut boveda,
+            sel.ids_seleccionados(),
+            Some("id-1"),
+        );
+        assert_eq!(id_unificado.as_deref(), Some("id-1"));
+        assert_eq!(boveda.entradas.len(), 1);
+        assert!(boveda.entradas[0]
+            .historial_contrasenas
+            .iter()
+            .any(|h| h.contrasena == "PassSegundaCuenta!"));
+
+        // Fase 3: Cambio de TipoEntrada y respaldo automático de contraseña al editar
+        let mut edit = entrada_a_edit_data(&boveda.entradas[0]);
+        edit.tipo = "SERVIDOR".into();
+        edit.password = "NuevaPassword2026!".into();
+        edit.servidor_host = "10.0.0.5".into();
+        edit.servidor_clave_publica = "ssh-ed25519 AAAAC3Nza...".into();
+        let actualizada = edit_data_a_entrada(&edit, Some(&boveda.entradas[0]));
+        assert_eq!(actualizada.tipo, TipoEntrada::Servidor);
+        assert_eq!(
+            actualizada.datos_servidor.as_ref().unwrap().clave_publica,
+            "ssh-ed25519 AAAAC3Nza..."
+        );
+        assert!(actualizada
+            .historial_contrasenas
+            .iter()
+            .any(|h| h.contrasena == "PassAntigua!"));
+    }
+
+    #[test]
+    fn test_fases_1_a_6_salud_duplicados_titulos_crud_ordenacion() {
+        use crate::gui::state::categories::{eliminar_categoria_boveda, guardar_o_crear_categoria};
+        use crate::gui::state::detail::formatear_bloques_4x4;
+        use crate::gui::state::duplicates::{
+            detectar_grupos_duplicados, unificar_todos_los_duplicados,
+        };
+        use crate::gui::state::health::{analizar_salud_boveda, rotar_contrasena_rapida};
+        use crate::gui::state::profiles::{eliminar_perfil_boveda, guardar_o_crear_perfil};
+        use crate::gui::state::sorting::ordenar_entradas_referencias;
+        use crate::gui::state::titles::{
+            aplicar_normalizacion_titulos, previsualizar_normalizacion_titulos,
+        };
+        use crate::gui::state::buscar_subseccion_ajustes;
+
+        // 1. Ordenación
+        let mut e1 = Entrada {
+            id: "e1".into(),
+            titulo: "github.com".into(),
+            usuario: "dev@corp.com".into(),
+            contrasena: "password".into(),
+            urls: vec!["https://github.com/login".into()],
+            creada_en: 1000,
+            modificada_en: 5000,
+            ultimo_uso_en: 10000,
+            ..Default::default()
+        };
+        let e2 = Entrada {
+            id: "e2".into(),
+            titulo: "github.com".into(),
+            usuario: "dev@corp.com".into(),
+            contrasena: "password".into(),
+            urls: vec!["https://github.com/settings".into()],
+            creada_en: 2000,
+            modificada_en: 3000,
+            ultimo_uso_en: 2000,
+            ..Default::default()
+        };
+        let mut refs = vec![&e1, &e2];
+        ordenar_entradas_referencias(&mut refs, "FRECUENCIA_USO", false);
+        assert_eq!(refs[0].id, "e1");
+
+        // 2. Salud de la bóveda y rotación rápida
+        let boveda_salud = ContenidoBoveda {
+            entradas: vec![e1.clone(), e2.clone()],
+            ..Default::default()
+        };
+        let (puntaje, conteos, items_comunes) =
+            analizar_salud_boveda(&boveda_salud, "COMUNES");
+        assert!(puntaje < 100);
+        assert_eq!(conteos[0], 0); // Caducadas
+        assert_eq!(conteos[1], 2); // Repetidas
+        assert_eq!(conteos[2], 2); // Comunes
+        assert_eq!(conteos[3], 2); // Débiles
+        assert_eq!(items_comunes.len(), 2);
+
+        assert!(rotar_contrasena_rapida(&mut e1, "NuevaClaveFuerte2026!#"));
+        assert_eq!(e1.contrasena, "NuevaClaveFuerte2026!#");
+        assert_eq!(e1.historial_contrasenas[0].contrasena, "password");
+
+        // 3. Duplicados y unificación masiva
+        let mut boveda = ContenidoBoveda {
+            entradas: vec![e1, e2],
+            ..Default::default()
+        };
+        let grupos = detectar_grupos_duplicados(&boveda, "TODOS");
+        assert_eq!(grupos.len(), 1);
+        let unificados = unificar_todos_los_duplicados(&mut boveda, "TODOS");
+        assert_eq!(unificados, 1);
+        assert_eq!(boveda.entradas.len(), 1);
+
+        // 4. Normalizador de títulos
+        let preview = previsualizar_normalizacion_titulos(
+            &boveda,
+            "CAPITALIZADO",
+            false,
+        );
+        assert_eq!(preview.len(), 1);
+        let modificadas = aplicar_normalizacion_titulos(
+            &mut boveda,
+            "CAPITALIZADO",
+            false,
+            None,
+            None,
+        );
+        assert_eq!(modificadas, 1);
+        assert_eq!(boveda.entradas[0].titulo, "GitHub");
+
+        // 5. CRUD Categorías y Perfiles
+        let cat_id = guardar_o_crear_categoria(&mut boveda, "", "Finanzas", "💰").unwrap();
+        boveda.entradas[0].categorias.push(cat_id.clone());
+        assert!(eliminar_categoria_boveda(&mut boveda, &cat_id));
+        assert!(boveda.entradas[0].categorias.is_empty());
+
+        let prof_id = guardar_o_crear_perfil(&mut boveda, "", "Corporativo", "corp@test.com", "", "CI", "1700000001", "correo").unwrap();
+        boveda.entradas[0].perfil_id = Some(prof_id.clone());
+        assert!(eliminar_perfil_boveda(&mut boveda, &prof_id));
+        assert_eq!(boveda.entradas[0].perfil_id, None);
+
+        // 6. Buscador de ajustes y formato 4x4
+        assert_eq!(buscar_subseccion_ajustes("argon2"), Some((1, 2)));
+        assert_eq!(buscar_subseccion_ajustes("kit de emergencia"), Some((5, 404)));
+        assert_eq!(
+            formatear_bloques_4x4("4111222233334444", true),
+            "4111 2222 3333 4444"
+        );
     }
 }

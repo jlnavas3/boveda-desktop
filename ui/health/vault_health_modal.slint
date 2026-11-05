@@ -1,0 +1,112 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { HealthScoreHeader } from "health_score_header.slint";
+import { HealthTabBar } from "health_tab_bar.slint";
+import { HealthIssueRow, HealthIssueItem } from "health_issue_row.slint";
+
+export { HealthIssueItem }
+
+export component VaultHealthModal inherits Rectangle {
+    in property <int> puntuacion: 100;
+    in property <string> pestana-activa: "REPETIDAS";
+    in property <int> conteo-caducadas: 0;
+    in property <int> conteo-repetidas: 0;
+    in property <int> conteo-comunes: 0;
+    in property <int> conteo-debiles: 0;
+    in property <int> conteo-antiguas: 0;
+    in property <int> conteo-ignoradas: 0;
+    in property <[HealthIssueItem]> items: [];
+
+    callback seleccionar-pestana(string);
+    callback rotar-clave-rapida(string);
+    callback alternar-ignorar(string);
+    callback editar-entrada(string);
+    callback cerrar();
+
+    width: 100%;
+    height: 100%;
+    background: #000000B0;
+
+    TouchArea {
+        width: 100%;
+        height: 100%;
+    }
+
+    Rectangle {
+        width: Math.min(820px, root.width - 48px);
+        height: Math.min(580px, root.height - 48px);
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        background: Theme.surface;
+        border-radius: Theme.radius-lg;
+        border-width: 1px;
+        border-color: Theme.border;
+        clip: true;
+
+        VerticalLayout {
+            padding: 18px;
+            spacing: 14px;
+
+            HealthScoreHeader {
+                puntuacion: root.puntuacion;
+                total-alertas: root.conteo-caducadas + root.conteo-repetidas + root.conteo-comunes + root.conteo-debiles + root.conteo-antiguas;
+                cerrar => { root.cerrar(); }
+            }
+
+            HealthTabBar {
+                pestana-activa: root.pestana-activa;
+                conteo-caducadas: root.conteo-caducadas;
+                conteo-repetidas: root.conteo-repetidas;
+                conteo-comunes: root.conteo-comunes;
+                conteo-debiles: root.conteo-debiles;
+                conteo-antiguas: root.conteo-antiguas;
+                conteo-ignoradas: root.conteo-ignoradas;
+                seleccionar-pestana(t) => { root.seleccionar-pestana(t); }
+            }
+
+            if root.items.length == 0 : VerticalLayout {
+                vertical-stretch: 1;
+                alignment: center;
+                spacing: 8px;
+
+                Text {
+                    text: "✓ Sin observaciones en esta categoría";
+                    color: Theme.accent-primary;
+                    font-size: 14px;
+                    font-weight: 700;
+                    horizontal-alignment: center;
+                }
+                Text {
+                    text: "Tus credenciales cumplen los criterios de seguridad en esta pestaña.";
+                    color: Theme.text-muted;
+                    font-size: 12px;
+                    horizontal-alignment: center;
+                }
+            }
+
+            if root.items.length > 0 : Flickable {
+                vertical-stretch: 1;
+                content-width: self.width;
+                content-height: list-layout.min-height;
+
+                list-layout := VerticalLayout {
+                    width: 100%;
+                    spacing: 8px;
+                    alignment: start;
+
+                    for it in root.items : HealthIssueRow {
+                        item: it;
+                        rotar-clave-rapida(id) => { root.rotar-clave-rapida(id); }
+                        alternar-ignorar(id) => { root.alternar-ignorar(id); }
+                        editar-entrada(id) => { root.editar-entrada(id); }
+                    }
+                }
+            }
+        }
+    }
+}

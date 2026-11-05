@@ -6,28 +6,47 @@
 
 use std::fs;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use slint::{ComponentHandle, ModelRc, SharedString, VecModel};
+use rand::RngCore;
+use slint::{ComponentHandle, Model, ModelRc, SharedString, VecModel};
 use zeroize::{Zeroize, Zeroizing};
 
 use boveda_core::config::AppConfigDesktop;
 use boveda_core::crypto::{
-    calcular_fuerza_contrasena, desempaquetar_boveda, generar_contrasena, CabeceraBvda,
-    PasswordGeneratorConfig, PerfilArgon2,
+    calcular_fuerza_contrasena, desempaquetar_boveda, empaquetar_boveda, escribir_atomico,
+    generar_contrasena, CabeceraBvda, PasswordGeneratorConfig, PerfilArgon2,
 };
 use boveda_core::gui::{
-    agregar_puerto_a_str, agregar_subdominio_a_str, aplicar_zoom_ventana, edit_data_a_entrada,
-    eliminar_puerto_de_str, eliminar_subdominio_de_str, entrada_a_edit_data, hsv_a_rgb,
-    parse_puertos_filas_con_ancho, parse_subdominios_filas_con_ancho, resolver_tema, AppWindow,
-    ClipboardManager, EntryDetailData, EntryEditData, GeneratorOptions, GuiVaultState,
+    agregar_puerto_a_str, agregar_subdominio_a_str, alternar_anclado_lote,
+    alternar_favorito_lote, alternar_ignorar_salud_lote, analizar_discrepancias_unificacion,
+    analizar_salud_boveda, aplicar_normalizacion_titulos, aplicar_zoom_ventana,
+    asignar_categorias_lote, buscar_subseccion_ajustes, contar_entradas_secundarias_duplicadas,
+    contar_problemas_salud_boveda_canonico, detectar_grupos_duplicados,
+    edit_data_a_entrada, eliminar_categoria_boveda, eliminar_contrasena_historial,
+    eliminar_passkey_secundaria, eliminar_perfil_boveda, eliminar_puerto_de_str,
+    eliminar_subdominio_de_str, eliminar_totp_secundario, entrada_a_edit_data,
+    generar_kit_emergencia_texto, generar_qr_imagen, guardar_o_crear_categoria,
+    guardar_o_crear_perfil, hsv_a_rgb, listar_perfiles_items, parse_puertos_filas_con_ancho,
+    parse_subdominios_filas_con_ancho, previsualizar_normalizacion_titulos, procesar_papelera_lote,
+    promover_passkey_secundaria, promover_totp_secundario, renombrar_lote, resolver_tema,
+    restaurar_contrasena_historial, rotar_contrasena_rapida, unificar_entradas_seleccionadas,
+    unificar_grupo_duplicado, unificar_todos_los_duplicados, AppWindow, ClipboardManager,
+    EntryDetailData, EntryEditData, GeneratedPasswordItem, GeneratorOptions, GuiVaultState,
     HsvColorResult, ModoTema, SettingsData, Theme, ZoomState,
+};
+use boveda_core::sync::{
+    calcular_huella_visual, derivar_clave_publica_x25519, detectar_ips_lan_candidatas,
+    obtener_nombre_desktop, serializar_sync_uri, ConfiguracionServidorP2P, ServidorSyncP2P,
+    SyncQrPayload,
 };
 
 /// Refresca y sincroniza reactivamente todos los modelos visuales de Slint desde el estado en memoria.
 fn refrescar_ui(ui: &AppWindow, st: &mut GuiVaultState, id_preferido: Option<&str>) {
+    st.tocar_actividad();
     let tipos = st.obtener_resumen_tipos();
     let categorias = st.obtener_resumen_categorias();
     let tipos_dropdown = st.obtener_opciones_tipos_dropdown();
@@ -52,6 +71,93 @@ fn refrescar_ui(ui: &AppWindow, st: &mut GuiVaultState, id_preferido: Option<&st
         .and_then(|id| st.obtener_detalle_entrada(id))
         .unwrap_or_default();
 
+    // Actualizar contadores en vivo para MainSidebar y modales
+    if let Some(ref boveda) = st.boveda {
+        let activas: Vec<_> = boveda.entradas.iter().filter(|e| e.eliminada_en == 0).collect();
+        let n_fav = activas.iter().filter(|e| e.favorito).count() as i32;
+        let n_totp = activas
+            .iter()
+            .filter(|e| {
+                !e.secreto_totp.as_deref().unwrap_or("").trim().is_empty()
+                    || !e.totps_secundarios.is_empty()
+            })
+            .count() as i32;
+        let n_passkey = activas
+            .iter()
+            .filter(|e| e.tipo == boveda_core::TipoEntrada::Passkey)
+            .count() as i32;
+
+        let pestana_salud = ui.get_salud_pestana_activa().to_string();
+        let (puntaje, conteos_salud, items_salud) = analizar_salud_boveda(boveda, &pestana_salud);
+        let alertas_salud = contar_problemas_salud_boveda_canonico(boveda);
+        ui.set_salud_puntuacion(puntaje);
+        ui.set_salud_conteo_caducadas(conteos_salud[0]);
+        ui.set_salud_conteo_repetidas(conteos_salud[1]);
+        ui.set_salud_conteo_comunes(conteos_salud[2]);
+        ui.set_salud_conteo_debiles(conteos_salud[3]);
+        ui.set_salud_conteo_antiguas(conteos_salud[4]);
+        ui.set_salud_conteo_ignoradas(conteos_salud[5]);
+        ui.set_salud_items(ModelRc::new(VecModel::from(items_salud)));
+
+        let filtro_dup = ui.get_duplicados_filtro_activo().to_string();
+        let grupos_dup = detectar_grupos_duplicados(boveda, &filtro_dup);
+        let n_duplicados_secundarias = contar_entradas_secundarias_duplicadas(boveda);
+        ui.set_duplicados_grupos(ModelRc::new(VecModel::from(grupos_dup)));
+
+        let fmt_titulos = ui.get_titulos_formato_activo().to_string();
+        let resp_pers = ui.get_titulos_respetar_personalizados();
+        let grupos_tit = previsualizar_normalizacion_titulos(boveda, &fmt_titulos, resp_pers);
+        let tlds = boveda
+            .configuracion
+            .as_ref()
+            .map(|c| c.tlds_descartables.clone())
+            .unwrap_or_default();
+        let n_sucios: i32 = boveda
+            .entradas
+            .iter()
+            .filter(|e| e.eliminada_en == 0 && boveda_core::gui::state::titles::es_titulo_comprometido(e, &tlds))
+            .count() as i32;
+        ui.set_titulos_grupos(ModelRc::new(VecModel::from(grupos_tit)));
+
+        let perfiles_crud = listar_perfiles_items(boveda);
+        ui.set_perfiles_gestor(ModelRc::new(VecModel::from(perfiles_crud)));
+
+        let total_entradas = boveda.entradas.iter().filter(|e| e.eliminada_en == 0).count() as i32;
+        let total_papelera = boveda.entradas.iter().filter(|e| e.eliminada_en > 0).count() as i32;
+        ui.set_total_entradas_boveda(total_entradas);
+        ui.set_conteo_papelera(total_papelera);
+        ui.set_conteo_perfiles(boveda.perfiles.len() as i32);
+        ui.set_conteo_categorias(boveda.categorias.len() as i32);
+
+        if let Some(config) = &boveda.configuracion {
+            let theme = ui.global::<Theme>();
+            theme.set_menu_lateral_mostrar_cabecera(config.menu_lateral_mostrar_cabecera);
+            theme.set_menu_lateral_mostrar_pie(config.menu_lateral_mostrar_pie);
+            theme.set_menu_lateral_mostrar_boton_bloquear(config.menu_lateral_mostrar_boton_bloquear);
+            theme.set_menu_lateral_agrupar_items(config.menu_lateral_agrupar_items);
+            theme.set_menu_lateral_sin_bordes(config.menu_lateral_sin_bordes);
+        }
+
+        ui.set_conteo_favoritos(n_fav);
+        ui.set_conteo_salud_alertas(alertas_salud);
+        ui.set_conteo_duplicados(n_duplicados_secundarias);
+        ui.set_conteo_totp(n_totp);
+        ui.set_conteo_passkeys(n_passkey);
+        ui.set_conteo_titulos_sucios(n_sucios);
+    }
+
+    let perfil_kdf_str = match st.perfil_argon2 {
+        PerfilArgon2::Ultraseguro => "ULTRASEGURO",
+        PerfilArgon2::Reforzado => "REFORZADO",
+        PerfilArgon2::Estandar => "ESTÁNDAR",
+    };
+    ui.set_perfil_argon2_nombre(SharedString::from(perfil_kdf_str));
+    ui.set_conteo_historial_generador(st.historial_generador.len() as i32);
+    ui.set_historial_generador(ModelRc::new(VecModel::from(st.historial_generador.clone())));
+    if !st.bitacora_eventos.is_empty() {
+        ui.set_ajustes_registro_eventos(SharedString::from(st.bitacora_eventos.join("\n")));
+    }
+
     ui.set_tipos_filtro(ModelRc::new(VecModel::from(tipos)));
     ui.set_categorias_filtro(ModelRc::new(VecModel::from(categorias)));
     ui.set_tipos_dropdown(ModelRc::new(VecModel::from(tipos_dropdown)));
@@ -63,6 +169,10 @@ fn refrescar_ui(ui: &AppWindow, st: &mut GuiVaultState, id_preferido: Option<&st
         st.entrada_seleccionada_id.clone().unwrap_or_default(),
     ));
     ui.set_detalle_actual(detalle);
+    let ids_visibles = st.obtener_ids_filtrados_reales();
+    ui.set_conteo_entradas_filtradas(ids_visibles.len() as i32);
+    ui.set_conteo_seleccionadas(st.seleccion.conteo() as i32);
+    ui.set_todas_seleccionadas(st.seleccion.todas_seleccionadas(&ids_visibles));
 }
 
 /// Borra el texto de notificación después de un tiempo especificado sin bloquear el hilo principal.
@@ -128,15 +238,32 @@ fn mapear_opciones_generador(opts: &GeneratorOptions) -> PasswordGeneratorConfig
     }
 }
 
-/// Genera la contraseña y evalúa su fuerza, actualizando las propiedades correspondientes de Slint.
-fn ejecutar_generacion(ui: &AppWindow, opts: &GeneratorOptions) {
+/// Genera la contraseña y evalúa su fuerza, actualizando las propiedades correspondientes de Slint
+/// y registrándola en el historial de contraseñas generadas de la sesión.
+fn ejecutar_generacion(ui: &AppWindow, opts: &GeneratorOptions, st: &mut GuiVaultState) {
     let config = mapear_opciones_generador(opts);
     let pw = generar_contrasena(&config);
     let (puntuacion, etiqueta) = calcular_fuerza_contrasena(&pw);
 
+    let fecha_str = chrono::Local::now().format("%d/%m/%Y %H:%M:%S").to_string();
+    st.historial_generador.insert(
+        0,
+        GeneratedPasswordItem {
+            clave: SharedString::from(pw.as_str()),
+            fecha: SharedString::from(fecha_str),
+            etiqueta_fuerza: SharedString::from(etiqueta),
+            puntuacion,
+        },
+    );
+    if st.historial_generador.len() > 50 {
+        st.historial_generador.truncate(50);
+    }
+
     ui.set_generador_resultado(SharedString::from(pw.as_str()));
     ui.set_generador_fuerza_puntuacion(puntuacion);
     ui.set_generador_fuerza_etiqueta(SharedString::from(etiqueta));
+    ui.set_conteo_historial_generador(st.historial_generador.len() as i32);
+    ui.set_historial_generador(ModelRc::new(VecModel::from(st.historial_generador.clone())));
 }
 
 fn main() -> Result<(), slint::PlatformError> {
@@ -157,6 +284,8 @@ fn main() -> Result<(), slint::PlatformError> {
     ui.set_biometria_disponible(bio_disponible);
 
     let state = Arc::new(Mutex::new(GuiVaultState::new(ruta_predeterminada)));
+    let sync_cancel_token = Arc::new(Mutex::new(None::<Arc<AtomicBool>>));
+    let sync_confirm_token = Arc::new(Mutex::new(None::<std::sync::mpsc::SyncSender<bool>>));
 
     // 2. Callback: Examinar archivo .bvda con diálogo nativo
     let ui_weak = ui.as_weak();
@@ -240,7 +369,18 @@ fn main() -> Result<(), slint::PlatformError> {
                             ui.set_boveda_desbloqueada(true);
                         }
                         Err(err) => {
-                            ui.set_error_desbloqueo(SharedString::from(err));
+                            let mut st = state_worker.lock().unwrap();
+                            st.intentos_fallidos_desbloqueo += 1;
+                            let max_intentos = ui.get_ajustes_datos().autodestruccion_intentos;
+                            if max_intentos > 0 && st.intentos_fallidos_desbloqueo >= max_intentos {
+                                let _ = fs::remove_file(&ruta);
+                                st.intentos_fallidos_desbloqueo = 0;
+                                ui.set_error_desbloqueo(SharedString::from(
+                                    "⚠ Autodestrucción ejecutada tras superar el límite de intentos fallidos.",
+                                ));
+                            } else {
+                                ui.set_error_desbloqueo(SharedString::from(err));
+                            }
                         }
                     }
                 }
@@ -606,22 +746,169 @@ fn main() -> Result<(), slint::PlatformError> {
         }
     });
 
+    // 18c. Callbacks de Credenciales Alternativas y Adjuntos en Vista de Detalle
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_restaurar_password_historial(move |id, pw| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let id_str = id.to_string();
+            if let Some(mut entrada) = st.obtener_entrada_por_id(&id_str) {
+                if restaurar_contrasena_historial(&mut entrada, pw.as_str()) {
+                    if let Ok(id_guardada) = st.guardar_o_crear_entrada(entrada) {
+                        refrescar_ui(&ui, &mut st, Some(&id_guardada));
+                        ui.set_texto_notificacion("✓ Contraseña restaurada como principal".into());
+                        limpiar_notificacion_despues(&ui_notify, 3);
+                    }
+                }
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_eliminar_password_historial(move |id, pw| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let id_str = id.to_string();
+            if let Some(mut entrada) = st.obtener_entrada_por_id(&id_str) {
+                if eliminar_contrasena_historial(&mut entrada, pw.as_str()) {
+                    if let Ok(id_guardada) = st.guardar_o_crear_entrada(entrada) {
+                        refrescar_ui(&ui, &mut st, Some(&id_guardada));
+                        ui.set_texto_notificacion("✓ Contraseña eliminada del historial".into());
+                        limpiar_notificacion_despues(&ui_notify, 3);
+                    }
+                }
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_promover_passkey_secundaria(move |id, cred_id| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let id_str = id.to_string();
+            if let Some(mut entrada) = st.obtener_entrada_por_id(&id_str) {
+                if promover_passkey_secundaria(&mut entrada, cred_id.as_str()) {
+                    if let Ok(id_guardada) = st.guardar_o_crear_entrada(entrada) {
+                        refrescar_ui(&ui, &mut st, Some(&id_guardada));
+                        ui.set_texto_notificacion("✓ Llave de acceso establecida como principal".into());
+                        limpiar_notificacion_despues(&ui_notify, 3);
+                    }
+                }
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_eliminar_passkey_secundaria(move |id, cred_id| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let id_str = id.to_string();
+            if let Some(mut entrada) = st.obtener_entrada_por_id(&id_str) {
+                if eliminar_passkey_secundaria(&mut entrada, cred_id.as_str()) {
+                    if let Ok(id_guardada) = st.guardar_o_crear_entrada(entrada) {
+                        refrescar_ui(&ui, &mut st, Some(&id_guardada));
+                        ui.set_texto_notificacion("✓ Llave de acceso secundaria eliminada".into());
+                        limpiar_notificacion_despues(&ui_notify, 3);
+                    }
+                }
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_promover_totp_secundario(move |id, totp_id| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let id_str = id.to_string();
+            if let Some(mut entrada) = st.obtener_entrada_por_id(&id_str) {
+                if promover_totp_secundario(&mut entrada, totp_id.as_str()) {
+                    if let Ok(id_guardada) = st.guardar_o_crear_entrada(entrada) {
+                        refrescar_ui(&ui, &mut st, Some(&id_guardada));
+                        ui.set_texto_notificacion("✓ Código 2FA establecido como principal".into());
+                        limpiar_notificacion_despues(&ui_notify, 3);
+                    }
+                }
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_eliminar_totp_secundario(move |id, totp_id| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let id_str = id.to_string();
+            if let Some(mut entrada) = st.obtener_entrada_por_id(&id_str) {
+                if eliminar_totp_secundario(&mut entrada, totp_id.as_str()) {
+                    if let Ok(id_guardada) = st.guardar_o_crear_entrada(entrada) {
+                        refrescar_ui(&ui, &mut st, Some(&id_guardada));
+                        ui.set_texto_notificacion("✓ Código 2FA secundario eliminado".into());
+                        limpiar_notificacion_despues(&ui_notify, 3);
+                    }
+                }
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_guardar_adjunto(move |id, adj_id| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let st = state_clone.lock().unwrap();
+            if let Some(entrada) = st.obtener_entrada_por_id(id.as_str()) {
+                if let Some(adj) = entrada.adjuntos.iter().find(|a| a.id == adj_id.as_str()) {
+                    if let Some(destino) = rfd::FileDialog::new()
+                        .set_title("Guardar archivo adjunto")
+                        .set_file_name(&adj.nombre)
+                        .save_file()
+                    {
+                        match fs::write(&destino, adj.contenido_base64.as_bytes()) {
+                            Ok(()) => {
+                                ui.set_texto_notificacion(format!("✓ Adjunto '{}' guardado", adj.nombre).into());
+                            }
+                            Err(e) => {
+                                ui.set_texto_notificacion(format!("Error al guardar adjunto: {e}").into());
+                            }
+                        }
+                        limpiar_notificacion_despues(&ui_notify, 3);
+                    }
+                }
+            }
+        }
+    });
+
     // 19. Callback: Abrir Diálogo de Generador de Contraseñas
     let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
     ui.on_abrir_generador(move |destino| {
         if let Some(ui) = ui_weak.upgrade() {
             ui.set_generador_destino(destino);
             let opts = ui.get_generador_opciones();
-            ejecutar_generacion(&ui, &opts);
+            let mut st = state_clone.lock().unwrap();
+            ejecutar_generacion(&ui, &opts, &mut st);
             ui.set_mostrar_generador(true);
         }
     });
 
     // 20. Callback: Regenerar Contraseña
     let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
     ui.on_regenerar_contrasena(move |opts| {
         if let Some(ui) = ui_weak.upgrade() {
-            ejecutar_generacion(&ui, &opts);
+            let mut st = state_clone.lock().unwrap();
+            ejecutar_generacion(&ui, &opts, &mut st);
         }
     });
 
@@ -704,6 +991,11 @@ fn main() -> Result<(), slint::PlatformError> {
                 incluir_enie_niagara: true,
                 prefijos_subdominios: prefijos_final.into(),
                 puertos_homelab: puertos_final.into(),
+                menu_lateral_mostrar_cabecera: config.menu_lateral_mostrar_cabecera,
+                menu_lateral_mostrar_pie: config.menu_lateral_mostrar_pie,
+                menu_lateral_mostrar_boton_bloquear: config.menu_lateral_mostrar_boton_bloquear,
+                menu_lateral_agrupar_items: config.menu_lateral_agrupar_items,
+                menu_lateral_sin_bordes: config.menu_lateral_sin_bordes,
             });
             ui.set_ajustes_error(SharedString::default());
             ui.set_ajustes_exito(SharedString::default());
@@ -729,9 +1021,16 @@ fn main() -> Result<(), slint::PlatformError> {
 
             // Aplicar tema en Slint en tiempo real
             aplicar_tema_a_ui(&ui, st.modo_tema, &st.color_acento);
+            let theme = ui.global::<Theme>();
+            theme.set_menu_lateral_mostrar_cabecera(datos.menu_lateral_mostrar_cabecera);
+            theme.set_menu_lateral_mostrar_pie(datos.menu_lateral_mostrar_pie);
+            theme.set_menu_lateral_mostrar_boton_bloquear(datos.menu_lateral_mostrar_boton_bloquear);
+            theme.set_menu_lateral_agrupar_items(datos.menu_lateral_agrupar_items);
+            theme.set_menu_lateral_sin_bordes(datos.menu_lateral_sin_bordes);
 
             match st.actualizar_ajustes(&datos, perfil) {
                 Ok(()) => {
+                    refrescar_ui(&ui, &mut st, None);
                     ui.set_ajustes_exito("✓ Ajustes guardados correctamente".into());
                     ui.set_ajustes_error(SharedString::default());
                     ui.set_texto_notificacion("✓ Ajustes de bóveda actualizados".into());
@@ -752,6 +1051,12 @@ fn main() -> Result<(), slint::PlatformError> {
         if let Some(ui) = ui_weak.upgrade() {
             let ancho = state_clone_rst.lock().unwrap().ultimo_ancho_chips;
             let defaults = boveda_core::config::defaults::valores_predeterminados();
+            let theme = ui.global::<Theme>();
+            theme.set_menu_lateral_mostrar_cabecera(defaults.menu_lateral_mostrar_cabecera);
+            theme.set_menu_lateral_mostrar_pie(defaults.menu_lateral_mostrar_pie);
+            theme.set_menu_lateral_mostrar_boton_bloquear(defaults.menu_lateral_mostrar_boton_bloquear);
+            theme.set_menu_lateral_agrupar_items(defaults.menu_lateral_agrupar_items);
+            theme.set_menu_lateral_sin_bordes(defaults.menu_lateral_sin_bordes);
             let filas_p = parse_puertos_filas_con_ancho(&defaults.puertos_homelab, ancho);
             let filas_s = parse_subdominios_filas_con_ancho(&defaults.prefijos_subdominios, ancho);
             ui.set_ajustes_filas_puertos(ModelRc::new(VecModel::from(filas_p)));
@@ -854,6 +1159,19 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
                 "apariencia_identidad" => {
                     datos.nombre_boveda = defaults.nombre_boveda;
+                }
+                "apariencia_menu_lateral" => {
+                    datos.menu_lateral_mostrar_cabecera = defaults.menu_lateral_mostrar_cabecera;
+                    datos.menu_lateral_mostrar_pie = defaults.menu_lateral_mostrar_pie;
+                    datos.menu_lateral_mostrar_boton_bloquear = defaults.menu_lateral_mostrar_boton_bloquear;
+                    datos.menu_lateral_agrupar_items = defaults.menu_lateral_agrupar_items;
+                    datos.menu_lateral_sin_bordes = defaults.menu_lateral_sin_bordes;
+                    let theme = ui.global::<Theme>();
+                    theme.set_menu_lateral_mostrar_cabecera(defaults.menu_lateral_mostrar_cabecera);
+                    theme.set_menu_lateral_mostrar_pie(defaults.menu_lateral_mostrar_pie);
+                    theme.set_menu_lateral_mostrar_boton_bloquear(defaults.menu_lateral_mostrar_boton_bloquear);
+                    theme.set_menu_lateral_agrupar_items(defaults.menu_lateral_agrupar_items);
+                    theme.set_menu_lateral_sin_bordes(defaults.menu_lateral_sin_bordes);
                 }
                 "apariencia_indicadores" => {
                     let theme = ui.global::<Theme>();
@@ -1154,10 +1472,13 @@ fn main() -> Result<(), slint::PlatformError> {
             ui.set_texto_notificacion("Seleccione segundo archivo .bvda para fusión Lossless".into());
         }
     });
-    let ui_notify = ui.as_weak();
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
     ui.on_auditoria_salud(move || {
-        if let Some(ui) = ui_notify.upgrade() {
-            ui.set_texto_notificacion("Auditoría de salud completada: 0 problemas críticos".into());
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            refrescar_ui(&ui, &mut st, None);
+            ui.set_mostrar_salud(true);
         }
     });
 
@@ -1193,29 +1514,11 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let ui_weak = ui.as_weak();
     let state_clone = Arc::clone(&state);
-    let ui_notify = ui.as_weak();
     ui.on_normalizar_titulos(move || {
         if let Some(ui) = ui_weak.upgrade() {
             let mut st = state_clone.lock().unwrap();
-            let mut modificadas = 0usize;
-            if let Some(ref mut boveda) = st.boveda {
-                for entrada in &mut boveda.entradas {
-                    let url_primer = entrada.urls.first().map(|s| s.as_str()).unwrap_or("");
-                    let serv = boveda_core::gui::extraer_nombre_servicio(url_primer, &entrada.titulo);
-                    if !serv.is_empty() && serv != entrada.titulo {
-                        entrada.titulo = serv;
-                        modificadas += 1;
-                    }
-                }
-            }
-            if modificadas > 0 {
-                let _ = st.guardar_a_disco();
-                refrescar_ui(&ui, &mut st, None);
-                ui.set_texto_notificacion(format!("✓ {} títulos normalizados", modificadas).into());
-            } else {
-                ui.set_texto_notificacion("✓ Todos los títulos ya se encuentran normalizados".into());
-            }
-            limpiar_notificacion_despues(&ui_notify, 3);
+            refrescar_ui(&ui, &mut st, None);
+            ui.set_mostrar_normalizador_titulos(true);
         }
     });
 
@@ -1285,6 +1588,918 @@ fn main() -> Result<(), slint::PlatformError> {
         if let Some(ui) = ui_notify.upgrade() {
             ui.set_texto_notificacion("Bóveda Local Desktop v0.1.0 - Ayuda y Manual en línea".into());
             limpiar_notificacion_despues(&ui_notify, 4);
+        }
+    });
+
+    // 26a-lote. Callbacks de Selección Múltiple y Simple en el Listado Principal
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    ui.on_alternar_seleccion_entrada(move |id| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            st.seleccion.alternar_id(id.as_str());
+            refrescar_ui(&ui, &mut st, None);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    ui.on_alternar_seleccion_grupo(move |clave_grupo| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ids_grupo = st.obtener_ids_grupo(clave_grupo.as_str());
+            st.seleccion.alternar_grupo(&ids_grupo);
+            refrescar_ui(&ui, &mut st, None);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    ui.on_cancelar_seleccion(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            st.seleccion.limpiar();
+            refrescar_ui(&ui, &mut st, None);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    ui.on_alternar_seleccionar_todas(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ids_visibles = st.obtener_ids_filtrados_reales();
+            if st.seleccion.todas_seleccionadas(&ids_visibles) {
+                st.seleccion.limpiar();
+            } else {
+                st.seleccion.seleccionar_todas(&ids_visibles);
+            }
+            refrescar_ui(&ui, &mut st, None);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_lote_favorito(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ids = st.seleccion.ids_seleccionados().clone();
+            if let Some(ref mut boveda) = st.boveda {
+                let activo = alternar_favorito_lote(&mut boveda.entradas, &ids);
+                let _ = st.guardar_a_disco();
+                refrescar_ui(&ui, &mut st, None);
+                let msg = if activo { "★ Entradas marcadas como favoritas" } else { "☆ Favorito quitado de la selección" };
+                ui.set_texto_notificacion(msg.into());
+                limpiar_notificacion_despues(&ui_notify, 3);
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_lote_anclar(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ids = st.seleccion.ids_seleccionados().clone();
+            if let Some(ref mut boveda) = st.boveda {
+                let activo = alternar_anclado_lote(&mut boveda.entradas, &ids);
+                let _ = st.guardar_a_disco();
+                refrescar_ui(&ui, &mut st, None);
+                let msg = if activo { "📌 Entradas ancladas arriba" } else { "📌 Entradas desancladas" };
+                ui.set_texto_notificacion(msg.into());
+                limpiar_notificacion_despues(&ui_notify, 3);
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_lote_salud(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ids = st.seleccion.ids_seleccionados().clone();
+            if let Some(ref mut boveda) = st.boveda {
+                let ignorar = alternar_ignorar_salud_lote(&mut boveda.entradas, &ids);
+                let _ = st.guardar_a_disco();
+                refrescar_ui(&ui, &mut st, None);
+                let msg = if ignorar {
+                    "🛡 Entradas excluidas de la auditoría de salud"
+                } else {
+                    "🛡 Entradas incluidas en la auditoría de salud"
+                };
+                ui.set_texto_notificacion(msg.into());
+                limpiar_notificacion_despues(&ui_notify, 3);
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_lote_exportar(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let st = state_clone.lock().unwrap();
+            let ids = st.seleccion.ids_seleccionados().clone();
+            if ids.is_empty() {
+                return;
+            }
+            if let (Some(ref boveda), Some(ref clave)) = (&st.boveda, &st.clave_maestra) {
+                if let Some(path) = rfd::FileDialog::new()
+                    .add_filter("Bóveda Local", &["bvda"])
+                    .set_file_name("seleccion_exportada.bvda")
+                    .save_file()
+                {
+                    let mut parcial = boveda.clone();
+                    parcial.entradas.retain(|e| ids.contains(&e.id));
+                    match empaquetar_boveda(&parcial, clave.as_bytes(), st.perfil_argon2)
+                        .and_then(|bytes| escribir_atomico(&path, &bytes))
+                    {
+                        Ok(_) => {
+                            ui.set_texto_notificacion(
+                                format!("✓ {} entradas exportadas a .bvda", parcial.entradas.len()).into(),
+                            );
+                        }
+                        Err(err) => {
+                            ui.set_texto_notificacion(format!("Error al exportar selección: {err}").into());
+                        }
+                    }
+                    limpiar_notificacion_despues(&ui_notify, 3);
+                }
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_lote_papelera(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ids = st.seleccion.ids_seleccionados().clone();
+            if let Some(ref mut boveda) = st.boveda {
+                let n = procesar_papelera_lote(&mut boveda.entradas, &ids, "MOVER_PAPELERA");
+                if n > 0 {
+                    st.seleccion.limpiar();
+                    let _ = st.guardar_a_disco();
+                    refrescar_ui(&ui, &mut st, None);
+                    ui.set_texto_notificacion(format!("🗑 {n} entradas movidas a la papelera").into());
+                    limpiar_notificacion_despues(&ui_notify, 3);
+                }
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_lote_restaurar(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ids = st.seleccion.ids_seleccionados().clone();
+            if let Some(ref mut boveda) = st.boveda {
+                let n = procesar_papelera_lote(&mut boveda.entradas, &ids, "RESTAURAR");
+                if n > 0 {
+                    st.seleccion.limpiar();
+                    let _ = st.guardar_a_disco();
+                    refrescar_ui(&ui, &mut st, None);
+                    ui.set_texto_notificacion(format!("♻ {n} entradas restauradas").into());
+                    limpiar_notificacion_despues(&ui_notify, 3);
+                }
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_lote_eliminar_definitivo(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ids = st.seleccion.ids_seleccionados().clone();
+            if let Some(ref mut boveda) = st.boveda {
+                let n = procesar_papelera_lote(&mut boveda.entradas, &ids, "ELIMINAR_DEFINITIVO");
+                if n > 0 {
+                    st.seleccion.limpiar();
+                    let _ = st.guardar_a_disco();
+                    refrescar_ui(&ui, &mut st, None);
+                    ui.set_texto_notificacion(format!("✓ {n} entradas eliminadas definitivamente").into());
+                    limpiar_notificacion_despues(&ui_notify, 3);
+                }
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    ui.on_preparar_unificacion_lote(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let st = state_clone.lock().unwrap();
+            let ids = st.seleccion.ids_seleccionados();
+            if let Some(ref boveda) = st.boveda {
+                let seleccionadas: Vec<_> = boveda
+                    .entradas
+                    .iter()
+                    .filter(|e| ids.contains(&e.id))
+                    .cloned()
+                    .collect();
+                let id_prin = boveda_core::gui::state::selection::entry_unifier::seleccionar_mejor_entrada(&seleccionadas)
+                    .unwrap_or_default();
+                let titulo_sugerido = seleccionadas
+                    .iter()
+                    .find(|e| e.id == id_prin)
+                    .map(|e| e.titulo.clone())
+                    .unwrap_or_default();
+                let resumen = analizar_discrepancias_unificacion(&seleccionadas, &id_prin);
+                ui.set_resumen_unificacion_lote(resumen.into());
+                ui.set_texto_dialogo_lote(titulo_sugerido.into());
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_confirmar_renombrar_lote(move |nuevo_titulo| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ids = st.seleccion.ids_seleccionados().clone();
+            if let Some(ref mut boveda) = st.boveda {
+                let n = renombrar_lote(&mut boveda.entradas, &ids, nuevo_titulo.as_str());
+                if n > 0 {
+                    st.seleccion.limpiar();
+                    let _ = st.guardar_a_disco();
+                    refrescar_ui(&ui, &mut st, None);
+                    ui.set_texto_notificacion(format!("✓ {n} entradas renombradas").into());
+                    limpiar_notificacion_despues(&ui_notify, 3);
+                }
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_confirmar_categoria_lote(move |cat_id| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ids = st.seleccion.ids_seleccionados().clone();
+            if let Some(ref mut boveda) = st.boveda {
+                let cat_arg = if cat_id.trim().is_empty() {
+                    "SIN_CATEGORIA"
+                } else {
+                    cat_id.as_str()
+                };
+                let _ = asignar_categorias_lote(&mut boveda.entradas, &ids, cat_arg);
+                st.seleccion.limpiar();
+                let _ = st.guardar_a_disco();
+                refrescar_ui(&ui, &mut st, None);
+                ui.set_texto_notificacion("📁 Categoría actualizada en la selección".into());
+                limpiar_notificacion_despues(&ui_notify, 3);
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_confirmar_unificar_lote(move |titulo_elegido| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ids = st.seleccion.ids_seleccionados().clone();
+            if let Some(ref mut boveda) = st.boveda {
+                if let Some(id_principal) = unificar_entradas_seleccionadas(boveda, &ids, None) {
+                    if !titulo_elegido.trim().is_empty() {
+                        if let Some(e) = boveda.entradas.iter_mut().find(|e| e.id == id_principal) {
+                            e.titulo = titulo_elegido.trim().to_string();
+                        }
+                    }
+                    st.seleccion.limpiar();
+                    let _ = st.guardar_a_disco();
+                    refrescar_ui(&ui, &mut st, Some(&id_principal));
+                    ui.set_texto_notificacion("✓ Entradas unificadas preservando credenciales alternativas".into());
+                    limpiar_notificacion_despues(&ui_notify, 4);
+                }
+            }
+        }
+    });
+
+    // 26c. Callbacks de Salud de la Bóveda, Duplicados, Títulos, Categorías, Perfiles, Historial y Ajustes
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    ui.on_abrir_salud(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            refrescar_ui(&ui, &mut st, None);
+            ui.set_mostrar_salud(true);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    ui.on_seleccionar_pestana_salud(move |pestana| {
+        if let Some(ui) = ui_weak.upgrade() {
+            ui.set_salud_pestana_activa(pestana);
+            let mut st = state_clone.lock().unwrap();
+            refrescar_ui(&ui, &mut st, None);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_rotar_clave_salud(move |id| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let opts = ui.get_generador_opciones();
+            let config = mapear_opciones_generador(&opts);
+            let nueva_pw = generar_contrasena(&config);
+            let mut st = state_clone.lock().unwrap();
+            if let Some(mut entrada) = st.obtener_entrada_por_id(id.as_str()) {
+                if rotar_contrasena_rapida(&mut entrada, &nueva_pw) {
+                    if let Ok(id_guardada) = st.guardar_o_crear_entrada(entrada) {
+                        let _ = ClipboardManager::copiar_con_limpieza(nueva_pw.to_string(), 30);
+                        st.registrar_evento(&format!("Contraseña rotada rápidamente para la entrada '{id_guardada}'."));
+                        refrescar_ui(&ui, &mut st, Some(&id_guardada));
+                        ui.set_texto_notificacion("✓ Nueva clave generada, copiada y anterior respaldada en el historial".into());
+                        limpiar_notificacion_despues(&ui_notify, 4);
+                    }
+                }
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_alternar_ignorar_salud_individual(move |id| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            if let Some(mut entrada) = st.obtener_entrada_por_id(id.as_str()) {
+                entrada.ignorada_en_salud = !entrada.ignorada_en_salud;
+                let ignorada = entrada.ignorada_en_salud;
+                if let Ok(id_guardada) = st.guardar_o_crear_entrada(entrada) {
+                    refrescar_ui(&ui, &mut st, Some(&id_guardada));
+                    ui.set_texto_notificacion(
+                        if ignorada {
+                            "🛡 Entrada excluida de la auditoría de salud"
+                        } else {
+                            "🛡 Entrada re-incluida en la auditoría de salud"
+                        }
+                        .into(),
+                    );
+                    limpiar_notificacion_despues(&ui_notify, 3);
+                }
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    ui.on_abrir_duplicados(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            refrescar_ui(&ui, &mut st, None);
+            ui.set_mostrar_duplicados(true);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    ui.on_seleccionar_filtro_duplicados(move |filtro| {
+        if let Some(ui) = ui_weak.upgrade() {
+            ui.set_duplicados_filtro_activo(filtro);
+            let mut st = state_clone.lock().unwrap();
+            refrescar_ui(&ui, &mut st, None);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_unificar_grupo_duplicados(move |ids_csv| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let id_unificado = st
+                .boveda
+                .as_mut()
+                .and_then(|b| unificar_grupo_duplicado(b, ids_csv.as_str()));
+            if let Some(id_prin) = id_unificado {
+                let _ = st.guardar_a_disco();
+                st.registrar_evento("Grupo de entradas duplicadas unificado sin pérdida.");
+                refrescar_ui(&ui, &mut st, Some(&id_prin));
+                ui.set_texto_notificacion("✓ Grupo duplicado unificado sin pérdida de credenciales".into());
+                limpiar_notificacion_despues(&ui_notify, 3);
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_unificar_todos_duplicados(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let filtro = ui.get_duplicados_filtro_activo().to_string();
+            let mut st = state_clone.lock().unwrap();
+            let n = st
+                .boveda
+                .as_mut()
+                .map(|b| unificar_todos_los_duplicados(b, &filtro))
+                .unwrap_or(0);
+            if n > 0 {
+                let _ = st.guardar_a_disco();
+                st.registrar_evento(&format!("Limpieza masiva: {n} grupos duplicados unificados."));
+                refrescar_ui(&ui, &mut st, None);
+                ui.set_texto_notificacion(format!("✓ {n} grupos duplicados unificados sin pérdida").into());
+                limpiar_notificacion_despues(&ui_notify, 3);
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    ui.on_cambiar_formato_titulos(move |fmt| {
+        if let Some(ui) = ui_weak.upgrade() {
+            ui.set_titulos_formato_activo(fmt);
+            let mut st = state_clone.lock().unwrap();
+            refrescar_ui(&ui, &mut st, None);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    ui.on_alternar_respetar_personalizados_titulos(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let actual = ui.get_titulos_respetar_personalizados();
+            ui.set_titulos_respetar_personalizados(!actual);
+            let mut st = state_clone.lock().unwrap();
+            refrescar_ui(&ui, &mut st, None);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_aplicar_normalizacion_todos_titulos(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let fmt = ui.get_titulos_formato_activo().to_string();
+            let resp = ui.get_titulos_respetar_personalizados();
+            let mut st = state_clone.lock().unwrap();
+            let n = st
+                .boveda
+                .as_mut()
+                .map(|b| aplicar_normalizacion_titulos(b, &fmt, resp, None, None))
+                .unwrap_or(0);
+            if n > 0 {
+                let _ = st.guardar_a_disco();
+                st.registrar_evento(&format!("{n} títulos normalizados en formato {fmt}."));
+                refrescar_ui(&ui, &mut st, None);
+                ui.set_texto_notificacion(format!("✓ {n} títulos estandarizados con éxito").into());
+                limpiar_notificacion_despues(&ui_notify, 3);
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_aplicar_normalizacion_grupo_titulos(move |clave, propuesto| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let fmt = ui.get_titulos_formato_activo().to_string();
+            let resp = ui.get_titulos_respetar_personalizados();
+            let mut st = state_clone.lock().unwrap();
+            let n = st
+                .boveda
+                .as_mut()
+                .map(|b| {
+                    aplicar_normalizacion_titulos(
+                        b,
+                        &fmt,
+                        resp,
+                        Some(clave.as_str()),
+                        Some(propuesto.as_str()),
+                    )
+                })
+                .unwrap_or(0);
+            if n > 0 {
+                let _ = st.guardar_a_disco();
+                refrescar_ui(&ui, &mut st, None);
+                ui.set_texto_notificacion(format!("✓ {n} cuentas renombradas a '{propuesto}'").into());
+                limpiar_notificacion_despues(&ui_notify, 3);
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    ui.on_abrir_gestor_categorias(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            refrescar_ui(&ui, &mut st, None);
+            ui.set_mostrar_gestor_categorias(true);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_guardar_categoria(move |id, nombre, icono| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ok = st
+                .boveda
+                .as_mut()
+                .and_then(|b| guardar_o_crear_categoria(b, id.as_str(), nombre.as_str(), icono.as_str()))
+                .is_some();
+            if ok {
+                let _ = st.guardar_a_disco();
+                st.registrar_evento(&format!("Categoría '{}' guardada.", nombre.as_str()));
+                refrescar_ui(&ui, &mut st, None);
+                ui.set_texto_notificacion("✓ Categoría guardada".into());
+                limpiar_notificacion_despues(&ui_notify, 2);
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_eliminar_categoria(move |id| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ok = st
+                .boveda
+                .as_mut()
+                .map(|b| eliminar_categoria_boveda(b, id.as_str()))
+                .unwrap_or(false);
+            if ok {
+                if st.filtro_categoria == id.as_str() {
+                    st.filtro_categoria = "TODAS".to_string();
+                    ui.set_filtro_categoria_actual("TODAS".into());
+                }
+                let _ = st.guardar_a_disco();
+                st.registrar_evento("Categoría eliminada.");
+                refrescar_ui(&ui, &mut st, None);
+                ui.set_texto_notificacion("🗑 Categoría eliminada".into());
+                limpiar_notificacion_despues(&ui_notify, 2);
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    ui.on_abrir_gestor_perfiles(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            refrescar_ui(&ui, &mut st, None);
+            ui.set_mostrar_gestor_perfiles(true);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_guardar_perfil(move |id, nombre, correo, sec, tdoc, doc, pref| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ok = st
+                .boveda
+                .as_mut()
+                .and_then(|b| {
+                    guardar_o_crear_perfil(
+                        b,
+                        id.as_str(),
+                        nombre.as_str(),
+                        correo.as_str(),
+                        sec.as_str(),
+                        tdoc.as_str(),
+                        doc.as_str(),
+                        pref.as_str(),
+                    )
+                })
+                .is_some();
+            if ok {
+                let _ = st.guardar_a_disco();
+                st.registrar_evento(&format!("Perfil '{}' guardado.", nombre.as_str()));
+                refrescar_ui(&ui, &mut st, None);
+                ui.set_texto_notificacion("✓ Perfil guardado".into());
+                limpiar_notificacion_despues(&ui_notify, 2);
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_eliminar_perfil(move |id| {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ok = st
+                .boveda
+                .as_mut()
+                .map(|b| eliminar_perfil_boveda(b, id.as_str()))
+                .unwrap_or(false);
+            if ok {
+                if st.filtro_perfil == id.as_str() {
+                    st.filtro_perfil = "TODOS".to_string();
+                    ui.set_filtro_perfil_actual("TODOS".into());
+                }
+                let _ = st.guardar_a_disco();
+                st.registrar_evento("Perfil eliminado.");
+                refrescar_ui(&ui, &mut st, None);
+                ui.set_texto_notificacion("🗑 Perfil eliminado".into());
+                limpiar_notificacion_despues(&ui_notify, 2);
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    ui.on_abrir_historial_claves(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            refrescar_ui(&ui, &mut st, None);
+            ui.set_mostrar_historial_generador(true);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_limpiar_historial_claves(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            st.historial_generador.clear();
+            refrescar_ui(&ui, &mut st, None);
+            ui.set_texto_notificacion("✓ Historial de claves generadas vaciado".into());
+            limpiar_notificacion_despues(&ui_notify, 2);
+        }
+    });
+
+    // 38. Sincronización Segura LAN P2P con Bóveda Local Android
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let cancel_token_holder = Arc::clone(&sync_cancel_token);
+    let confirm_token_holder = Arc::clone(&sync_confirm_token);
+    let ui_notify = ui.as_weak();
+    ui.on_abrir_escaner_qr(move || {
+        let Some(ui) = ui_weak.upgrade() else { return };
+
+        // 1. Validar que la bóveda esté desbloqueada y obtener copia de trabajo
+        let boveda_local = {
+            let st = state_clone.lock().unwrap();
+            match st.boveda.as_ref() {
+                Some(b) => b.clone(),
+                None => {
+                    ui.set_texto_notificacion("Desbloquee la bóveda antes de sincronizar".into());
+                    limpiar_notificacion_despues(&ui_notify, 3);
+                    return;
+                }
+            }
+        };
+
+        // 2. Cancelar cualquier sesión P2P previa activa
+        if let Some(prev_cancel) = cancel_token_holder.lock().unwrap().take() {
+            prev_cancel.store(true, Ordering::SeqCst);
+        }
+        let _ = confirm_token_holder.lock().unwrap().take();
+        let cancel_flag = Arc::new(AtomicBool::new(false));
+        *cancel_token_holder.lock().unwrap() = Some(Arc::clone(&cancel_flag));
+
+        // 3. Generar credenciales efímeras X25519 y PSK (CSPRNG)
+        let mut sk_desktop = [0u8; 32];
+        let mut psk_token = [0u8; 32];
+        rand::thread_rng().fill_bytes(&mut sk_desktop);
+        rand::thread_rng().fill_bytes(&mut psk_token);
+
+        let pk_desktop = derivar_clave_publica_x25519(&sk_desktop);
+        let huella_visual = calcular_huella_visual(&pk_desktop, &psk_token);
+
+        // 4. Detectar IPs LAN RFC 1918
+        let ips = detectar_ips_lan_candidatas();
+        if ips.is_empty() {
+            ui.set_texto_notificacion("No se detectó interfaz LAN con IP privada RFC 1918 conectada".into());
+            limpiar_notificacion_despues(&ui_notify, 4);
+            return;
+        }
+
+        // 5. Enlazar servidor TCP en puerto efímero 0
+        let config_servidor = ConfiguracionServidorP2P::new(sk_desktop, psk_token, 0);
+        let servidor = match ServidorSyncP2P::bind(config_servidor) {
+            Ok(s) => s,
+            Err(e) => {
+                ui.set_texto_notificacion(format!("Error iniciando servidor P2P: {e}").into());
+                limpiar_notificacion_despues(&ui_notify, 4);
+                return;
+            }
+        };
+
+        let puerto = match servidor.puerto_local() {
+            Ok(p) => p,
+            Err(e) => {
+                ui.set_texto_notificacion(format!("Error obteniendo puerto local: {e}").into());
+                limpiar_notificacion_despues(&ui_notify, 4);
+                return;
+            }
+        };
+
+        // 6. Construir Payload QR canónico con identidad de equipo y renderizar imagen RGBA
+        let payload = SyncQrPayload::new(ips.clone(), puerto, pk_desktop, psk_token)
+            .with_alias(obtener_nombre_desktop());
+        let uri = serializar_sync_uri(&payload);
+        let qr_img = match generar_qr_imagen(&uri) {
+            Ok(img) => img,
+            Err(e) => {
+                ui.set_texto_notificacion(format!("Error generando QR: {e}").into());
+                limpiar_notificacion_despues(&ui_notify, 4);
+                return;
+            }
+        };
+
+        // 7. Configurar estado reactivo en la ventana modal
+        ui.set_sync_p2p_qr(qr_img);
+        ui.set_sync_p2p_huella(huella_visual.into());
+        ui.set_sync_p2p_estado_texto("Esperando escaneo móvil...".into());
+        ui.set_sync_p2p_estado_codigo(0);
+        ui.set_sync_p2p_alias_remoto("".into());
+        ui.set_sync_p2p_red_info(format!("IP: {} • Puerto: {}", ips.join(", "), puerto).into());
+        ui.set_mostrar_sync_p2p(true);
+
+        // 8. Iniciar atención asíncrona en hilo secundario con Atomic Commit y confirmación de par
+        let state_worker = Arc::clone(&state_clone);
+        let ui_handle = ui.as_weak();
+        let cancel_flag_worker = Arc::clone(&cancel_flag);
+        let confirm_holder_worker = Arc::clone(&confirm_token_holder);
+
+        thread::spawn(move || {
+            let ui_for_confirm = ui_handle.clone();
+            let resultado = servidor.atender_sincronizacion_cancelable_con_confirmacion(
+                &boveda_local,
+                |boveda_fusionada| {
+                    let mut st = state_worker.lock().unwrap();
+                    st.boveda = Some(boveda_fusionada.clone());
+                    st.guardar_a_disco()
+                        .map_err(|e| format!("Error guardando commit atómico a disco: {e}"))
+                },
+                cancel_flag_worker,
+                move |alias_remoto, huella| {
+                    let (tx, rx) = std::sync::mpsc::sync_channel::<bool>(1);
+                    *confirm_holder_worker.lock().unwrap() = Some(tx);
+
+                    let alias = alias_remoto.to_string();
+                    let huella_str = huella.to_string();
+                    let ui_inner = ui_for_confirm.clone();
+                    let _ = slint::invoke_from_event_loop(move || {
+                        if let Some(ui) = ui_inner.upgrade() {
+                            ui.set_sync_p2p_alias_remoto(alias.clone().into());
+                            ui.set_sync_p2p_estado_texto(
+                                format!("¿Deseas sincronizar con {alias}? Huella: {huella_str}").into(),
+                            );
+                            ui.set_sync_p2p_estado_codigo(4);
+                        }
+                    });
+
+                    match rx.recv_timeout(Duration::from_secs(120)) {
+                        Ok(aprobado) => {
+                            let ui_inner = ui_for_confirm.clone();
+                            let _ = slint::invoke_from_event_loop(move || {
+                                if let Some(ui) = ui_inner.upgrade() {
+                                    if aprobado {
+                                        ui.set_sync_p2p_estado_texto("Fusionando bóvedas...".into());
+                                        ui.set_sync_p2p_estado_codigo(1);
+                                    }
+                                }
+                            });
+                            aprobado
+                        }
+                        Err(_) => false,
+                    }
+                },
+            );
+
+            let _ = slint::invoke_from_event_loop(move || {
+                if let Some(ui) = ui_handle.upgrade() {
+                    match resultado {
+                        Ok(res) => {
+                            let mut st = state_worker.lock().unwrap();
+                            refrescar_ui(&ui, &mut st, None);
+                            ui.set_sync_p2p_estado_codigo(2);
+                            let resumen = res.informe_sync.texto_resumen();
+                            let texto_estado = if let Some(ref disp) = res.informe_sync.dispositivo_remoto {
+                                if !disp.trim().is_empty() {
+                                    let prefijo = format!("con {disp}: ");
+                                    let detalles = resumen.strip_prefix(&prefijo).unwrap_or(&resumen);
+                                    format!("¡Sincronización exitosa con {disp}! {detalles}")
+                                } else {
+                                    format!("¡Sincronización exitosa! {resumen}")
+                                }
+                            } else {
+                                format!("¡Sincronización exitosa! {resumen}")
+                            };
+                            ui.set_sync_p2p_estado_texto(texto_estado.into());
+                            ui.set_texto_notificacion(format!("✓ Sincronización P2P: {resumen}").into());
+                        }
+                        Err(e) => {
+                            if !e.contains("cancelada por el usuario") && !e.contains("rechazada por el usuario") {
+                                ui.set_sync_p2p_estado_codigo(3);
+                                ui.set_sync_p2p_estado_texto(format!("Error: {e}").into());
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    });
+
+    let confirm_holder = Arc::clone(&sync_confirm_token);
+    ui.on_confirmar_sincronizacion_p2p(move || {
+        if let Some(tx) = confirm_holder.lock().unwrap().take() {
+            let _ = tx.send(true);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let cancel_token_holder = Arc::clone(&sync_cancel_token);
+    let confirm_holder = Arc::clone(&sync_confirm_token);
+    ui.on_cancelar_sincronizacion_p2p(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            if let Some(tx) = confirm_holder.lock().unwrap().take() {
+                let _ = tx.send(false);
+            }
+            if let Some(cancel) = cancel_token_holder.lock().unwrap().take() {
+                cancel.store(true, Ordering::SeqCst);
+            }
+            ui.set_mostrar_sync_p2p(false);
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_vaciar_papelera(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            if let Ok(n) = st.vaciar_papelera() {
+                refrescar_ui(&ui, &mut st, None);
+                let msg = if n > 0 {
+                    format!("🗑 Papelera vaciada ({n} entradas eliminadas definitivamente)")
+                } else {
+                    "✓ La papelera ya está vacía".to_string()
+                };
+                ui.set_texto_notificacion(msg.into());
+                limpiar_notificacion_despues(&ui_notify, 3);
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    let state_clone = Arc::clone(&state);
+    let ui_notify = ui.as_weak();
+    ui.on_generar_kit_emergencia(move || {
+        if let Some(ui) = ui_weak.upgrade() {
+            let mut st = state_clone.lock().unwrap();
+            let ruta_str = st.ruta_boveda.display().to_string();
+            let perfil_str = match st.perfil_argon2 {
+                PerfilArgon2::Ultraseguro => "ULTRASEGURO",
+                PerfilArgon2::Reforzado => "REFORZADO",
+                PerfilArgon2::Estandar => "ESTÁNDAR",
+            };
+            let (n_ent, n_cat) = st
+                .boveda
+                .as_ref()
+                .map(|b| {
+                    (
+                        b.entradas.iter().filter(|e| e.eliminada_en == 0).count(),
+                        b.categorias.len(),
+                    )
+                })
+                .unwrap_or((0, 0));
+
+            let contenido = generar_kit_emergencia_texto(&ruta_str, perfil_str, n_ent, n_cat);
+            if let Some(destino) = rfd::FileDialog::new()
+                .set_title("Exportar Kit de Emergencia Soberano")
+                .add_filter("Documento de Texto (*.txt)", &["txt"])
+                .set_file_name("kit_emergencia_boveda.txt")
+                .save_file()
+            {
+                if fs::write(&destino, contenido.as_bytes()).is_ok() {
+                    st.registrar_evento("Kit de emergencia exportado a archivo físico.");
+                    refrescar_ui(&ui, &mut st, None);
+                    ui.set_texto_notificacion("✓ Kit de emergencia exportado con éxito".into());
+                    limpiar_notificacion_despues(&ui_notify, 3);
+                }
+            }
+        }
+    });
+
+    let ui_weak = ui.as_weak();
+    ui.on_buscar_ajuste(move |termino| {
+        if let Some(ui) = ui_weak.upgrade() {
+            if let Some((cat, sub)) = buscar_subseccion_ajustes(termino.as_str()) {
+                ui.set_ajustes_categoria_activa(cat);
+                ui.set_ajustes_subseccion_activa(sub);
+            }
         }
     });
 
@@ -1359,8 +2574,31 @@ fn main() -> Result<(), slint::PlatformError> {
 
                 if ui.get_boveda_desbloqueada() {
                     let st = state_totp.lock().unwrap();
+                    let ahora_seg = chrono::Utc::now().timestamp() as u64;
+                    let limite_inactividad = st
+                        .boveda
+                        .as_ref()
+                        .and_then(|b| b.configuracion.as_ref())
+                        .map(|c| c.auto_bloqueo_segundos)
+                        .unwrap_or(0);
+
+                    if limite_inactividad > 0
+                        && ahora_seg.saturating_sub(st.ultima_actividad_seg) >= (limite_inactividad as u64)
+                    {
+                        drop(st);
+                        ui.invoke_bloquear_boveda();
+                        return;
+                    }
+
                     let entradas = st.obtener_entradas_filtradas();
                     ui.set_lista_entradas(ModelRc::new(VecModel::from(entradas)));
+                    if let Some(ref sel_id) = st.entrada_seleccionada_id {
+                        if let Some(det) = st.obtener_detalle_entrada(sel_id) {
+                            if !det.totp_codigo.is_empty() || det.totps_secundarios.row_count() > 0 {
+                                ui.set_detalle_actual(det);
+                            }
+                        }
+                    }
                 }
             }
         },

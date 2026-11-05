@@ -1,0 +1,182 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { DropdownOption } from "../dropdown_filter.slint";
+
+export component BatchActionDialog inherits Rectangle {
+    // modo: "" (oculto), "renombrar", "categorias", "unificar"
+    in-out property <string> modo: "";
+    in-out property <string> valor-texto: "";
+    in property <[DropdownOption]> opciones-categorias: [];
+    in property <string> resumen-unificacion: "";
+    in property <int> conteo-seleccionadas: 0;
+
+    callback confirmar-renombrar(string);
+    callback confirmar-categoria(string);
+    callback confirmar-unificar(string);
+    callback cancelar();
+
+    background: #000000.transparentize(35%);
+
+    TouchArea {
+        width: 100%;
+        height: 100%;
+        clicked => { root.cancelar(); }
+    }
+
+    Rectangle {
+        width: 440px;
+        height: root.modo == "categorias" ? 360px : 260px;
+        background: Theme.surface;
+        border-radius: Theme.radius-lg;
+        border-width: 1px;
+        border-color: Theme.border;
+        clip: true;
+
+        TouchArea { width: 100%; height: 100%; }
+
+        VerticalLayout {
+            padding: 20px;
+            spacing: 14px;
+            alignment: space-between;
+
+            VerticalLayout {
+                spacing: 6px;
+                Text {
+                    text: root.modo == "renombrar" ? "Renombrar entradas en lote" :
+                          root.modo == "categorias" ? "Asignar categoría en lote" :
+                          "Unificar entradas seleccionadas";
+                    color: Theme.text-primary;
+                    font-size: 16px;
+                    font-weight: 700;
+                }
+                Text {
+                    text: root.modo == "renombrar" ? "Se aplicará el nuevo título a las \{root.conteo-seleccionadas} entradas seleccionadas:" :
+                          root.modo == "categorias" ? "Selecciona la categoría para aplicar a las \{root.conteo-seleccionadas} entradas:" :
+                          root.resumen-unificacion;
+                    color: Theme.text-secondary;
+                    font-size: 12px;
+                    wrap: word-wrap;
+                }
+            }
+
+            if root.modo == "renombrar" || root.modo == "unificar" : VerticalLayout {
+                spacing: 6px;
+                Text {
+                    text: root.modo == "unificar" ? "Título de la cuenta unificada" : "Nuevo título";
+                    color: Theme.text-secondary;
+                    font-size: 11px;
+                    font-weight: 600;
+                }
+                Rectangle {
+                    height: 36px;
+                    background: Theme.background;
+                    border-radius: Theme.radius-sm;
+                    border-width: 1px;
+                    border-color: input-txt.has-focus ? Theme.accent-primary : Theme.border;
+
+                    input-txt := TextInput {
+                        x: 10px;
+                        width: parent.width - 20px;
+                        height: 100%;
+                        text <=> root.valor-texto;
+                        color: Theme.text-primary;
+                        font-size: 13px;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+
+            if root.modo == "categorias" : Flickable {
+                vertical-stretch: 1;
+                content-height: cats-col.min-height;
+
+                cats-col := VerticalLayout {
+                    spacing: 6px;
+
+                    btn-sin-cat := TouchArea {
+                        height: 32px;
+                        clicked => {
+                            root.confirmar-categoria("");
+                        }
+                        Rectangle {
+                            background: btn-sin-cat.has-hover ? Theme.surface-hover : Theme.background;
+                            border-radius: Theme.radius-sm;
+                            border-width: 1px;
+                            border-color: Theme.border;
+                            HorizontalLayout {
+                                padding-left: 12px; padding-right: 12px;
+                                Text { text: "Quitar categorías (Sin categoría)"; color: Theme.text-secondary; font-size: 12px; vertical-alignment: center; }
+                            }
+                        }
+                    }
+
+                    for cat in root.opciones-categorias : TouchArea {
+                        height: 32px;
+                        clicked => {
+                            if cat.id != "TODAS" {
+                                root.confirmar-categoria(cat.id);
+                            }
+                        }
+                        if cat.id != "TODAS" : Rectangle {
+                            background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                            border-radius: Theme.radius-sm;
+                            border-width: 1px;
+                            border-color: Theme.border;
+                            HorizontalLayout {
+                                padding-left: 12px; padding-right: 12px; spacing: 8px;
+                                Text { text: cat.nombre; color: Theme.text-primary; font-size: 12px; font-weight: 600; vertical-alignment: center; }
+                            }
+                        }
+                    }
+                }
+            }
+
+            HorizontalLayout {
+                alignment: end;
+                spacing: 10px;
+
+                btn-c := TouchArea {
+                    width: 96px;
+                    height: 34px;
+                    clicked => { root.cancelar(); }
+                    Rectangle {
+                        background: btn-c.has-hover ? Theme.surface-hover : Theme.background;
+                        border-radius: Theme.radius-sm;
+                        border-width: 1px;
+                        border-color: Theme.border;
+                        Text { text: "Cancelar"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                    }
+                }
+
+                if root.modo == "renombrar" || root.modo == "unificar" : btn-ok := TouchArea {
+                    width: 120px;
+                    height: 34px;
+                    clicked => {
+                        if root.modo == "renombrar" {
+                            root.confirmar-renombrar(root.valor-texto);
+                        } else {
+                            root.confirmar-unificar(root.valor-texto);
+                        }
+                    }
+                    Rectangle {
+                        background: btn-ok.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                        border-radius: Theme.radius-sm;
+                        Text {
+                            text: root.modo == "unificar" ? "Unificar ahora" : "Aplicar";
+                            color: #FFFFFF;
+                            font-size: 12px;
+                            font-weight: 700;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

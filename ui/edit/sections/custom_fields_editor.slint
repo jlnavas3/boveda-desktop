@@ -1,18 +1,60 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
 import { Theme } from "../../theme.slint";
 
 export component CustomFieldsEditor inherits VerticalLayout {
     in-out property <string> campos-personalizados: "";
 
-    spacing: 4px;
+    spacing: 6px;
 
     HorizontalLayout {
         alignment: space-between;
         Text { text: "Campos Personalizados (Formato: Nombre: Valor)"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
-        Text { text: "* Prefijo con * para secreto"; color: Theme.text-muted; font-size: 10px; }
+        Text { text: "* Prefijo con * para campo sensible oculto"; color: Theme.text-muted; font-size: 10px; }
+    }
+
+    HorizontalLayout {
+        spacing: 6px;
+        alignment: start;
+        for preset in [
+            { label: "+ PIN", tpl: "*PIN: " },
+            { label: "+ Pregunta seguridad", tpl: "*Pregunta de seguridad: " },
+            { label: "+ Código recuperación", tpl: "*Código de recuperación: " },
+            { label: "+ Licencia", tpl: "Clave de licencia: " },
+            { label: "+ ID Cliente", tpl: "ID Cliente: " }
+        ] : TouchArea {
+            height: 22px;
+            width: txt-p.preferred-width + 14px;
+            clicked => {
+                if (root.campos-personalizados == "") {
+                    root.campos-personalizados = preset.tpl;
+                } else {
+                    root.campos-personalizados = root.campos-personalizados + "\n" + preset.tpl;
+                }
+            }
+            Rectangle {
+                background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                border-radius: Theme.radius-sm;
+                border-width: 1px;
+                border-color: Theme.border;
+                txt-p := Text {
+                    text: preset.label;
+                    color: Theme.accent-primary;
+                    font-size: 10px;
+                    font-weight: 600;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
     }
 
     Rectangle {
-        height: 56px;
+        height: 64px;
         background: Theme.background;
         border-width: 1px;
         border-color: Theme.border;

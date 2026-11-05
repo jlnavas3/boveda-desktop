@@ -1,25 +1,58 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
 import { Theme } from "../../theme.slint";
 
 export component ContactForm inherits VerticalLayout {
     in-out property <string> nombre: "";
     in-out property <string> correo: "";
+    in-out property <string> telefono-principal: "";
     in-out property <string> telefono: "";
     in-out property <string> empresa: "";
+    in-out property <string> direccion: "";
+    in-out property <string> cp: "";
+    in-out property <string> ciudad: "";
+    in-out property <string> provincia: "";
+    in-out property <string> pais: "";
 
     spacing: 10px;
 
-    VerticalLayout {
-        spacing: 4px;
-        Text { text: "Nombre Completo"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
-        Rectangle {
-            height: 36px; background: Theme.background;
-            border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
-            HorizontalLayout {
-                padding-left: 8px; padding-right: 8px;
-                TextInput {
-                    text <=> root.nombre;
-                    color: Theme.text-primary; font-size: 12px;
-                    vertical-alignment: center; single-line: true;
+    HorizontalLayout {
+        spacing: 8px;
+
+        VerticalLayout {
+            horizontal-stretch: 2; spacing: 4px;
+            Text { text: "Nombre Completo"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.nombre;
+                        color: Theme.text-primary; font-size: 12px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+        }
+
+        VerticalLayout {
+            horizontal-stretch: 1; spacing: 4px;
+            Text { text: "Empresa / Organización"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.empresa;
+                        color: Theme.text-primary; font-size: 12px;
+                        vertical-alignment: center; single-line: true;
+                    }
                 }
             }
         }
@@ -47,7 +80,24 @@ export component ContactForm inherits VerticalLayout {
 
         VerticalLayout {
             horizontal-stretch: 1; spacing: 4px;
-            Text { text: "Teléfono"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Text { text: "Teléfono Principal"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.telefono-principal;
+                        color: Theme.text-primary; font-size: 12px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+        }
+
+        VerticalLayout {
+            horizontal-stretch: 1; spacing: 4px;
+            Text { text: "Teléfono Secundario"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
             Rectangle {
                 height: 36px; background: Theme.background;
                 border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
@@ -65,16 +115,88 @@ export component ContactForm inherits VerticalLayout {
 
     VerticalLayout {
         spacing: 4px;
-        Text { text: "Organización o Empresa"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+        Text { text: "Dirección Postal"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
         Rectangle {
             height: 36px; background: Theme.background;
             border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
             HorizontalLayout {
                 padding-left: 8px; padding-right: 8px;
                 TextInput {
-                    text <=> root.empresa;
+                    text <=> root.direccion;
                     color: Theme.text-primary; font-size: 12px;
                     vertical-alignment: center; single-line: true;
+                }
+            }
+        }
+    }
+
+    HorizontalLayout {
+        spacing: 8px;
+
+        VerticalLayout {
+            horizontal-stretch: 1; spacing: 4px;
+            Text { text: "Ciudad"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.ciudad;
+                        color: Theme.text-primary; font-size: 11px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+        }
+
+        VerticalLayout {
+            horizontal-stretch: 1; spacing: 4px;
+            Text { text: "Provincia / Estado"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.provincia;
+                        color: Theme.text-primary; font-size: 11px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+        }
+
+        VerticalLayout {
+            horizontal-stretch: 1; spacing: 4px;
+            Text { text: "Código Postal"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.cp;
+                        color: Theme.text-primary; font-size: 11px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+        }
+
+        VerticalLayout {
+            horizontal-stretch: 1; spacing: 4px;
+            Text { text: "País"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.pais;
+                        color: Theme.text-primary; font-size: 11px;
+                        vertical-alignment: center; single-line: true;
+                    }
                 }
             }
         }

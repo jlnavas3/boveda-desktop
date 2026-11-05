@@ -1,0 +1,117 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+
+export struct DuplicateGroupItem {
+    clave-grupo: string,
+    titulo-servicio: string,
+    usuario-comun: string,
+    tipo-duplicado: string,
+    etiqueta-tipo: string,
+    conteo-entradas: int,
+    ids-csv: string,
+    resumen-entradas: string,
+}
+
+export component DuplicateGroupCard inherits Rectangle {
+    in property <DuplicateGroupItem> grupo;
+    callback unificar-grupo(string);
+
+    width: 100%;
+    background: Theme.background;
+    border-radius: Theme.radius-sm;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    VerticalLayout {
+        padding: 12px;
+        spacing: 8px;
+
+        HorizontalLayout {
+            alignment: space-between;
+            spacing: 10px;
+
+            VerticalLayout {
+                horizontal-stretch: 1;
+                spacing: 3px;
+
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+
+                    Text {
+                        text: root.grupo.titulo-servicio;
+                        color: Theme.text-primary;
+                        font-size: 14px;
+                        font-weight: 800;
+                        vertical-alignment: center;
+                    }
+
+                    Rectangle {
+                        height: 20px;
+                        border-radius: 4px;
+                        background: Theme.accent-amber.transparentize(82%);
+                        border-width: 1px;
+                        border-color: Theme.accent-amber.transparentize(40%);
+
+                        HorizontalLayout {
+                            padding-left: 6px;
+                            padding-right: 6px;
+                            alignment: center;
+                            Text {
+                                text: root.grupo.conteo-entradas + " entradas · " + root.grupo.etiqueta-tipo;
+                                color: Theme.accent-amber;
+                                font-size: 10px;
+                                font-weight: 700;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+
+                Text {
+                    text: "Usuario: " + root.grupo.usuario-comun;
+                    color: Theme.text-secondary;
+                    font-size: 11px;
+                }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                btn-merge := TouchArea {
+                    width: 132px;
+                    height: 30px;
+                    mouse-cursor: pointer;
+                    clicked => { root.unificar-grupo(root.grupo.ids-csv); }
+
+                    Rectangle {
+                        background: btn-merge.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                        border-radius: Theme.radius-sm;
+
+                        Text {
+                            text: "Unificar sin pérdida";
+                            color: #FFFFFF;
+                            font-size: 11px;
+                            font-weight: 700;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+
+        Rectangle { height: 1px; background: Theme.border; }
+
+        Text {
+            text: root.grupo.resumen-entradas;
+            color: Theme.text-muted;
+            font-size: 11px;
+            wrap: word-wrap;
+        }
+    }
+}

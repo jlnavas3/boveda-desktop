@@ -1,0 +1,138 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
+import { TitleNormalizerQuickCard } from "title_normalizer_quick_card.slint";
+import { TitleGroupRow, TitleNormalizationGroupItem } from "title_group_row.slint";
+
+export { TitleNormalizationGroupItem }
+
+export component TitleNormalizerModal inherits Rectangle {
+    in property <string> formato-activo: "CAPITALIZADO";
+    in property <bool> respetar-personalizados: true;
+    in property <[TitleNormalizationGroupItem]> grupos: [];
+
+    callback cambiar-formato(string);
+    callback alternar-respetar-personalizados();
+    callback aplicar-todos();
+    callback aplicar-grupo(string, string);
+    callback cerrar();
+
+    width: 100%;
+    height: 100%;
+    background: #000000B0;
+
+    TouchArea {
+        width: 100%;
+        height: 100%;
+    }
+
+    Rectangle {
+        width: Math.min(820px, root.width - 48px);
+        height: Math.min(580px, root.height - 48px);
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        background: Theme.surface;
+        border-radius: Theme.radius-lg;
+        border-width: 1px;
+        border-color: Theme.border;
+        clip: true;
+
+        VerticalLayout {
+            padding: 18px;
+            spacing: 12px;
+
+            HorizontalLayout {
+                alignment: space-between;
+                spacing: 12px;
+
+                VerticalLayout {
+                    spacing: 3px;
+                    Text {
+                        text: "Normalizador y Renombrador Inteligente de Títulos";
+                        color: Theme.text-primary;
+                        font-size: 16px;
+                        font-weight: 800;
+                    }
+                    Text {
+                        text: "Limpia URLs crudas, paquetes Android y subdominios convirtiéndolos en nombres de servicio limpios.";
+                        color: Theme.text-secondary;
+                        font-size: 11px;
+                    }
+                }
+
+                btn-close := TouchArea {
+                    width: 32px;
+                    height: 32px;
+                    mouse-cursor: pointer;
+                    clicked => { root.cerrar(); }
+
+                    Rectangle {
+                        background: btn-close.has-hover ? Theme.surface-hover : Theme.background;
+                        border-radius: Theme.radius-sm;
+                        border-width: 1px;
+                        border-color: Theme.border;
+
+                        AppIcon {
+                            source: @image-url("../assets/icons/close.svg");
+                            icon-size: 14px;
+                            icon-color: Theme.text-primary;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            TitleNormalizerQuickCard {
+                formato-activo: root.formato-activo;
+                respetar-personalizados: root.respetar-personalizados;
+                total-grupos: root.grupos.length;
+                cambiar-formato(f) => { root.cambiar-formato(f); }
+                alternar-respetar-personalizados => { root.alternar-respetar-personalizados(); }
+                aplicar-todos => { root.aplicar-todos(); }
+            }
+
+            if root.grupos.length == 0 : VerticalLayout {
+                vertical-stretch: 1;
+                alignment: center;
+                spacing: 8px;
+
+                Text {
+                    text: "✓ Todos los títulos ya están limpios y normalizados";
+                    color: Theme.accent-primary;
+                    font-size: 14px;
+                    font-weight: 700;
+                    horizontal-alignment: center;
+                }
+                Text {
+                    text: "No hay URLs crudas ni nombres de paquetes pendientes de normalizar con este formato.";
+                    color: Theme.text-muted;
+                    font-size: 12px;
+                    horizontal-alignment: center;
+                }
+            }
+
+            if root.grupos.length > 0 : Flickable {
+                vertical-stretch: 1;
+                content-width: self.width;
+                content-height: rows-layout.min-height;
+
+                rows-layout := VerticalLayout {
+                    width: 100%;
+                    spacing: 8px;
+                    alignment: start;
+
+                    for grp in root.grupos : TitleGroupRow {
+                        grupo: grp;
+                        aplicar-grupo(clave, prop) => { root.aplicar-grupo(clave, prop); }
+                    }
+                }
+            }
+        }
+    }
+}

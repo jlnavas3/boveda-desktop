@@ -1,0 +1,78 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+
+export component HealthTabBar inherits HorizontalLayout {
+    in property <string> pestana-activa: "REPETIDAS";
+    in property <int> conteo-caducadas: 0;
+    in property <int> conteo-repetidas: 0;
+    in property <int> conteo-comunes: 0;
+    in property <int> conteo-debiles: 0;
+    in property <int> conteo-antiguas: 0;
+    in property <int> conteo-ignoradas: 0;
+
+    callback seleccionar-pestana(string);
+
+    width: 100%;
+    height: 36px;
+    spacing: 6px;
+
+    for tab in [
+        { id: "REPETIDAS", label: "Repetidas", count: root.conteo-repetidas },
+        { id: "DEBILES", label: "Débiles", count: root.conteo-debiles },
+        { id: "COMUNES", label: "Comunes", count: root.conteo-comunes },
+        { id: "CADUCADAS", label: "Caducadas", count: root.conteo-caducadas },
+        { id: "ANTIGUAS", label: "Antiguas", count: root.conteo-antiguas },
+        { id: "IGNORADAS", label: "Ignoradas", count: root.conteo-ignoradas },
+    ] : item-touch := TouchArea {
+        horizontal-stretch: 1;
+        height: 34px;
+        mouse-cursor: pointer;
+        clicked => { root.seleccionar-pestana(tab.id); }
+
+        Rectangle {
+            background: root.pestana-activa == tab.id ? Theme.accent-primary.transparentize(82%) :
+                        item-touch.has-hover ? Theme.surface-hover : Theme.background;
+            border-radius: Theme.radius-sm;
+            border-width: 1px;
+            border-color: root.pestana-activa == tab.id ? Theme.accent-primary : Theme.border;
+
+            HorizontalLayout {
+                alignment: center;
+                spacing: 5px;
+                padding-left: 6px;
+                padding-right: 6px;
+
+                Text {
+                    text: tab.label;
+                    color: root.pestana-activa == tab.id ? Theme.accent-primary : Theme.text-secondary;
+                    font-size: 11px;
+                    font-weight: root.pestana-activa == tab.id ? 700 : 600;
+                    vertical-alignment: center;
+                }
+
+                Rectangle {
+                    height: 16px;
+                    border-radius: 8px;
+                    background: tab.count > 0 && tab.id != "IGNORADAS" ? Theme.accent-amber.transparentize(78%) : Theme.surface;
+                    HorizontalLayout {
+                        padding-left: 5px;
+                        padding-right: 5px;
+                        alignment: center;
+                        Text {
+                            text: tab.count;
+                            color: tab.count > 0 && tab.id != "IGNORADAS" ? Theme.accent-amber : Theme.text-muted;
+                            font-size: 10px;
+                            font-weight: 700;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

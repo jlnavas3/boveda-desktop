@@ -1,0 +1,45 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../../theme.slint";
+import { SettingGroupHeader } from "../../../components/widgets/setting_group_header.slint";
+import { SettingBlock } from "../../../components/widgets/setting_block.slint";
+
+export component SubSystemAuditLog inherits VerticalLayout {
+    in property <string> registro-eventos: "Sesión iniciada con cifrado autenticado AES-256-GCM y derivación Argon2id.";
+
+    spacing: 12px;
+
+    SettingGroupHeader {
+        titulo: "Registro de Eventos y Auditoría";
+        descripcion: "Bitácora en memoria volátil de operaciones de seguridad, desbloqueos, exportaciones y rotaciones de claves.";
+    }
+
+    SettingBlock {
+        titulo: "Eventos Recientes de la Sesión";
+        descripcion: "Este registro reside exclusivamente en RAM y se destruye al bloquear o cerrar la bóveda.";
+        mostrar-restaurar: false;
+
+        Rectangle {
+            width: 100%;
+            min-height: 160px;
+            background: Theme.background;
+            border-radius: Theme.radius-sm;
+            border-width: 1px;
+            border-color: Theme.border;
+
+            VerticalLayout {
+                padding: 12px;
+                Text {
+                    text: root.registro-eventos;
+                    color: Theme.text-secondary;
+                    font-size: 11px;
+                    wrap: word-wrap;
+                }
+            }
+        }
+    }
+}

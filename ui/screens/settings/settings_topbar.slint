@@ -9,6 +9,7 @@ import { AppIcon } from "../../components/widgets/app_icon.slint";
 
 export component SettingsTopBar inherits Rectangle {
     in-out property <string> termino-busqueda: "";
+    callback buscar(string);
     callback volver();
     callback restaurar-predeterminados();
     callback guardar();
@@ -84,6 +85,7 @@ export component SettingsTopBar inherits Rectangle {
                         vertical-alignment: center;
                         single-line: true;
                         horizontal-stretch: 1;
+                        edited => { root.buscar(self.text); }
                     }
                 }
                 if !in-search.has-focus && in-search.text == "" : Text {

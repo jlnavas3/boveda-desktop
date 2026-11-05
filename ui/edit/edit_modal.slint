@@ -1,5 +1,12 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
 import { Theme } from "../theme.slint";
-import { TypeChipBar } from "type_chip_bar.slint";
+import { DropdownOption } from "../components/dropdown_filter.slint";
+import { EntryTypeDropdown } from "entry_type_dropdown.slint";
 import { LoginForm } from "forms/login_form.slint";
 import { CardForm } from "forms/card_form.slint";
 import { BankForm } from "forms/bank_form.slint";
@@ -13,17 +20,22 @@ import { TotpField } from "sections/totp_field.slint";
 import { CategorySelector } from "sections/category_selector.slint";
 import { TagsField } from "sections/tags_field.slint";
 import { CustomFieldsEditor } from "sections/custom_fields_editor.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
 
 export struct EntryEditData {
     id: string,
     tipo: string,
     titulo: string,
     favorito: bool,
+    anclado: bool,
+    ignorada_en_salud: bool,
     categoria_id: string,
+    perfil_id: string,
     usuario: string,
     password: string,
     url: string,
     urls_secundarias: string,
+    paquetes_android: string,
     notas: string,
 
     // TOTP
@@ -54,6 +66,7 @@ export struct EntryEditData {
     servidor_puerto: string,
     servidor_usuario: string,
     servidor_password: string,
+    servidor_clave_publica: string,
 
     // Cuenta Bancaria
     banco_entidad: string,
@@ -65,17 +78,27 @@ export struct EntryEditData {
     wallet_red: string,
     wallet_direccion: string,
     wallet_semilla: string,
+    wallet_clave_privada: string,
 
     // Documento Identidad
     identidad_nombre: string,
     identidad_tipo_doc: string,
     identidad_numero: string,
+    identidad_expedicion: string,
+    identidad_caducidad: string,
+    identidad_pais: string,
 
     // Contacto
     contacto_nombre: string,
     contacto_correo: string,
+    contacto_telefono_principal: string,
     contacto_telefono: string,
     contacto_empresa: string,
+    contacto_direccion: string,
+    contacto_cp: string,
+    contacto_ciudad: string,
+    contacto_provincia: string,
+    contacto_pais: string,
 }
 
 export component EditModal inherits Rectangle {
@@ -84,11 +107,15 @@ export component EditModal inherits Rectangle {
         tipo: "LOGIN",
         titulo: "",
         favorito: false,
+        anclado: false,
+        ignorada_en_salud: false,
         categoria_id: "",
+        perfil_id: "",
         usuario: "",
         password: "",
         url: "",
         urls_secundarias: "",
+        paquetes_android: "",
         notas: "",
         totp_secreto: "",
         totp_emisor: "",
@@ -109,6 +136,7 @@ export component EditModal inherits Rectangle {
         servidor_puerto: "22",
         servidor_usuario: "",
         servidor_password: "",
+        servidor_clave_publica: "",
         banco_entidad: "",
         banco_titular: "",
         banco_numero_cuenta: "",
@@ -116,16 +144,28 @@ export component EditModal inherits Rectangle {
         wallet_red: "Bitcoin",
         wallet_direccion: "",
         wallet_semilla: "",
+        wallet_clave_privada: "",
         identidad_nombre: "",
         identidad_tipo_doc: "DNI",
         identidad_numero: "",
+        identidad_expedicion: "",
+        identidad_caducidad: "",
+        identidad_pais: "",
         contacto_nombre: "",
         contacto_correo: "",
+        contacto_telefono_principal: "",
         contacto_telefono: "",
         contacto_empresa: "",
+        contacto_direccion: "",
+        contacto_cp: "",
+        contacto_ciudad: "",
+        contacto_provincia: "",
+        contacto_pais: "",
     };
 
     in property <bool> es-nueva: false;
+    in property <[DropdownOption]> opciones-categorias: [];
+    in property <[DropdownOption]> opciones-perfiles: [];
 
     callback guardar(EntryEditData);
     callback cancelar();
@@ -134,7 +174,8 @@ export component EditModal inherits Rectangle {
     background: #000000.transparentize(35%);
 
     TouchArea {
-        // Bloquear clicks de pasar al fondo
+        width: 100%;
+        height: 100%;
     }
 
     VerticalLayout {
@@ -144,8 +185,8 @@ export component EditModal inherits Rectangle {
             alignment: center;
 
             Rectangle {
-                width: 620px;
-                max-height: root.height * 88%;
+                width: 660px;
+                max-height: root.height * 90%;
                 background: Theme.surface;
                 border-width: 1px;
                 border-color: Theme.border;
@@ -186,7 +227,13 @@ export component EditModal inherits Rectangle {
                             }
                         }
 
-                        // Título de la entrada y botón favorito ★
+                        // Menú Dropdown de Tipo de Entrada (disponible tanto al crear como al editar)
+                        EntryTypeDropdown {
+                            tipo-seleccionado <=> root.datos.tipo;
+                            seleccionar(t) => { root.datos.tipo = t; }
+                        }
+
+                        // Título de la entrada + Botones rápidos (Favorito, Anclado, Ignorar en Salud)
                         HorizontalLayout {
                             spacing: 8px;
 
@@ -211,27 +258,53 @@ export component EditModal inherits Rectangle {
                                 }
                             }
 
-                            TouchArea {
+                            btn-fav := TouchArea {
                                 width: 38px; height: 38px;
                                 clicked => { root.datos.favorito = !root.datos.favorito; }
                                 Rectangle {
-                                    background: root.datos.favorito ? Theme.accent-amber.transparentize(80%) : Theme.background;
-                                    border-width: 1px; border-color: root.datos.favorito ? Theme.accent-amber : Theme.border;
+                                    background: root.datos.favorito ? #F59E0B.transparentize(82%) : Theme.background;
+                                    border-width: 1px; border-color: root.datos.favorito ? #F59E0B : Theme.border;
                                     border-radius: Theme.radius-sm;
-                                    Text {
-                                        text: "★";
-                                        color: root.datos.favorito ? Theme.accent-amber : Theme.text-muted;
-                                        font-size: 16px;
+                                    AppIcon {
+                                        source: root.datos.favorito ? @image-url("../assets/icons/star.svg") : @image-url("../assets/icons/star_border.svg");
+                                        icon-size: 16px;
+                                        icon-color: root.datos.favorito ? #F59E0B : Theme.text-muted;
                                         horizontal-alignment: center; vertical-alignment: center;
                                     }
                                 }
                             }
-                        }
 
-                        // Barra selectora de Tipo
-                        TypeChipBar {
-                            tipo-seleccionado <=> root.datos.tipo;
-                            seleccionar(t) => { root.datos.tipo = t; }
+                            btn-pin := TouchArea {
+                                width: 38px; height: 38px;
+                                clicked => { root.datos.anclado = !root.datos.anclado; }
+                                Rectangle {
+                                    background: root.datos.anclado ? Theme.accent-primary.transparentize(82%) : Theme.background;
+                                    border-width: 1px; border-color: root.datos.anclado ? Theme.accent-primary : Theme.border;
+                                    border-radius: Theme.radius-sm;
+                                    AppIcon {
+                                        source: @image-url("../assets/icons/pin.svg");
+                                        icon-size: 15px;
+                                        icon-color: root.datos.anclado ? Theme.accent-primary : Theme.text-muted;
+                                        horizontal-alignment: center; vertical-alignment: center;
+                                    }
+                                }
+                            }
+
+                            btn-health := TouchArea {
+                                width: 38px; height: 38px;
+                                clicked => { root.datos.ignorada_en_salud = !root.datos.ignorada_en_salud; }
+                                Rectangle {
+                                    background: root.datos.ignorada_en_salud ? Theme.accent-amber.transparentize(82%) : Theme.background;
+                                    border-width: 1px; border-color: root.datos.ignorada_en_salud ? Theme.accent-amber : Theme.border;
+                                    border-radius: Theme.radius-sm;
+                                    AppIcon {
+                                        source: @image-url("../assets/icons/shield.svg");
+                                        icon-size: 15px;
+                                        icon-color: root.datos.ignorada_en_salud ? Theme.accent-amber : Theme.text-muted;
+                                        horizontal-alignment: center; vertical-alignment: center;
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -239,6 +312,7 @@ export component EditModal inherits Rectangle {
 
                     // Contenido del Formulario Desplazable
                     Flickable {
+                        vertical-stretch: 1;
                         content-height: form-layout.min-height;
 
                         form-layout := VerticalLayout {
@@ -274,6 +348,7 @@ export component EditModal inherits Rectangle {
                                 puerto <=> root.datos.servidor_puerto;
                                 usuario <=> root.datos.servidor_usuario;
                                 password <=> root.datos.servidor_password;
+                                clave-publica <=> root.datos.servidor_clave_publica;
                             }
 
                             if root.datos.tipo == "WIFI" : WifiForm {
@@ -287,19 +362,29 @@ export component EditModal inherits Rectangle {
                                 red <=> root.datos.wallet_red;
                                 direccion <=> root.datos.wallet_direccion;
                                 semilla <=> root.datos.wallet_semilla;
+                                clave-privada <=> root.datos.wallet_clave_privada;
                             }
 
                             if root.datos.tipo == "IDENTIDAD" : IdentityForm {
                                 nombre <=> root.datos.identidad_nombre;
                                 tipo-doc <=> root.datos.identidad_tipo_doc;
                                 numero <=> root.datos.identidad_numero;
+                                expedicion <=> root.datos.identidad_expedicion;
+                                caducidad <=> root.datos.identidad_caducidad;
+                                pais <=> root.datos.identidad_pais;
                             }
 
                             if root.datos.tipo == "CONTACTO" : ContactForm {
                                 nombre <=> root.datos.contacto_nombre;
                                 correo <=> root.datos.contacto_correo;
+                                telefono-principal <=> root.datos.contacto_telefono_principal;
                                 telefono <=> root.datos.contacto_telefono;
                                 empresa <=> root.datos.contacto_empresa;
+                                direccion <=> root.datos.contacto_direccion;
+                                cp <=> root.datos.contacto_cp;
+                                ciudad <=> root.datos.contacto_ciudad;
+                                provincia <=> root.datos.contacto_provincia;
+                                pais <=> root.datos.contacto_pais;
                             }
 
                             if root.datos.tipo == "NOTA" : NoteForm {
@@ -318,11 +403,15 @@ export component EditModal inherits Rectangle {
 
                             CategorySelector {
                                 categoria-id <=> root.datos.categoria_id;
+                                perfil-id <=> root.datos.perfil_id;
+                                opciones-categorias: root.opciones-categorias;
+                                opciones-perfiles: root.opciones-perfiles;
                             }
 
                             TagsField {
                                 etiquetas <=> root.datos.etiquetas;
                                 fecha-caducidad <=> root.datos.fecha_caducidad;
+                                paquetes-android <=> root.datos.paquetes_android;
                             }
 
                             CustomFieldsEditor {
@@ -353,33 +442,46 @@ export component EditModal inherits Rectangle {
                     HorizontalLayout {
                         padding: 14px;
                         spacing: 12px;
-                        alignment: end;
+                        alignment: space-between;
 
-                        TouchArea {
-                            width: 100px; height: 36px;
-                            clicked => { root.cancelar(); }
-                            Rectangle {
-                                background: parent.has-hover ? Theme.surface-hover : Theme.background;
-                                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
-                                Text { text: "Cancelar"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
-                            }
+                        Text {
+                            text: root.datos.ignorada_en_salud ? "🛡 Excluida de auditoría de salud" :
+                                  root.datos.anclado ? "📌 Anclada en la parte superior" : "";
+                            color: Theme.text-muted;
+                            font-size: 11px;
+                            vertical-alignment: center;
                         }
 
-                        TouchArea {
-                            width: 140px; height: 36px;
-                            clicked => {
-                                if root.datos.titulo != "" {
-                                    root.guardar(root.datos);
+                        HorizontalLayout {
+                            spacing: 12px;
+                            alignment: end;
+
+                            TouchArea {
+                                width: 100px; height: 36px;
+                                clicked => { root.cancelar(); }
+                                Rectangle {
+                                    background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                                    border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                                    Text { text: "Cancelar"; color: Theme.text-secondary; font-size: 12px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
                                 }
                             }
-                            Rectangle {
-                                background: root.datos.titulo == "" ? Theme.text-muted :
-                                           parent.has-hover ? Theme.accent-hover : Theme.accent-primary;
-                                border-radius: Theme.radius-sm;
-                                Text {
-                                    text: root.es-nueva ? "✓ Crear Entrada" : "✓ Guardar Cambios";
-                                    color: #FFFFFF; font-size: 12px; font-weight: 700;
-                                    horizontal-alignment: center; vertical-alignment: center;
+
+                            TouchArea {
+                                width: 150px; height: 36px;
+                                clicked => {
+                                    if root.datos.titulo != "" {
+                                        root.guardar(root.datos);
+                                    }
+                                }
+                                Rectangle {
+                                    background: root.datos.titulo == "" ? Theme.text-muted :
+                                               parent.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                                    border-radius: Theme.radius-sm;
+                                    Text {
+                                        text: root.es-nueva ? "✓ Crear Entrada" : "✓ Guardar Cambios";
+                                        color: #FFFFFF; font-size: 12px; font-weight: 700;
+                                        horizontal-alignment: center; vertical-alignment: center;
+                                    }
                                 }
                             }
                         }

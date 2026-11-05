@@ -1,0 +1,165 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
+
+export component EntryTypeDropdown inherits VerticalLayout {
+    in-out property <string> tipo-seleccionado: "LOGIN";
+    in-out property <bool> desplegado: false;
+    callback seleccionar(string);
+
+    spacing: 4px;
+
+    pure function nombre-tipo(t: string) -> string {
+        if (t == "LOGIN") { return "Contraseña / Inicio de Sesión"; }
+        if (t == "TARJETA") { return "Tarjeta Bancaria (Crédito / Débito)"; }
+        if (t == "CUENTA_BANCARIA") { return "Cuenta Bancaria / IBAN"; }
+        if (t == "SERVIDOR") { return "Servidor / Acceso SSH"; }
+        if (t == "WIFI") { return "Red Inalámbrica Wi-Fi"; }
+        if (t == "WALLET") { return "Cripto Wallet / Semilla"; }
+        if (t == "IDENTIDAD") { return "Documento de Identidad"; }
+        if (t == "CONTACTO") { return "Contacto Personal / Corporativo"; }
+        if (t == "NOTA") { return "Nota Segura Cifrada"; }
+        return t;
+    }
+
+    pure function icono-tipo(t: string) -> image {
+        if (t == "TARJETA") { return @image-url("../assets/icons/credit_card.svg"); }
+        if (t == "CUENTA_BANCARIA") { return @image-url("../assets/icons/account_balance.svg"); }
+        if (t == "SERVIDOR") { return @image-url("../assets/icons/computer.svg"); }
+        if (t == "WIFI") { return @image-url("../assets/icons/wifi.svg"); }
+        if (t == "WALLET") { return @image-url("../assets/icons/wallet.svg"); }
+        if (t == "IDENTIDAD") { return @image-url("../assets/icons/badge.svg"); }
+        if (t == "CONTACTO") { return @image-url("../assets/icons/person.svg"); }
+        if (t == "NOTA") { return @image-url("../assets/icons/note.svg"); }
+        return @image-url("../assets/icons/key.svg");
+    }
+
+    Text {
+        text: "Tipo de credencial";
+        color: Theme.text-secondary;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    btn-trigger := TouchArea {
+        height: 38px;
+        mouse-cursor: pointer;
+        clicked => { root.desplegado = !root.desplegado; }
+
+        Rectangle {
+            background: btn-trigger.has-hover ? Theme.surface-hover : Theme.background;
+            border-radius: Theme.radius-sm;
+            border-width: 1px;
+            border-color: root.desplegado ? Theme.accent-primary : Theme.border;
+
+            HorizontalLayout {
+                padding-left: 12px;
+                padding-right: 12px;
+                spacing: 10px;
+                alignment: space-between;
+
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+
+                    AppIcon {
+                        source: root.icono-tipo(root.tipo-seleccionado);
+                        icon-size: 16px;
+                        icon-color: Theme.accent-primary;
+                        vertical-alignment: center;
+                    }
+
+                    Text {
+                        text: root.nombre-tipo(root.tipo-seleccionado);
+                        color: Theme.text-primary;
+                        font-size: 13px;
+                        font-weight: 600;
+                        vertical-alignment: center;
+                    }
+                }
+
+                AppIcon {
+                    source: root.desplegado ? @image-url("../assets/icons/expand_less.svg") : @image-url("../assets/icons/expand_more.svg");
+                    icon-size: 18px;
+                    icon-color: Theme.text-secondary;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+
+    if root.desplegado : Rectangle {
+        background: Theme.background;
+        border-radius: Theme.radius-sm;
+        border-width: 1px;
+        border-color: Theme.accent-primary;
+        clip: true;
+
+        VerticalLayout {
+            padding: 4px;
+            spacing: 2px;
+
+            for item in [
+                { id: "LOGIN", label: "Contraseña / Inicio de Sesión" },
+                { id: "TARJETA", label: "Tarjeta Bancaria (Crédito / Débito)" },
+                { id: "CUENTA_BANCARIA", label: "Cuenta Bancaria / IBAN" },
+                { id: "SERVIDOR", label: "Servidor / Acceso SSH" },
+                { id: "WIFI", label: "Red Inalámbrica Wi-Fi" },
+                { id: "WALLET", label: "Cripto Wallet / Semilla" },
+                { id: "IDENTIDAD", label: "Documento de Identidad" },
+                { id: "CONTACTO", label: "Contacto Personal / Corporativo" },
+                { id: "NOTA", label: "Nota Segura Cifrada" }
+            ] : TouchArea {
+                height: 30px;
+                mouse-cursor: pointer;
+                clicked => {
+                    root.tipo-seleccionado = item.id;
+                    root.desplegado = false;
+                    root.seleccionar(item.id);
+                }
+
+                Rectangle {
+                    background: root.tipo-seleccionado == item.id ? Theme.accent-primary.transparentize(84%) :
+                                (parent.has-hover ? Theme.surface-hover : transparent);
+                    border-radius: Theme.radius-sm;
+
+                    HorizontalLayout {
+                        padding-left: 10px;
+                        padding-right: 10px;
+                        spacing: 8px;
+                        alignment: space-between;
+
+                        HorizontalLayout {
+                            spacing: 8px;
+                            AppIcon {
+                                source: root.icono-tipo(item.id);
+                                icon-size: 14px;
+                                icon-color: root.tipo-seleccionado == item.id ? Theme.accent-primary : Theme.text-secondary;
+                                vertical-alignment: center;
+                            }
+                            Text {
+                                text: item.label;
+                                color: root.tipo-seleccionado == item.id ? Theme.accent-primary : Theme.text-primary;
+                                font-size: 12px;
+                                font-weight: root.tipo-seleccionado == item.id ? 700 : 500;
+                                vertical-alignment: center;
+                            }
+                        }
+
+                        if root.tipo-seleccionado == item.id : AppIcon {
+                            source: @image-url("../assets/icons/check.svg");
+                            icon-size: 14px;
+                            icon-color: Theme.accent-primary;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -28,6 +28,8 @@ pub struct ContenidoBoveda {
     pub perfiles: Vec<Perfil>,
     #[serde(default)]
     pub configuracion: Option<ConfiguracionBovedaExportable>,
+    #[serde(rename = "aliasDispositivo", default, skip_serializing_if = "Option::is_none")]
+    pub alias_dispositivo: Option<String>,
 }
 
 fn default_version() -> i32 {
@@ -43,6 +45,7 @@ impl Default for ContenidoBoveda {
             categorias: Vec::new(),
             perfiles: Vec::new(),
             configuracion: Some(ConfiguracionBovedaExportable::default()),
+            alias_dispositivo: None,
         }
     }
 }

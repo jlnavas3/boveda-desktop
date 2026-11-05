@@ -10,13 +10,12 @@ import { ContextMenu } from "../components/widgets/context_menu.slint";
 import { AppIcon } from "../components/widgets/app_icon.slint";
 import { GroupHeaderItem } from "../components/widgets/group_header_item.slint";
 import { ListOverflowMenu } from "../components/widgets/list_overflow_menu.slint";
+import { SelectionTopBar } from "../components/selection/selection_top_bar.slint";
+import { SelectionBottomBar } from "../components/selection/selection_bottom_bar.slint";
+import { BatchActionDialog } from "../components/selection/batch_action_dialog.slint";
+import { MainSidebar, FilterItem } from "../components/sidebar/main_sidebar.slint";
 
-export struct FilterItem {
-    id: string,
-    nombre: string,
-    icono: string,
-    conteo: int,
-}
+export { FilterItem }
 
 export component MainScreen inherits Rectangle {
     in property <[FilterItem]> tipos-filtro: [];
@@ -43,6 +42,28 @@ export component MainScreen inherits Rectangle {
 
     in property <bool> solo-favoritos: false;
     in property <string> orden-actual: "NOMBRE_AZ";
+
+    // Contadores reactivos de auditoría y herramientas para MainSidebar
+    in property <int> conteo-favoritos: 0;
+    in property <int> conteo-salud-alertas: 0;
+    in property <int> conteo-duplicados: 0;
+    in property <int> conteo-papelera: 0;
+    in property <int> conteo-perfiles: 0;
+    in property <int> conteo-categorias: 0;
+    in property <int> total-entradas-boveda: 0;
+    in property <int> conteo-entradas-filtradas: 0;
+    in property <int> conteo-totp: 0;
+    in property <int> conteo-passkeys: 0;
+    in property <int> conteo-titulos-sucios: 0;
+    in property <int> conteo-historial-generador: 0;
+    in property <string> perfil-argon2-nombre: "ESTÁNDAR";
+
+    // Propiedades de selección múltiple / simple
+    in property <int> conteo-seleccionadas: 0;
+    in property <bool> todas-seleccionadas: false;
+    in property <string> resumen-unificacion-lote: "";
+    in-out property <string> modo-dialogo-lote: "";
+    in-out property <string> texto-dialogo-lote: "";
 
     in-out property <bool> sidebar-colapsada: false;
     in-out property <length> ancho-sidebar: 230px;
@@ -76,6 +97,30 @@ export component MainScreen inherits Rectangle {
     callback alternar-favorito(string);
     callback alternar-anclado(string);
     callback copiar-totp(string);
+    callback restaurar-password-historial(string, string);
+    callback eliminar-password-historial(string, string);
+    callback promover-passkey-secundaria(string, string);
+    callback eliminar-passkey-secundaria(string, string);
+    callback promover-totp-secundario(string, string);
+    callback eliminar-totp-secundario(string, string);
+    callback guardar-adjunto(string, string);
+
+    // Callbacks de selección múltiple y acciones en lote
+    callback alternar-seleccion-entrada(string);
+    callback alternar-seleccion-grupo(string);
+    callback cancelar-seleccion();
+    callback alternar-seleccionar-todas();
+    callback lote-favorito();
+    callback lote-anclar();
+    callback lote-salud();
+    callback lote-exportar();
+    callback lote-papelera();
+    callback lote-restaurar();
+    callback lote-eliminar-definitivo();
+    callback preparar-unificacion-lote();
+    callback confirmar-renombrar-lote(string);
+    callback confirmar-categoria-lote(string);
+    callback confirmar-unificar-lote(string);
 
     // Callbacks del menú de 3 puntos y agrupamiento
     callback alternar-grupo(string);
@@ -91,6 +136,14 @@ export component MainScreen inherits Rectangle {
     callback exportar-csv();
     callback navegar-apariencia();
     callback abrir-ayuda();
+    callback abrir-salud();
+    callback abrir-duplicados();
+    callback abrir-escaner-qr();
+    callback abrir-gestor-categorias();
+    callback abrir-gestor-perfiles();
+    callback abrir-generador-sidebar();
+    callback abrir-historial-claves();
+    callback vaciar-papelera();
 
     property <string> menu-contextual-id: "";
     property <bool> menu-contextual-favorito: false;
@@ -98,6 +151,7 @@ export component MainScreen inherits Rectangle {
     property <bool> menu-contextual-tiene-totp: false;
     property <bool> menu-contextual-tiene-password: false;
     property <bool> menu-contextual-tiene-usuario: false;
+    property <bool> menu-contextual-seleccionada-lote: false;
     property <string> menu-contextual-subtitulo: "";
     property <length> menu-contextual-pos-x: 0px;
     property <length> menu-contextual-pos-y: 0px;
@@ -131,7 +185,9 @@ export component MainScreen inherits Rectangle {
         tiene-totp: root.menu-contextual-tiene-totp;
         tiene-password: root.menu-contextual-tiene-password;
         tiene-usuario: root.menu-contextual-tiene-usuario;
+        es-seleccionada-lote: root.menu-contextual-seleccionada-lote;
 
+        alternar-seleccion => { root.alternar-seleccion-entrada(root.menu-contextual-id); }
         copiar-usuario => { root.copiar-campo(root.menu-contextual-subtitulo, "Usuario"); }
         copiar-password => { root.copiar-campo(root.menu-contextual-id, "Contraseña"); }
         copiar-totp => { root.copiar-totp(root.menu-contextual-id); }
@@ -156,6 +212,7 @@ export component MainScreen inherits Rectangle {
         importar-bitwarden => { root.importar-bitwarden(); }
         importar-csv => { root.importar-csv(); }
         fusionar-boveda => { root.fusionar-boveda(); }
+        abrir-sincronizacion-p2p => { root.abrir-escaner-qr(); }
         exportar-bvda => { root.exportar-bvda(); }
         exportar-json => { root.exportar-json(); }
         exportar-csv => { root.exportar-csv(); }
@@ -167,383 +224,45 @@ export component MainScreen inherits Rectangle {
     background: Theme.background;
 
     HorizontalLayout {
-        // PANEL IZQUIERDO: Barra Lateral de Filtros (Redimensionable y Colapsable)
-        Rectangle {
+        // PANEL IZQUIERDO: Barra Lateral Completa y Modular (MainSidebar)
+        MainSidebar {
             width: root.ancho-sidebar-efectivo;
-            background: Theme.surface;
-            border-width: 1px;
-            border-color: Theme.border;
-            clip: true;
+            tipos-filtro: root.tipos-filtro;
+            categorias-filtro: root.categorias-filtro;
+            perfiles-filtro: root.perfiles-filtro;
+            filtro-tipo-actual: root.filtro-tipo-actual;
+            filtro-categoria-actual: root.filtro-categoria-actual;
+            filtro-perfil-actual: root.filtro-perfil-actual;
+            solo-favoritos: root.solo-favoritos;
+            conteo-favoritos: root.conteo-favoritos;
+            conteo-salud-alertas: root.conteo-salud-alertas;
+            conteo-duplicados: root.conteo-duplicados;
+            conteo-papelera: root.conteo-papelera;
+            conteo-perfiles: root.conteo-perfiles;
+            conteo-categorias: root.conteo-categorias;
+            conteo-totp: root.conteo-totp;
+            conteo-passkeys: root.conteo-passkeys;
+            conteo-titulos-sucios: root.conteo-titulos-sucios;
+            conteo-historial-generador: root.conteo-historial-generador;
+            perfil-argon2-nombre: root.perfil-argon2-nombre;
+            sidebar-colapsada <=> root.sidebar-colapsada;
 
-            VerticalLayout {
-                width: 100%;
-                padding: 10px;
-                spacing: 12px;
-
-                // Cabecera: Menú Hamburguesa + Estado
-                HorizontalLayout {
-                    spacing: 6px;
-
-                    // Botón Hamburguesa ☰ para colapsar/expandir
-                    TouchArea {
-                        horizontal-stretch: 0;
-                        width: 32px;
-                        height: 32px;
-                        clicked => {
-                            root.sidebar-colapsada = !root.sidebar-colapsada;
-                        }
-
-                        Rectangle {
-                            background: parent.has-hover ? Theme.surface-hover : Theme.background;
-                            border-radius: Theme.radius-sm;
-                            border-width: 1px;
-                            border-color: Theme.border;
-
-                            AppIcon {
-                                source: @image-url("../assets/icons/menu.svg");
-                                icon-size: 16px;
-                                icon-color: Theme.text-primary;
-                                horizontal-alignment: center;
-                                vertical-alignment: center;
-                            }
-                        }
-                    }
-
-                    if !root.sidebar-colapsada : HorizontalLayout {
-                        horizontal-stretch: 1;
-                        min-width: 0px;
-                        spacing: 6px;
-                        alignment: start;
-
-                        VerticalLayout {
-                            horizontal-stretch: 0;
-                            alignment: center;
-                            Rectangle {
-                                width: 8px;
-                                height: 8px;
-                                border-radius: 4px;
-                                background: Theme.accent-primary;
-                            }
-                        }
-
-                        Text {
-                            horizontal-stretch: 1;
-                            min-width: 0px;
-                            text: "Bóveda";
-                            color: Theme.text-primary;
-                            font-size: 13px;
-                            font-weight: 700;
-                            overflow: elide;
-                            horizontal-alignment: left;
-                            vertical-alignment: center;
-                        }
-                    }
-
-                    // Botón Bloquear
-                    btn-bloquear := TouchArea {
-                        horizontal-stretch: 0;
-                        width: root.sidebar-colapsada ? 32px : 68px;
-                        height: 32px;
-                        clicked => { root.bloquear-boveda(); }
-
-                        Rectangle {
-                            background: btn-bloquear.has-hover ? Theme.danger.transparentize(80%) : Theme.surface-hover;
-                            border-width: 1px;
-                            border-color: btn-bloquear.has-hover ? Theme.danger : Theme.border;
-                            border-radius: Theme.radius-sm;
-
-                            HorizontalLayout {
-                                alignment: center;
-                                spacing: 4px;
-                                padding-left: 4px;
-                                padding-right: 4px;
-
-                                AppIcon {
-                                    source: @image-url("../assets/icons/lock.svg");
-                                    icon-size: 13px;
-                                    icon-color: btn-bloquear.has-hover ? Theme.danger : Theme.text-primary;
-                                    vertical-alignment: center;
-                                }
-                                if !root.sidebar-colapsada : Text {
-                                    text: "Bloquear";
-                                    color: btn-bloquear.has-hover ? Theme.danger : Theme.text-secondary;
-                                    font-size: 11px;
-                                    font-weight: 600;
-                                    overflow: elide;
-                                    vertical-alignment: center;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Botón Nueva Entrada
-                btn-nueva := TouchArea {
-                    height: 34px;
-                    clicked => { root.abrir-nueva-entrada(); }
-
-                    Rectangle {
-                        background: btn-nueva.has-hover ? Theme.accent-hover : Theme.accent-primary;
-                        border-radius: Theme.radius-sm;
-                        clip: true;
-
-                        HorizontalLayout {
-                            alignment: center;
-                            spacing: 6px;
-                            padding-left: 8px;
-                            padding-right: 8px;
-
-                            AppIcon {
-                                source: @image-url("../assets/icons/add.svg");
-                                icon-size: 15px;
-                                icon-color: #FFFFFF;
-                                vertical-alignment: center;
-                            }
-                            if !root.sidebar-colapsada : Text {
-                                text: "Nueva Entrada";
-                                font-size: 12px;
-                                font-weight: 700;
-                                color: #FFFFFF;
-                                overflow: elide;
-                                vertical-alignment: center;
-                            }
-                        }
-                    }
-                }
-
-                Rectangle { height: 1px; background: Theme.border; }
-
-                // Lista de Filtros de Tipos Nativos
-                if !root.sidebar-colapsada : Text {
-                    text: "TIPOS DE ENTRADA";
-                    color: Theme.text-muted;
-                    font-size: 10px;
-                    font-weight: 700;
-                    overflow: elide;
-                    horizontal-alignment: left;
-                }
-
-                Flickable {
-                    vertical-stretch: 1;
-                    content-width: self.width;
-                    content-height: sidebar-content.min-height;
-
-                    sidebar-content := VerticalLayout {
-                        width: 100%;
-                        spacing: 12px;
-
-                        lista-tipos := VerticalLayout {
-                            width: 100%;
-                            spacing: 4px;
-
-                            for item in tipos-filtro : TouchArea {
-                                height: 32px;
-                                clicked => {
-                                    if root.filtro-categoria-actual != "TODAS" {
-                                        root.seleccionar-categoria("TODAS");
-                                    }
-                                    root.seleccionar-tipo(item.id);
-                                }
-
-                                Rectangle {
-                                    background: filtro-tipo-actual == item.id ? Theme.surface-selected :
-                                               parent.has-hover ? Theme.surface-hover : Colors.transparent;
-                                    border-radius: Theme.radius-sm;
-                                    border-width: filtro-tipo-actual == item.id ? 1px : 0px;
-                                    border-color: Theme.accent-primary;
-                                    clip: true;
-
-                                    HorizontalLayout {
-                                        width: 100%;
-                                        height: 100%;
-                                        padding-left: 10px;
-                                        padding-right: 10px;
-                                        spacing: 8px;
-
-                                        AppIcon {
-                                            horizontal-stretch: 0;
-                                            source: item.id == "LOGIN" ? @image-url("../assets/icons/key.svg") :
-                                                    item.id == "TARJETA" ? @image-url("../assets/icons/credit_card.svg") :
-                                                    item.id == "CUENTA_BANCARIA" ? @image-url("../assets/icons/account_balance.svg") :
-                                                    item.id == "SERVIDOR" ? @image-url("../assets/icons/computer.svg") :
-                                                    item.id == "WIFI" ? @image-url("../assets/icons/wifi.svg") :
-                                                    item.id == "WALLET" ? @image-url("../assets/icons/wallet.svg") :
-                                                    item.id == "IDENTIDAD" ? @image-url("../assets/icons/badge.svg") :
-                                                    item.id == "CONTACTO" ? @image-url("../assets/icons/person.svg") :
-                                                    item.id == "NOTA" ? @image-url("../assets/icons/note.svg") :
-                                                    item.id == "PAPELERA" ? @image-url("../assets/icons/delete.svg") :
-                                                    @image-url("../assets/icons/folder.svg");
-                                            icon-size: 16px;
-                                            icon-color: filtro-tipo-actual == item.id ? Theme.accent-primary : Theme.text-secondary;
-                                            vertical-alignment: center;
-                                        }
-
-                                        if !root.sidebar-colapsada : Text {
-                                            text: item.nombre;
-                                            color: filtro-tipo-actual == item.id ? Theme.text-primary : Theme.text-secondary;
-                                            font-size: 12px;
-                                            font-weight: filtro-tipo-actual == item.id ? 600 : 400;
-                                            horizontal-stretch: 1;
-                                            min-width: 0px;
-                                            overflow: elide;
-                                            vertical-alignment: center;
-                                            horizontal-alignment: left;
-                                        }
-
-                                        if !root.sidebar-colapsada : VerticalLayout {
-                                            horizontal-stretch: 0;
-                                            alignment: center;
-                                            Rectangle {
-                                                background: Theme.border;
-                                                border-radius: Theme.radius-sm;
-                                                height: 18px;
-                                                HorizontalLayout {
-                                                    padding-left: 6px;
-                                                    padding-right: 6px;
-                                                    alignment: center;
-                                                    Text {
-                                                        text: item.conteo;
-                                                        color: Theme.text-secondary;
-                                                        font-size: 10px;
-                                                        font-weight: 600;
-                                                        vertical-alignment: center;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        if categorias-filtro.length > 0 && !root.sidebar-colapsada : VerticalLayout {
-                            width: 100%;
-                            spacing: 6px;
-
-                            Text {
-                                text: "CATEGORÍAS";
-                                color: Theme.text-muted;
-                                font-size: 10px;
-                                font-weight: 700;
-                                overflow: elide;
-                                horizontal-alignment: left;
-                            }
-
-                            lista-cats := VerticalLayout {
-                                width: 100%;
-                                spacing: 4px;
-
-                                for cat in categorias-filtro : TouchArea {
-                                    height: 30px;
-                                    clicked => {
-                                        if root.filtro-tipo-actual != "TODOS" {
-                                            root.seleccionar-tipo("TODOS");
-                                        }
-                                        root.seleccionar-categoria(cat.id);
-                                    }
-
-                                    Rectangle {
-                                        background: filtro-categoria-actual == cat.id ? Theme.surface-selected :
-                                                   parent.has-hover ? Theme.surface-hover : Colors.transparent;
-                                        border-radius: Theme.radius-sm;
-                                        border-width: filtro-categoria-actual == cat.id ? 1px : 0px;
-                                        border-color: Theme.accent-blue;
-                                        clip: true;
-
-                                        HorizontalLayout {
-                                            width: 100%;
-                                            height: 100%;
-                                            padding-left: 10px;
-                                            padding-right: 10px;
-                                            spacing: 8px;
-
-                                            AppIcon {
-                                                horizontal-stretch: 0;
-                                                source: @image-url("../assets/icons/folder.svg");
-                                                icon-size: 14px;
-                                                icon-color: filtro-categoria-actual == cat.id ? Theme.accent-primary : Theme.text-secondary;
-                                                vertical-alignment: center;
-                                            }
-
-                                            Text {
-                                                text: cat.nombre;
-                                                color: filtro-categoria-actual == cat.id ? Theme.text-primary : Theme.text-secondary;
-                                                font-size: 12px;
-                                                horizontal-stretch: 1;
-                                                min-width: 0px;
-                                                overflow: elide;
-                                                vertical-alignment: center;
-                                                horizontal-alignment: left;
-                                            }
-
-                                            VerticalLayout {
-                                                horizontal-stretch: 0;
-                                                alignment: center;
-                                                Rectangle {
-                                                    background: Theme.border;
-                                                    border-radius: Theme.radius-sm;
-                                                    height: 18px;
-                                                    HorizontalLayout {
-                                                        padding-left: 6px;
-                                                        padding-right: 6px;
-                                                        alignment: center;
-                                                        Text {
-                                                             text: cat.conteo;
-                                                             color: Theme.text-secondary;
-                                                             font-size: 10px;
-                                                             font-weight: 600;
-                                                             vertical-alignment: center;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Rectangle { height: 1px; background: Theme.border; }
-
-                // Botón Ajustes
-                btn-ajustes := TouchArea {
-                    height: 32px;
-                    clicked => { root.abrir-ajustes(); }
-
-                    Rectangle {
-                        background: btn-ajustes.has-hover ? Theme.surface-hover : Theme.background;
-                        border-width: 1px;
-                        border-color: Theme.border;
-                        border-radius: Theme.radius-sm;
-                        clip: true;
-
-                        HorizontalLayout {
-                            alignment: center;
-                            spacing: 6px;
-                            padding-left: 8px;
-                            padding-right: 8px;
-
-                            AppIcon {
-                                source: @image-url("../assets/icons/settings.svg");
-                                icon-size: 15px;
-                                icon-color: btn-ajustes.has-hover ? Theme.accent-primary : Theme.text-primary;
-                                vertical-alignment: center;
-                            }
-                            if !root.sidebar-colapsada : Text {
-                                text: "Ajustes de Bóveda";
-                                font-size: 11px;
-                                font-weight: 600;
-                                color: Theme.text-secondary;
-                                overflow: elide;
-                                vertical-alignment: center;
-                                horizontal-alignment: left;
-                            }
-                        }
-                    }
-                }
-            }
+            bloquear-boveda => { root.bloquear-boveda(); }
+            abrir-nueva-entrada => { root.abrir-nueva-entrada(); }
+            seleccionar-tipo(t) => { root.seleccionar-tipo(t); }
+            seleccionar-categoria(c) => { root.seleccionar-categoria(c); }
+            seleccionar-perfil(p) => { root.seleccionar-perfil(p); }
+            alternar-solo-favoritos => { root.alternar-solo-favoritos(); }
+            abrir-salud => { root.abrir-salud(); }
+            abrir-duplicados => { root.abrir-duplicados(); }
+            abrir-normalizador-titulos => { root.normalizar-titulos(); }
+            abrir-gestor-categorias => { root.abrir-gestor-categorias(); }
+            abrir-gestor-perfiles => { root.abrir-gestor-perfiles(); }
+            abrir-generador => { root.abrir-generador-sidebar(); }
+            abrir-escaner-qr => { root.abrir-escaner-qr(); }
+            abrir-historial-claves => { root.abrir-historial-claves(); }
+            vaciar-papelera => { root.vaciar-papelera(); }
+            abrir-ajustes => { root.abrir-ajustes(); }
         }
 
         // SPLITTER 1 (Lateral <-> Lista)
@@ -573,6 +292,13 @@ export component MainScreen inherits Rectangle {
                 padding: 12px;
                 spacing: 10px;
 
+                if root.conteo-seleccionadas > 0 : SelectionTopBar {
+                    conteo-seleccionadas: root.conteo-seleccionadas;
+                    todas-seleccionadas: root.todas-seleccionadas;
+                    cancelar-seleccion => { root.cancelar-seleccion(); }
+                    alternar-seleccionar-todas => { root.alternar-seleccionar-todas(); }
+                }
+
                 // Buscador en Tiempo Real + Botón Menú de 3 Puntos
                 HorizontalLayout {
                     spacing: 8px;
@@ -581,6 +307,28 @@ export component MainScreen inherits Rectangle {
                         horizontal-stretch: 1;
                         search-changed(q) => { root.buscar(q); }
                         clear-clicked() => { root.buscar(""); }
+                    }
+
+                    btn-sync := TouchArea {
+                        width: 36px;
+                        height: 36px;
+                        mouse-cursor: pointer;
+                        clicked => { root.abrir-escaner-qr(); }
+
+                        Rectangle {
+                            background: btn-sync.has-hover ? Theme.surface-hover : Theme.surface;
+                            border-radius: Theme.curvatura-esquinas > 0px ? Theme.curvatura-esquinas / 2 : 6px;
+                            border-width: Theme.grosor-borde;
+                            border-color: Theme.border;
+
+                            AppIcon {
+                                source: @image-url("../assets/icons/qr_code.svg");
+                                icon-size: 18px;
+                                icon-color: btn-sync.has-hover ? Theme.accent-primary : Theme.text-primary;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
                     }
 
                     btn-overflow := TouchArea {
@@ -631,7 +379,9 @@ export component MainScreen inherits Rectangle {
                     alignment: space-between;
 
                     Text {
-                        text: lista-entradas.length + (lista-entradas.length == 1 ? " elemento" : " elementos");
+                        text: (root.filtro-tipo-actual != "TODOS" || root.filtro-perfil-actual != "TODOS" || root.filtro-categoria-actual != "TODAS" || root.filtro-etiqueta-actual != "TODAS" || root.solo-favoritos || root.conteo-entradas-filtradas != root.total-entradas-boveda)
+                            ? (root.conteo-entradas-filtradas + (root.conteo-entradas-filtradas == 1 ? " resultado encontrado" : " resultados encontrados"))
+                            : (root.total-entradas-boveda + (root.total-entradas-boveda == 1 ? " entrada cifrada" : " entradas cifradas"));
                         color: Theme.text-muted;
                         font-size: 11px;
                         font-weight: 600;
@@ -680,15 +430,22 @@ export component MainScreen inherits Rectangle {
                                     conteo: entrada.grupo_conteo;
                                     expandido: entrada.grupo_expandido;
                                     seleccionado: entrada.id == entrada-seleccionada-id;
+                                    seleccionado-lote: entrada.seleccionada_lote;
+                                    modo-seleccion: root.conteo-seleccionadas > 0;
                                     alternar => {
                                         root.alternar-grupo(entrada.clave_grupo);
                                         root.seleccionar-entrada(entrada.id);
+                                    }
+                                    alternar-seleccion-grupo => {
+                                        root.alternar-seleccion-grupo(entrada.clave_grupo);
                                     }
                                 }
                                 if !entrada.es_cabecera_grupo : EntryItem {
                                     entrada: entrada;
                                     seleccionado: entrada.id == entrada-seleccionada-id;
+                                    modo-seleccion: root.conteo-seleccionadas > 0;
                                     clicked => { root.seleccionar-entrada(entrada.id); }
+                                    alternar-seleccion-lote => { root.alternar-seleccion-entrada(entrada.id); }
                                     abrir-menu-contextual(id, mx, my) => {
                                         root.menu-contextual-id = id;
                                         root.menu-contextual-favorito = entrada.favorito;
@@ -696,6 +453,7 @@ export component MainScreen inherits Rectangle {
                                         root.menu-contextual-tiene-totp = entrada.tiene_totp;
                                         root.menu-contextual-tiene-password = entrada.tiene_password;
                                         root.menu-contextual-tiene-usuario = entrada.tiene_usuario;
+                                        root.menu-contextual-seleccionada-lote = entrada.seleccionada_lote;
                                         root.menu-contextual-subtitulo = entrada.subtitulo;
 
                                         let coords = root.calcular-posicion-menu-contextual(
@@ -732,6 +490,29 @@ export component MainScreen inherits Rectangle {
                         ancho-tactil: Theme.niagara-ancho-tactil * 1px;
                         letra-seleccionada(l) => { root.saltar-a-letra(l); }
                     }
+                }
+
+                if root.conteo-seleccionadas > 0 : SelectionBottomBar {
+                    conteo-seleccionadas: root.conteo-seleccionadas;
+                    en-papelera: root.filtro-tipo-actual == "PAPELERA";
+                    lote-favorito => { root.lote-favorito(); }
+                    lote-anclar => { root.lote-anclar(); }
+                    lote-renombrar => {
+                        root.texto-dialogo-lote = "";
+                        root.modo-dialogo-lote = "renombrar";
+                    }
+                    lote-categorias => {
+                        root.modo-dialogo-lote = "categorias";
+                    }
+                    lote-unificar => {
+                        root.preparar-unificacion-lote();
+                        root.modo-dialogo-lote = "unificar";
+                    }
+                    lote-salud => { root.lote-salud(); }
+                    lote-exportar => { root.lote-exportar(); }
+                    lote-papelera => { root.lote-papelera(); }
+                    lote-restaurar => { root.lote-restaurar(); }
+                    lote-eliminar-definitivo => { root.lote-eliminar-definitivo(); }
                 }
             }
         }
@@ -782,8 +563,43 @@ export component MainScreen inherits Rectangle {
                     restaurar => { root.restaurar-entrada(detalle-actual.id); }
                     eliminar-definitivo => { root.eliminar-definitivo(detalle-actual.id); }
                     cerrar => { root.cerrar-detalle(); }
+                    alternar-favorito => { root.alternar-favorito(detalle-actual.id); }
+                    alternar-anclado => { root.alternar-anclado(detalle-actual.id); }
+                    filtrar-etiqueta(tag) => { root.seleccionar-etiqueta(tag); }
+                    restaurar-password-historial(pw) => { root.restaurar-password-historial(detalle-actual.id, pw); }
+                    eliminar-password-historial(pw) => { root.eliminar-password-historial(detalle-actual.id, pw); }
+                    promover-passkey-secundaria(cid) => { root.promover-passkey-secundaria(detalle-actual.id, cid); }
+                    eliminar-passkey-secundaria(cid) => { root.eliminar-passkey-secundaria(detalle-actual.id, cid); }
+                    promover-totp-secundario(tid) => { root.promover-totp-secundario(detalle-actual.id, tid); }
+                    eliminar-totp-secundario(tid) => { root.eliminar-totp-secundario(detalle-actual.id, tid); }
+                    guardar-adjunto(aid) => { root.guardar-adjunto(detalle-actual.id, aid); }
                 }
             }
+        }
+    }
+
+    if root.modo-dialogo-lote != "" : BatchActionDialog {
+        width: 100%;
+        height: 100%;
+        modo <=> root.modo-dialogo-lote;
+        valor-texto <=> root.texto-dialogo-lote;
+        opciones-categorias: root.categorias-dropdown;
+        resumen-unificacion: root.resumen-unificacion-lote;
+        conteo-seleccionadas: root.conteo-seleccionadas;
+        confirmar-renombrar(nuevo) => {
+            root.modo-dialogo-lote = "";
+            root.confirmar-renombrar-lote(nuevo);
+        }
+        confirmar-categoria(cat) => {
+            root.modo-dialogo-lote = "";
+            root.confirmar-categoria-lote(cat);
+        }
+        confirmar-unificar(titulo) => {
+            root.modo-dialogo-lote = "";
+            root.confirmar-unificar-lote(titulo);
+        }
+        cancelar => {
+            root.modo-dialogo-lote = "";
         }
     }
 }

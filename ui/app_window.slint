@@ -2,22 +2,29 @@ import { Theme } from "theme.slint";
 import { UnlockScreen } from "screens/unlock_screen.slint";
 import { MainScreen, FilterItem } from "screens/main_screen.slint";
 import { EntryOverview } from "components/entry_item.slint";
-import { EntryDetailData } from "screens/entry_detail.slint";
+import { EntryDetailData, PasswordHistoryItem, SecondaryPasskeyItem, SecondaryTotpItem, DetailCustomFieldItem, DetailLinkItem, DetailAttachmentItem } from "screens/entry_detail.slint";
 import { GeneratorDialog, GeneratorOptions } from "screens/generator_dialog.slint";
 import { SettingsScreen, PortRuleItem, PortRuleRow, SubdomainRuleItem, SubdomainRuleRow, HsvColorResult } from "screens/settings_screen.slint";
 import { SettingsData } from "settings/settings_modal.slint";
 import { EditModal as EditDialog, EntryEditData } from "edit/edit_modal.slint";
 import { DropdownOption } from "components/dropdown_filter.slint";
 import { ZoomShortcutHandler } from "components/widgets/zoom_shortcut_handler.slint";
+import { VaultHealthModal, HealthIssueItem } from "health/vault_health_modal.slint";
+import { DuplicatesModal, DuplicateGroupItem } from "duplicates/duplicates_modal.slint";
+import { TitleNormalizerModal, TitleNormalizationGroupItem } from "titles/title_normalizer_modal.slint";
+import { CategoryManagerModal } from "categories/category_manager_modal.slint";
+import { ProfileManagerModal, ProfileManagerItem } from "profiles/profile_manager_modal.slint";
+import { PasswordHistoryModal, GeneratedPasswordItem } from "generator/password_history_modal.slint";
+import { P2pSyncModal } from "dialogs/p2p_sync_modal.slint";
 
-export { Theme, FilterItem, EntryOverview, EntryDetailData, GeneratorOptions, SettingsData, EntryEditData, DropdownOption, PortRuleItem, PortRuleRow, SubdomainRuleItem, SubdomainRuleRow, HsvColorResult }
+export { Theme, FilterItem, EntryOverview, EntryDetailData, PasswordHistoryItem, SecondaryPasskeyItem, SecondaryTotpItem, DetailCustomFieldItem, DetailLinkItem, DetailAttachmentItem, GeneratorOptions, SettingsData, EntryEditData, DropdownOption, PortRuleItem, PortRuleRow, SubdomainRuleItem, SubdomainRuleRow, HsvColorResult, HealthIssueItem, DuplicateGroupItem, TitleNormalizationGroupItem, ProfileManagerItem, GeneratedPasswordItem }
 
 export component AppWindow inherits Window {
     title: "Bóveda Local Desktop";
     preferred-width: 1080px;
     preferred-height: 680px;
-    min-width: 800px;
-    min-height: 500px;
+    min-width: 360px;
+    min-height: 260px;
     background: Theme.background;
 
     // Propiedades de Estado
@@ -47,6 +54,67 @@ export component AppWindow inherits Window {
     in-out property <length> lista-viewport-y: 0px;
     in-out property <bool> solo-favoritos: false;
     in-out property <string> orden-actual: "NOMBRE_AZ";
+    in-out property <int> conteo-seleccionadas: 0;
+    in-out property <bool> todas-seleccionadas: false;
+    in-out property <string> resumen-unificacion-lote: "";
+    in-out property <string> modo-dialogo-lote: "";
+    in-out property <string> texto-dialogo-lote: "";
+
+    // Contadores reactivos de auditoría y herramientas en el Sidebar
+    in-out property <int> conteo-favoritos: 0;
+    in-out property <int> conteo-salud-alertas: 0;
+    in-out property <int> conteo-duplicados: 0;
+    in-out property <int> conteo-papelera: 0;
+    in-out property <int> conteo-perfiles: 0;
+    in-out property <int> conteo-categorias: 0;
+    in-out property <int> total-entradas-boveda: 0;
+    in-out property <int> conteo-entradas-filtradas: 0;
+    in-out property <int> conteo-totp: 0;
+    in-out property <int> conteo-passkeys: 0;
+    in-out property <int> conteo-titulos-sucios: 0;
+    in-out property <int> conteo-historial-generador: 0;
+    in-out property <string> perfil-argon2-nombre: "ESTÁNDAR";
+
+    // Estado de Modales de Salud, Duplicados, Normalizador, Categorías, Perfiles e Historial
+    in-out property <bool> mostrar-salud: false;
+    in-out property <int> salud-puntuacion: 100;
+    in-out property <string> salud-pestana-activa: "REPETIDAS";
+    in-out property <int> salud-conteo-caducadas: 0;
+    in-out property <int> salud-conteo-repetidas: 0;
+    in-out property <int> salud-conteo-comunes: 0;
+    in-out property <int> salud-conteo-debiles: 0;
+    in-out property <int> salud-conteo-antiguas: 0;
+    in-out property <int> salud-conteo-ignoradas: 0;
+    in-out property <[HealthIssueItem]> salud-items: [];
+
+    in-out property <bool> mostrar-duplicados: false;
+    in-out property <string> duplicados-filtro-activo: "TODOS";
+    in-out property <[DuplicateGroupItem]> duplicados-grupos: [];
+
+    in-out property <bool> mostrar-normalizador-titulos: false;
+    in-out property <string> titulos-formato-activo: "CAPITALIZADO";
+    in-out property <bool> titulos-respetar-personalizados: true;
+    in-out property <[TitleNormalizationGroupItem]> titulos-grupos: [];
+
+    in-out property <bool> mostrar-gestor-categorias: false;
+    in-out property <bool> mostrar-gestor-perfiles: false;
+    in-out property <[ProfileManagerItem]> perfiles-gestor: [];
+
+    in-out property <bool> mostrar-historial-generador: false;
+    in-out property <[GeneratedPasswordItem]> historial-generador: [];
+
+    // Estado del Diálogo P2P Sync
+    in-out property <bool> mostrar-sync-p2p: false;
+    in-out property <image> sync-p2p-qr;
+    in-out property <string> sync-p2p-huella: "00:00:00:00:00:00";
+    in-out property <string> sync-p2p-estado-texto: "Esperando escaneo móvil...";
+    in-out property <int> sync-p2p-estado-codigo: 0;
+    in-out property <string> sync-p2p-red-info: "";
+    in-out property <string> sync-p2p-alias-remoto: "";
+
+    in-out property <int> ajustes-categoria-activa: 1;
+    in-out property <int> ajustes-subseccion-activa: 1;
+    in-out property <string> ajustes-registro-eventos: "Sesión iniciada con cifrado autenticado AES-256-GCM y derivación Argon2id.";
 
     // Modales y Diálogos
     in-out property <bool> mostrar-editor: false;
@@ -118,6 +186,30 @@ export component AppWindow inherits Window {
     callback alternar-favorito(string);
     callback alternar-anclado(string);
     callback copiar-totp(string);
+    callback restaurar-password-historial(string, string);
+    callback eliminar-password-historial(string, string);
+    callback promover-passkey-secundaria(string, string);
+    callback eliminar-passkey-secundaria(string, string);
+    callback promover-totp-secundario(string, string);
+    callback eliminar-totp-secundario(string, string);
+    callback guardar-adjunto(string, string);
+
+    // Callbacks de selección múltiple y acciones en lote
+    callback alternar-seleccion-entrada(string);
+    callback alternar-seleccion-grupo(string);
+    callback cancelar-seleccion();
+    callback alternar-seleccionar-todas();
+    callback lote-favorito();
+    callback lote-anclar();
+    callback lote-salud();
+    callback lote-exportar();
+    callback lote-papelera();
+    callback lote-restaurar();
+    callback lote-eliminar-definitivo();
+    callback preparar-unificacion-lote();
+    callback confirmar-renombrar-lote(string);
+    callback confirmar-categoria-lote(string);
+    callback confirmar-unificar-lote(string);
 
     callback abrir-generador(string);
     callback regenerar-contrasena(GeneratorOptions);
@@ -153,6 +245,34 @@ export component AppWindow inherits Window {
     callback exportar-bvda();
     callback navegar-apariencia();
     callback abrir-ayuda();
+
+    // Callbacks para Salud, Duplicados, Títulos, Categorías, Perfiles, Historial y Ajustes
+    callback abrir-salud();
+    callback seleccionar-pestana-salud(string);
+    callback rotar-clave-salud(string);
+    callback alternar-ignorar-salud-individual(string);
+    callback abrir-duplicados();
+    callback seleccionar-filtro-duplicados(string);
+    callback unificar-grupo-duplicados(string);
+    callback unificar-todos-duplicados();
+    callback cambiar-formato-titulos(string);
+    callback alternar-respetar-personalizados-titulos();
+    callback aplicar-normalizacion-todos-titulos();
+    callback aplicar-normalizacion-grupo-titulos(string, string);
+    callback abrir-gestor-categorias();
+    callback guardar-categoria(string, string, string);
+    callback eliminar-categoria(string);
+    callback abrir-gestor-perfiles();
+    callback guardar-perfil(string, string, string, string, string, string, string);
+    callback eliminar-perfil(string);
+    callback abrir-historial-claves();
+    callback limpiar-historial-claves();
+    callback vaciar-papelera();
+    callback generar-kit-emergencia();
+    callback buscar-ajuste(string);
+    callback abrir-escaner-qr();
+    callback cancelar-sincronizacion-p2p();
+    callback confirmar-sincronizacion-p2p();
 
     // Callbacks desacoplados de Zoom Global (Ctrl +, Ctrl -, Ctrl 0)
     callback aumentar-zoom();
@@ -204,6 +324,24 @@ export component AppWindow inherits Window {
             lista-viewport-y <=> root.lista-viewport-y;
             solo-favoritos: root.solo-favoritos;
             orden-actual: root.orden-actual;
+            conteo-seleccionadas: root.conteo-seleccionadas;
+            todas-seleccionadas: root.todas-seleccionadas;
+            resumen-unificacion-lote: root.resumen-unificacion-lote;
+            modo-dialogo-lote <=> root.modo-dialogo-lote;
+            texto-dialogo-lote <=> root.texto-dialogo-lote;
+            conteo-favoritos: root.conteo-favoritos;
+            conteo-salud-alertas: root.conteo-salud-alertas;
+            conteo-duplicados: root.conteo-duplicados;
+            conteo-papelera: root.conteo-papelera;
+            conteo-perfiles: root.conteo-perfiles;
+            conteo-categorias: root.conteo-categorias;
+            total-entradas-boveda: root.total-entradas-boveda;
+            conteo-entradas-filtradas: root.conteo-entradas-filtradas;
+            conteo-totp: root.conteo-totp;
+            conteo-passkeys: root.conteo-passkeys;
+            conteo-titulos-sucios: root.conteo-titulos-sucios;
+            conteo-historial-generador: root.conteo-historial-generador;
+            perfil-argon2-nombre: root.perfil-argon2-nombre;
 
             seleccionar-tipo(t) => { root.seleccionar-tipo(t); }
             seleccionar-categoria(c) => { root.seleccionar-categoria(c); }
@@ -225,6 +363,29 @@ export component AppWindow inherits Window {
             alternar-favorito(id) => { root.alternar-favorito(id); }
             alternar-anclado(id) => { root.alternar-anclado(id); }
             copiar-totp(id) => { root.copiar-totp(id); }
+            restaurar-password-historial(id, pw) => { root.restaurar-password-historial(id, pw); }
+            eliminar-password-historial(id, pw) => { root.eliminar-password-historial(id, pw); }
+            promover-passkey-secundaria(id, cid) => { root.promover-passkey-secundaria(id, cid); }
+            eliminar-passkey-secundaria(id, cid) => { root.eliminar-passkey-secundaria(id, cid); }
+            promover-totp-secundario(id, tid) => { root.promover-totp-secundario(id, tid); }
+            eliminar-totp-secundario(id, tid) => { root.eliminar-totp-secundario(id, tid); }
+            guardar-adjunto(id, aid) => { root.guardar-adjunto(id, aid); }
+
+            alternar-seleccion-entrada(id) => { root.alternar-seleccion-entrada(id); }
+            alternar-seleccion-grupo(g) => { root.alternar-seleccion-grupo(g); }
+            cancelar-seleccion => { root.cancelar-seleccion(); }
+            alternar-seleccionar-todas => { root.alternar-seleccionar-todas(); }
+            lote-favorito => { root.lote-favorito(); }
+            lote-anclar => { root.lote-anclar(); }
+            lote-salud => { root.lote-salud(); }
+            lote-exportar => { root.lote-exportar(); }
+            lote-papelera => { root.lote-papelera(); }
+            lote-restaurar => { root.lote-restaurar(); }
+            lote-eliminar-definitivo => { root.lote-eliminar-definitivo(); }
+            preparar-unificacion-lote => { root.preparar-unificacion-lote(); }
+            confirmar-renombrar-lote(t) => { root.confirmar-renombrar-lote(t); }
+            confirmar-categoria-lote(c) => { root.confirmar-categoria-lote(c); }
+            confirmar-unificar-lote(t) => { root.confirmar-unificar-lote(t); }
 
             alternar-grupo(c) => { root.alternar-grupo(c); }
             alternar-solo-favoritos => { root.alternar-solo-favoritos(); }
@@ -239,6 +400,14 @@ export component AppWindow inherits Window {
             exportar-csv => { root.exportar-csv(); }
             navegar-apariencia => { root.navegar-apariencia(); }
             abrir-ayuda => { root.abrir-ayuda(); }
+            abrir-salud => { root.abrir-salud(); }
+            abrir-duplicados => { root.abrir-duplicados(); }
+            abrir-gestor-categorias => { root.abrir-gestor-categorias(); }
+            abrir-gestor-perfiles => { root.abrir-gestor-perfiles(); }
+            abrir-generador-sidebar => { root.abrir-generador(""); }
+            abrir-escaner-qr => { root.abrir-escaner-qr(); }
+            abrir-historial-claves => { root.abrir-historial-claves(); }
+            vaciar-papelera => { root.vaciar-papelera(); }
         }
 
         // Pantalla Integrada de Ajustes a Todo lo Ancho (Paridad Canónica con Android)
@@ -257,6 +426,9 @@ export component AppWindow inherits Window {
             hex-passkey: root.ajustes-hex-passkey;
             hex-url: root.ajustes-hex-url;
             hex-app: root.ajustes-hex-app;
+            categoria-activa <=> root.ajustes-categoria-activa;
+            subseccion-activa <=> root.ajustes-subseccion-activa;
+            registro-eventos: root.ajustes-registro-eventos;
 
             guardar(d) => { root.guardar-ajustes(d); }
             restaurar-predeterminados => { root.restaurar-predeterminados(); }
@@ -269,6 +441,10 @@ export component AppWindow inherits Window {
             importar-bitwarden => { root.importar-bitwarden(); }
             importar-csv => { root.importar-csv(); }
             fusionar-boveda => { root.fusionar-boveda(); }
+            generar-kit-emergencia => { root.generar-kit-emergencia(); }
+            vaciar-papelera => { root.vaciar-papelera(); }
+            abrir-gestor-categorias => { root.abrir-gestor-categorias(); }
+            abrir-gestor-perfiles => { root.abrir-gestor-perfiles(); }
             abrir-generador => { root.abrir-generador("ajustes"); }
             auditoria-salud => { root.auditoria-salud(); }
             alternar-biometria(act) => { root.alternar-biometria(act); }
@@ -279,12 +455,18 @@ export component AppWindow inherits Window {
             reportar-ancho-chips(w) => { root.reportar-ancho-chips(w); }
             calcular-hsv(h, s, v) => { return root.calcular-hsv(h, s, v); }
             aplicar-color-indicador(c, col, hex) => { root.aplicar-color-indicador(c, col, hex); }
+            aumentar-zoom => { root.aumentar-zoom(); }
+            reducir-zoom => { root.reducir-zoom(); }
+            restaurar-zoom => { root.restaurar-zoom(); }
+            buscar-ajuste(q) => { root.buscar-ajuste(q); }
         }
 
         // Diálogo Modal: Edición de Entrada
         if mostrar-editor : EditDialog {
             datos <=> root.editor-datos;
             es-nueva: root.es-nueva-entrada;
+            opciones-categorias: root.categorias-dropdown;
+            opciones-perfiles: root.perfiles-filtro;
 
             guardar(d) => { root.guardar-entrada(d); }
             abrir-generador(destino) => { root.abrir-generador(destino); }
@@ -303,6 +485,89 @@ export component AppWindow inherits Window {
             copiar(p) => { root.copiar-campo(p, "Contraseña Generada"); }
             aplicar(p) => { root.aplicar-contrasena(p); }
             cerrar => { root.mostrar-generador = false; }
+        }
+
+        // Diálogo Modal: Salud de la Bóveda Interactiva
+        if mostrar-salud : VaultHealthModal {
+            puntuacion: root.salud-puntuacion;
+            pestana-activa: root.salud-pestana-activa;
+            conteo-caducadas: root.salud-conteo-caducadas;
+            conteo-repetidas: root.salud-conteo-repetidas;
+            conteo-comunes: root.salud-conteo-comunes;
+            conteo-debiles: root.salud-conteo-debiles;
+            conteo-antiguas: root.salud-conteo-antiguas;
+            conteo-ignoradas: root.salud-conteo-ignoradas;
+            items: root.salud-items;
+
+            seleccionar-pestana(t) => { root.seleccionar-pestana-salud(t); }
+            rotar-clave-rapida(id) => { root.rotar-clave-salud(id); }
+            alternar-ignorar(id) => { root.alternar-ignorar-salud-individual(id); }
+            editar-entrada(id) => {
+                root.mostrar-salud = false;
+                root.abrir-editar-entrada(id);
+            }
+            cerrar => { root.mostrar-salud = false; }
+        }
+
+        // Diálogo Modal: Detector y Unificador de Duplicados
+        if mostrar-duplicados : DuplicatesModal {
+            filtro-activo: root.duplicados-filtro-activo;
+            grupos: root.duplicados-grupos;
+
+            seleccionar-filtro(f) => { root.seleccionar-filtro-duplicados(f); }
+            unificar-grupo(ids) => { root.unificar-grupo-duplicados(ids); }
+            unificar-todos => { root.unificar-todos-duplicados(); }
+            cerrar => { root.mostrar-duplicados = false; }
+        }
+
+        // Diálogo Modal: Normalizador y Renombrador Interactivo de Títulos
+        if mostrar-normalizador-titulos : TitleNormalizerModal {
+            formato-activo: root.titulos-formato-activo;
+            respetar-personalizados: root.titulos-respetar-personalizados;
+            grupos: root.titulos-grupos;
+
+            cambiar-formato(f) => { root.cambiar-formato-titulos(f); }
+            alternar-respetar-personalizados => { root.alternar-respetar-personalizados-titulos(); }
+            aplicar-todos => { root.aplicar-normalizacion-todos-titulos(); }
+            aplicar-grupo(clave, prop) => { root.aplicar-normalizacion-grupo-titulos(clave, prop); }
+            cerrar => { root.mostrar-normalizador-titulos = false; }
+        }
+
+        // Diálogo Modal: Gestión CRUD de Categorías
+        if mostrar-gestor-categorias : CategoryManagerModal {
+            categorias: root.categorias-filtro;
+            guardar-categoria(id, nom, ico) => { root.guardar-categoria(id, nom, ico); }
+            eliminar-categoria(id) => { root.eliminar-categoria(id); }
+            cerrar => { root.mostrar-gestor-categorias = false; }
+        }
+
+        // Diálogo Modal: Gestión CRUD de Perfiles e Identidades
+        if mostrar-gestor-perfiles : ProfileManagerModal {
+            perfiles: root.perfiles-gestor;
+            guardar-perfil(id, nom, cor, sec, tdoc, doc, pref) => { root.guardar-perfil(id, nom, cor, sec, tdoc, doc, pref); }
+            eliminar-perfil(id) => { root.eliminar-perfil(id); }
+            cerrar => { root.mostrar-gestor-perfiles = false; }
+        }
+
+        // Diálogo Modal: Historial de Contraseñas Generadas
+        if mostrar-historial-generador : PasswordHistoryModal {
+            historial: root.historial-generador;
+            copiar-clave(c) => { root.copiar-campo(c, "Contraseña del Historial"); }
+            limpiar-historial => { root.limpiar-historial-claves(); }
+            cerrar => { root.mostrar-historial-generador = false; }
+        }
+
+        // Diálogo Modal: Sincronización Segura P2P
+        if mostrar-sync-p2p : P2pSyncModal {
+            qr-code: root.sync-p2p-qr;
+            huella-visual: root.sync-p2p-huella;
+            estado-texto: root.sync-p2p-estado-texto;
+            estado-codigo: root.sync-p2p-estado-codigo;
+            red-info: root.sync-p2p-red-info;
+            alias-remoto: root.sync-p2p-alias-remoto;
+
+            confirmar => { root.confirmar-sincronizacion-p2p(); }
+            cancelar => { root.cancelar-sincronizacion-p2p(); }
         }
     }
 }

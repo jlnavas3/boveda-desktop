@@ -33,6 +33,13 @@ export struct SettingsData {
     // Homelab y Red
     prefijos_subdominios: string,
     puertos_homelab: string,
+
+    // Personalización del Menú Lateral (AjustesDefaults.MenuLateral)
+    menu_lateral_mostrar_cabecera: bool,
+    menu_lateral_mostrar_pie: bool,
+    menu_lateral_mostrar_boton_bloquear: bool,
+    menu_lateral_agrupar_items: bool,
+    menu_lateral_sin_bordes: bool,
 }
 
 export component SettingsModal inherits Rectangle {
@@ -55,6 +62,11 @@ export component SettingsModal inherits Rectangle {
         incluir_enie_niagara: true,
         prefijos_subdominios: "admin, api, auth, cdn, dev, login, mail, portal, vpn",
         puertos_homelab: "8006: Proxmox\n8096: Jellyfin\n8123: Home Assistant\n9000: Portainer\n9443: Portainer SSL\n5000: Synology DSM",
+        menu_lateral_mostrar_cabecera: true,
+        menu_lateral_mostrar_pie: true,
+        menu_lateral_mostrar_boton_bloquear: true,
+        menu_lateral_agrupar_items: false,
+        menu_lateral_sin_bordes: false,
     };
 
     in property <string> mensaje-error: "";

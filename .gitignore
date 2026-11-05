@@ -1,9 +1,31 @@
-/target
-Cargo.lock
-**/*.rs.bk
+# --- Compilación de Rust y artefactos ---
+/target/
+*.rs.bk
 *.orig
-.DS_Store
+core.*
+
+# --- Archivos de Bóveda y bases de datos locales ---
 *.bvda
+*.bvda.tmp
+*.bvda.bak
+
+# --- Logs y archivos temporales ---
 *.log
 *.bak
 *.tmp
+*.swp
+*.swo
+*~
+
+# --- Editores y entornos de desarrollo (IDEs) ---
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# --- Documentación interna / scratchpads ---
+walkthrough.md
+WALKTHROUGH.md
+INSTRUCCIONES_AGENTE.md
+ESPECIFICACION_FORMATO_BVDA.md

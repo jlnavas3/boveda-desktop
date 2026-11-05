@@ -1,9 +1,18 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
 import { Theme } from "../../theme.slint";
 
 export component IdentityForm inherits VerticalLayout {
     in-out property <string> nombre: "";
     in-out property <string> tipo-doc: "DNI";
     in-out property <string> numero: "";
+    in-out property <string> expedicion: "";
+    in-out property <string> caducidad: "";
+    in-out property <string> pais: "";
 
     spacing: 10px;
 
@@ -57,6 +66,62 @@ export component IdentityForm inherits VerticalLayout {
                     TextInput {
                         text <=> root.numero;
                         color: Theme.accent-rose; font-size: 12px; font-weight: 700;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+        }
+    }
+
+    // Fechas de Expedición, Caducidad y País Emisor
+    HorizontalLayout {
+        spacing: 8px;
+
+        VerticalLayout {
+            horizontal-stretch: 1; spacing: 4px;
+            Text { text: "Fecha Expedición"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.expedicion;
+                        color: Theme.text-primary; font-size: 11px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+        }
+
+        VerticalLayout {
+            horizontal-stretch: 1; spacing: 4px;
+            Text { text: "Fecha Vencimiento"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.caducidad;
+                        color: Theme.text-primary; font-size: 11px;
+                        vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+        }
+
+        VerticalLayout {
+            horizontal-stretch: 1; spacing: 4px;
+            Text { text: "País Emisor"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
+            Rectangle {
+                height: 36px; background: Theme.background;
+                border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-sm;
+                HorizontalLayout {
+                    padding-left: 8px; padding-right: 8px;
+                    TextInput {
+                        text <=> root.pais;
+                        color: Theme.text-primary; font-size: 11px;
                         vertical-alignment: center; single-line: true;
                     }
                 }

@@ -1,0 +1,166 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
+
+export struct HealthIssueItem {
+    id: string,
+    titulo: string,
+    subtitulo: string,
+    categoria-riesgo: string,
+    detalle-riesgo: string,
+    severidad: string,
+    ignorada: bool,
+}
+
+export component HealthIssueRow inherits Rectangle {
+    in property <HealthIssueItem> item;
+
+    callback rotar-clave-rapida(string);
+    callback alternar-ignorar(string);
+    callback editar-entrada(string);
+
+    width: 100%;
+    height: 62px;
+    background: Theme.background;
+    border-radius: Theme.radius-sm;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        spacing: 10px;
+
+        VerticalLayout {
+            horizontal-stretch: 1;
+            min-width: 0px;
+            alignment: center;
+            spacing: 3px;
+
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: start;
+
+                Text {
+                    text: root.item.titulo;
+                    color: Theme.text-primary;
+                    font-size: 13px;
+                    font-weight: 700;
+                    overflow: elide;
+                    vertical-alignment: center;
+                }
+
+                if root.item.subtitulo != "" : Text {
+                    text: "· " + root.item.subtitulo;
+                    color: Theme.text-secondary;
+                    font-size: 11px;
+                    overflow: elide;
+                    vertical-alignment: center;
+                }
+            }
+
+            Text {
+                text: root.item.detalle-riesgo;
+                color: root.item.severidad == "CRITICA" || root.item.severidad == "ALTA" ? Theme.accent-amber : Theme.text-muted;
+                font-size: 11px;
+                overflow: elide;
+            }
+        }
+
+        // Acciones correctivas rápidas (Rotar clave en 1 clic, Ignorar/Incluir, Editar)
+        HorizontalLayout {
+            horizontal-stretch: 0;
+            spacing: 6px;
+            alignment: end;
+
+            if !root.item.ignorada : VerticalLayout {
+                alignment: center;
+                btn-rotar := TouchArea {
+                    width: 116px;
+                    height: 28px;
+                    mouse-cursor: pointer;
+                    clicked => { root.rotar-clave-rapida(root.item.id); }
+
+                    Rectangle {
+                        background: btn-rotar.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                        border-radius: Theme.radius-sm;
+
+                        HorizontalLayout {
+                            alignment: center;
+                            spacing: 4px;
+                            AppIcon {
+                                source: @image-url("../assets/icons/key.svg");
+                                icon-size: 12px;
+                                icon-color: #FFFFFF;
+                                vertical-alignment: center;
+                            }
+                            Text {
+                                text: "Rotar clave";
+                                color: #FFFFFF;
+                                font-size: 11px;
+                                font-weight: 700;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                btn-ign := TouchArea {
+                    width: 78px;
+                    height: 28px;
+                    mouse-cursor: pointer;
+                    clicked => { root.alternar-ignorar(root.item.id); }
+
+                    Rectangle {
+                        background: btn-ign.has-hover ? Theme.surface-hover : Theme.surface;
+                        border-radius: Theme.radius-sm;
+                        border-width: 1px;
+                        border-color: Theme.border;
+
+                        Text {
+                            text: root.item.ignorada ? "Incluir" : "Ignorar";
+                            color: Theme.text-secondary;
+                            font-size: 11px;
+                            font-weight: 600;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                btn-edit := TouchArea {
+                    width: 32px;
+                    height: 28px;
+                    mouse-cursor: pointer;
+                    clicked => { root.editar-entrada(root.item.id); }
+
+                    Rectangle {
+                        background: btn-edit.has-hover ? Theme.surface-hover : Theme.surface;
+                        border-radius: Theme.radius-sm;
+                        border-width: 1px;
+                        border-color: Theme.border;
+
+                        AppIcon {
+                            source: @image-url("../assets/icons/edit.svg");
+                            icon-size: 13px;
+                            icon-color: Theme.text-primary;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

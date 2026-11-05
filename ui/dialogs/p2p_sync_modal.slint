@@ -1,0 +1,404 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
+
+export component P2pSyncModal inherits Rectangle {
+    in property <image> qr-code;
+    in property <string> huella-visual: "00:00:00:00:00:00";
+    in property <string> estado-texto: "Esperando escaneo móvil...";
+    in property <int> estado-codigo: 0; // 0 = Esperando, 1 = Sincronizando, 2 = Exito, 3 = Error
+    in property <string> red-info: "";
+    in property <string> alias-remoto: "";
+
+    callback confirmar();
+    callback cancelar();
+
+    width: 100%;
+    height: 100%;
+    background: #000000B0;
+
+    TouchArea {
+        width: 100%;
+        height: 100%;
+    }
+
+    Rectangle {
+        width: Math.min(540px, root.width - 32px);
+        height: Math.min(670px, root.height - 32px);
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        background: Theme.surface;
+        border-radius: Theme.radius-lg;
+        border-width: 1px;
+        border-color: Theme.border;
+        clip: true;
+
+        VerticalLayout {
+            padding: 24px;
+            spacing: 14px;
+            alignment: space-between;
+
+            // 1. Cabecera
+            HorizontalLayout {
+                alignment: space-between;
+                VerticalLayout {
+                    spacing: 4px;
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: start;
+                        AppIcon {
+                            source: @image-url("../assets/icons/qr_code.svg");
+                            icon-size: 20px;
+                            icon-color: Theme.accent-primary;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: "Sincronización Segura P2P";
+                            color: Theme.text-primary;
+                            font-size: 17px;
+                            font-weight: 800;
+                            vertical-alignment: center;
+                        }
+                    }
+                    Text {
+                        text: "Conexión directa y cifrada extremo a extremo en tu red local";
+                        color: Theme.text-secondary;
+                        font-size: 12px;
+                    }
+                }
+
+                TouchArea {
+                    width: 32px;
+                    height: 32px;
+                    mouse-cursor: pointer;
+                    clicked => { root.cancelar(); }
+
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : transparent;
+                        border-radius: Theme.radius-sm;
+
+                        AppIcon {
+                            source: @image-url("../assets/icons/close.svg");
+                            icon-size: 16px;
+                            icon-color: Theme.text-secondary;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            // 2. Contenedor de Código QR / Solicitud de Confirmación / Sesión Consumida
+            if root.estado-codigo == 4 : Rectangle {
+                height: 236px;
+                background: Theme.background;
+                border-radius: 16px;
+                border-width: 1px;
+                border-color: Theme.accent-primary;
+
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 12px;
+                    padding: 20px;
+
+                    HorizontalLayout {
+                        alignment: center;
+                        Rectangle {
+                            width: 60px;
+                            height: 60px;
+                            border-radius: 30px;
+                            background: #3B82F626;
+
+                            AppIcon {
+                                source: @image-url("../assets/icons/android.svg");
+                                icon-size: 32px;
+                                icon-color: Theme.accent-primary;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    Text {
+                        text: "¿Sincronizar con " + (root.alias-remoto != "" ? root.alias-remoto : "Dispositivo Móvil") + "?";
+                        color: Theme.text-primary;
+                        font-size: 16px;
+                        font-weight: 800;
+                        horizontal-alignment: center;
+                        wrap: word-wrap;
+                    }
+
+                    Text {
+                        text: "Se ha detectado una solicitud de sincronización LAN P2P bidireccional.\nCoteja que la huella visual coincida con la de tu teléfono:";
+                        color: Theme.text-secondary;
+                        font-size: 12px;
+                        horizontal-alignment: center;
+                        wrap: word-wrap;
+                    }
+                }
+            }
+
+            if root.estado-codigo != 2 && root.estado-codigo != 4 : Rectangle {
+                height: 236px;
+                background: #FFFFFF;
+                border-radius: 16px;
+                border-width: 1px;
+                border-color: #E2E8F0;
+
+                VerticalLayout {
+                    alignment: center;
+                    HorizontalLayout {
+                        alignment: center;
+                        Image {
+                            source: root.qr-code;
+                            width: 212px;
+                            height: 212px;
+                            image-fit: contain;
+                        }
+                    }
+                }
+            }
+
+            if root.estado-codigo == 2 : Rectangle {
+                height: 236px;
+                background: #10B9810D;
+                border-radius: 16px;
+                border-width: 1px;
+                border-color: #10B98140;
+
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 12px;
+                    padding: 20px;
+
+                    HorizontalLayout {
+                        alignment: center;
+                        Rectangle {
+                            width: 64px;
+                            height: 64px;
+                            border-radius: 32px;
+                            background: #10B98126;
+
+                            AppIcon {
+                                source: @image-url("../assets/icons/check.svg");
+                                icon-size: 32px;
+                                icon-color: #10B981;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    Text {
+                        text: "Sesión P2P Completada";
+                        color: #10B981;
+                        font-size: 16px;
+                        font-weight: 800;
+                        horizontal-alignment: center;
+                    }
+
+                    Text {
+                        text: "El túnel seguro y el puerto efímero se han cerrado con éxito.\nEl código QR de un solo uso ya ha sido consumido.";
+                        color: Theme.text-secondary;
+                        font-size: 12px;
+                        horizontal-alignment: center;
+                        wrap: word-wrap;
+                    }
+                }
+            }
+
+            // 3. Huella Visual Determinista de Seguridad
+            Rectangle {
+                background: Theme.background;
+                border-radius: Theme.radius-md;
+                border-width: 1px;
+                border-color: Theme.border;
+
+                VerticalLayout {
+                    padding: 10px;
+                    spacing: 6px;
+                    alignment: center;
+
+                    HorizontalLayout {
+                        alignment: center;
+                        spacing: 6px;
+                        AppIcon {
+                            source: @image-url("../assets/icons/fingerprint.svg");
+                            icon-size: 14px;
+                            icon-color: Theme.accent-primary;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: root.estado-codigo == 2 ? "HUELLA VISUAL VALIDADA Y VERIFICADA" : "HUELLA VISUAL DE EMPAREJAMIENTO";
+                            color: Theme.text-secondary;
+                            font-size: 11px;
+                            font-weight: 700;
+                            letter-spacing: 0.5px;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    HorizontalLayout {
+                        alignment: center;
+                        Text {
+                            text: root.huella-visual;
+                            color: Theme.accent-primary;
+                            font-size: 20px;
+                            font-weight: 800;
+                            font-family: "monospace";
+                            letter-spacing: 2px;
+                        }
+                    }
+
+                    Text {
+                        text: root.estado-codigo == 2 ? "Fusión bidireccional determinista autenticada sin intermediarios" : "Verifica que estos 6 pares coincidan exactamente con la pantalla de tu móvil";
+                        color: Theme.text-secondary;
+                        font-size: 10px;
+                        horizontal-alignment: center;
+                    }
+                }
+            }
+
+            // 4. Indicador de Estado Reactivo con Ajuste de Línea Dinámico
+            Rectangle {
+                background: root.estado-codigo == 2 ? #10B9811A : (root.estado-codigo == 3 ? #EF44441A : (root.estado-codigo == 1 || root.estado-codigo == 4 ? #3B82F61A : Theme.background));
+                border-radius: Theme.radius-md;
+                border-width: 1px;
+                border-color: root.estado-codigo == 2 ? #10B981 : (root.estado-codigo == 3 ? #EF4444 : (root.estado-codigo == 1 || root.estado-codigo == 4 ? #3B82F6 : Theme.border));
+                min-height: 44px;
+
+                HorizontalLayout {
+                    padding-left: 14px;
+                    padding-right: 14px;
+                    padding-top: 10px;
+                    padding-bottom: 10px;
+                    spacing: 10px;
+                    alignment: start;
+
+                    VerticalLayout {
+                        alignment: center;
+                        AppIcon {
+                            source: root.estado-codigo == 2 ? @image-url("../assets/icons/check.svg") : (root.estado-codigo == 3 ? @image-url("../assets/icons/close.svg") : (root.estado-codigo == 1 || root.estado-codigo == 4 ? @image-url("../assets/icons/restart.svg") : @image-url("../assets/icons/wifi.svg")));
+                            icon-size: 18px;
+                            icon-color: root.estado-codigo == 2 ? #10B981 : (root.estado-codigo == 3 ? #EF4444 : (root.estado-codigo == 1 || root.estado-codigo == 4 ? #3B82F6 : Theme.text-secondary));
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    Text {
+                        horizontal-stretch: 1;
+                        text: root.estado-texto;
+                        color: root.estado-codigo == 2 ? #10B981 : (root.estado-codigo == 3 ? #EF4444 : (root.estado-codigo == 1 || root.estado-codigo == 4 ? #3B82F6 : Theme.text-primary));
+                        font-size: 13px;
+                        font-weight: 600;
+                        vertical-alignment: center;
+                        wrap: word-wrap;
+                    }
+                }
+            }
+
+            // 5. Información de Red e IPs (RFC 1918)
+            if root.red-info != "" && root.estado-codigo != 2 && root.estado-codigo != 4 : HorizontalLayout {
+                alignment: center;
+                Text {
+                    text: root.red-info;
+                    color: Theme.text-secondary;
+                    font-size: 11px;
+                    horizontal-alignment: center;
+                }
+            }
+
+            // 6. Botones de Acción
+            if root.estado-codigo == 4 : HorizontalLayout {
+                alignment: end;
+                spacing: 12px;
+
+                TouchArea {
+                    width: 110px;
+                    height: 38px;
+                    mouse-cursor: pointer;
+                    clicked => { root.cancelar(); }
+
+                    Rectangle {
+                        background: parent.has-hover ? Theme.surface-hover : Theme.background;
+                        border-radius: Theme.radius-md;
+                        border-width: 1px;
+                        border-color: Theme.border;
+
+                        Text {
+                            text: "Cancelar";
+                            color: Theme.text-secondary;
+                            font-size: 13px;
+                            font-weight: 700;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                TouchArea {
+                    width: 156px;
+                    height: 38px;
+                    mouse-cursor: pointer;
+                    clicked => { root.confirmar(); }
+
+                    Rectangle {
+                        background: Theme.accent-primary;
+                        border-radius: Theme.radius-md;
+
+                        HorizontalLayout {
+                            alignment: center;
+                            spacing: 8px;
+
+                            AppIcon {
+                                source: @image-url("../assets/icons/restart.svg");
+                                icon-size: 16px;
+                                icon-color: #FFFFFF;
+                                vertical-alignment: center;
+                            }
+
+                            Text {
+                                text: "Sincronizar ahora";
+                                color: #FFFFFF;
+                                font-size: 13px;
+                                font-weight: 700;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if root.estado-codigo != 4 : HorizontalLayout {
+                alignment: end;
+                TouchArea {
+                    width: 120px;
+                    height: 38px;
+                    mouse-cursor: pointer;
+                    clicked => { root.cancelar(); }
+
+                    Rectangle {
+                        background: root.estado-codigo == 2 ? Theme.accent-primary : (parent.has-hover ? Theme.surface-hover : Theme.background);
+                        border-radius: Theme.radius-md;
+                        border-width: 1px;
+                        border-color: root.estado-codigo == 2 ? Theme.accent-primary : Theme.border;
+
+                        Text {
+                            text: root.estado-codigo == 2 ? "Finalizar" : "Cancelar";
+                            color: root.estado-codigo == 2 ? #FFFFFF : Theme.text-primary;
+                            font-size: 13px;
+                            font-weight: 700;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

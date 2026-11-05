@@ -34,6 +34,7 @@ import { SubListOrder } from "subsections/sub_list_order.slint";
 import { SubListPrivacy } from "subsections/sub_list_privacy.slint";
 import { SubToolsAudit } from "subsections/sub_tools_audit.slint";
 import { SubAccountsTrash } from "subsections/sub_accounts_trash.slint";
+import { SubAccountsCategories } from "subsections/sub_accounts_categories.slint";
 
 // 4. Herramientas (5 Sub-secciones)
 import { SubToolsGenerator } from "subsections/sub_tools_generator.slint";
@@ -49,7 +50,9 @@ import { SubBackupsMerge } from "subsections/sub_backups_merge.slint";
 import { SubBackupsKit } from "subsections/sub_backups_kit.slint";
 
 // 6. Sistema (4 Sub-secciones)
+import { SubSystemDesktop } from "subsections/sub_system_desktop.slint";
 import { SubSystemDiagnostics } from "subsections/sub_system_diagnostics.slint";
+import { SubSystemAuditLog } from "subsections/sub_system_audit_log.slint";
 import { SubSystemAbout } from "subsections/sub_system_about.slint";
 
 export component SettingsContentPanel inherits Rectangle {
@@ -66,6 +69,7 @@ export component SettingsContentPanel inherits Rectangle {
     in property <string> hex-passkey: "#8B5CF6";
     in property <string> hex-url: "#06B6D4";
     in property <string> hex-app: "#16A34A";
+    in property <string> registro-eventos: "Sesión iniciada con cifrado autenticado AES-256-GCM y derivación Argon2id.";
 
     callback restaurar-campo(string);
     callback restaurar-seccion(string);
@@ -75,6 +79,10 @@ export component SettingsContentPanel inherits Rectangle {
     callback importar-bitwarden();
     callback importar-csv();
     callback fusionar-boveda();
+    callback generar-kit-emergencia();
+    callback vaciar-papelera();
+    callback abrir-gestor-categorias();
+    callback abrir-gestor-perfiles();
     callback abrir-generador();
     callback auditoria-salud();
     callback alternar-biometria(bool);
@@ -84,6 +92,9 @@ export component SettingsContentPanel inherits Rectangle {
     callback eliminar-subdominio(string);
     callback reportar-ancho-chips(float);
     callback abrir-selector-color(string);
+    callback aumentar-zoom();
+    callback reducir-zoom();
+    callback restaurar-zoom();
 
     horizontal-stretch: 1;
     background: Theme.background;
@@ -154,6 +165,11 @@ export component SettingsContentPanel inherits Rectangle {
             }
 
             if root.subseccion-activa == 104 : SubAppearanceSidebar {
+                menu-lateral-mostrar-cabecera <=> root.datos.menu_lateral_mostrar_cabecera;
+                menu-lateral-mostrar-pie <=> root.datos.menu_lateral_mostrar_pie;
+                menu-lateral-mostrar-boton-bloquear <=> root.datos.menu_lateral_mostrar_boton_bloquear;
+                menu-lateral-agrupar-items <=> root.datos.menu_lateral_agrupar_items;
+                menu-lateral-sin-bordes <=> root.datos.menu_lateral_sin_bordes;
                 restaurar-todo => { root.restaurar-seccion("apariencia_menu_lateral"); }
             }
 
@@ -232,11 +248,12 @@ export component SettingsContentPanel inherits Rectangle {
             }
 
             if root.subseccion-activa == 205 : SubAccountsTrash {
-                vaciar-papelera => {}
+                vaciar-papelera => { root.vaciar-papelera(); }
             }
 
-            if root.subseccion-activa == 206 : SubAppearanceTemplates {
-                restaurar-todo => { root.restaurar-seccion("categorias_cuentas"); }
+            if root.subseccion-activa == 206 : SubAccountsCategories {
+                abrir-gestor-categorias => { root.abrir-gestor-categorias(); }
+                abrir-gestor-perfiles => { root.abrir-gestor-perfiles(); }
             }
 
             // 4. HERRAMIENTAS (5 Sub-secciones: 301..305)
@@ -286,26 +303,21 @@ export component SettingsContentPanel inherits Rectangle {
             }
 
             if root.subseccion-activa == 404 : SubBackupsKit {
-                generar-kit => { root.exportar-json(); }
+                generar-kit => { root.generar-kit-emergencia(); }
             }
 
             // 6. SISTEMA (4 Sub-secciones: 501..504)
-            if root.subseccion-activa == 501 : SubSystemServices {
-                puertos-homelab <=> root.datos.puertos_homelab;
-                filas-puertos: root.filas-puertos;
-                restaurar-todo => { root.restaurar-seccion("sistema_servicios"); }
-                restaurar-puertos => { root.restaurar-campo("puertos_homelab"); }
-                agregar-puerto(p, n) => { root.agregar-puerto(p, n); }
-                eliminar-puerto(id) => { root.eliminar-puerto(id); }
+            if root.subseccion-activa == 501 : SubSystemDesktop {
+                aumentar-zoom => { root.aumentar-zoom(); }
+                reducir-zoom => { root.reducir-zoom(); }
+                restaurar-zoom => { root.restaurar-zoom(); }
             }
 
             if root.subseccion-activa == 502 : SubSystemDiagnostics {
             }
 
-            if root.subseccion-activa == 503 : SubSecurityAutodestruct {
-                autodestruccion-intentos <=> root.datos.autodestruccion_intentos;
-                biometria-activa <=> root.datos.biometria_activa;
-                alternar-biometria(act) => { root.alternar-biometria(act); }
+            if root.subseccion-activa == 503 : SubSystemAuditLog {
+                registro-eventos: root.registro-eventos;
             }
 
             if root.subseccion-activa == 504 : SubSystemAbout {

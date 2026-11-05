@@ -10,6 +10,7 @@ import { IndicatorDots } from "indicators/indicator_dots.slint";
 import { IndicatorIcons } from "indicators/indicator_icons.slint";
 import { IndicatorStrip } from "indicators/indicator_strip.slint";
 import { AppIcon } from "widgets/app_icon.slint";
+import { SelectableAvatar } from "selection/selectable_avatar.slint";
 
 export struct EntryOverview {
     id: string,
@@ -35,15 +36,23 @@ export struct EntryOverview {
     grupo_expandido: bool,
     es_hijo_grupo: bool,
     es_ultimo_hijo_grupo: bool,
+    seleccionada_lote: bool,
+    mostrar_chip_perfil: bool,
+    nombre_perfil: string,
+    color_perfil: color,
+    es_documento_perfil: bool,
 }
 
 export component EntryItem inherits Rectangle {
     in property <EntryOverview> entrada;
     in property <bool> seleccionado: false;
+    in property <bool> modo-seleccion: false;
     callback clicked();
+    callback alternar-seleccion-lote();
     callback abrir-menu-contextual(string, length, length);
 
-    background: seleccionado ? Theme.surface-selected :
+    background: entrada.seleccionada_lote ? Theme.accent-primary.transparentize(84%) :
+                seleccionado ? Theme.surface-selected :
                 touch.has-hover ? Theme.surface-hover :
                 Theme.surface;
     border-top-left-radius: entrada.es_hijo_grupo ? 0px : Theme.radio-tarjetas;
@@ -51,7 +60,7 @@ export component EntryItem inherits Rectangle {
     border-bottom-left-radius: entrada.es_hijo_grupo ? (entrada.es_ultimo_hijo_grupo ? Theme.radio-tarjetas : 0px) : Theme.radio-tarjetas;
     border-bottom-right-radius: entrada.es_hijo_grupo ? (entrada.es_ultimo_hijo_grupo ? Theme.radio-tarjetas : 0px) : Theme.radio-tarjetas;
     border-width: 1px;
-    border-color: seleccionado ? Theme.accent-primary : (entrada.es_hijo_grupo ? Theme.accent-primary.transparentize(60%) : Theme.border);
+    border-color: (seleccionado || entrada.seleccionada_lote) ? Theme.accent-primary : (entrada.es_hijo_grupo ? Theme.accent-primary.transparentize(60%) : Theme.border);
     height: 64px;
     clip: true;
 
@@ -95,15 +104,19 @@ export component EntryItem inherits Rectangle {
             }
         }
         clicked => {
-            root.clicked();
+            if root.modo-seleccion {
+                root.alternar-seleccion-lote();
+            } else {
+                root.clicked();
+            }
         }
 
         HorizontalLayout {
             width: 100%;
             height: 100%;
-            padding-left: entrada.es_hijo_grupo ? (Theme.estilo-indicadores == "lateral" ? 22px : 26px) : (Theme.estilo-indicadores == "lateral" ? 10px : 14px);
-            padding-right: 14px;
-            spacing: 12px;
+            padding-left: entrada.es_hijo_grupo ? (Theme.estilo-indicadores == "lateral" ? 20px : 22px) : (Theme.estilo-indicadores == "lateral" ? 10px : 12px);
+            padding-right: 12px;
+            spacing: 10px;
 
             // ESTILO 4: Franja lateral izquierda
             if Theme.estilo-indicadores == "lateral" : IndicatorStrip {
@@ -115,6 +128,26 @@ export component EntryItem inherits Rectangle {
                 tiene-url: root.entrada.tiene_url;
                 tiene-app: root.entrada.tiene_app;
                 tiene-notas: root.entrada.tiene_notas;
+            }
+
+            VerticalLayout {
+                horizontal-stretch: 0;
+                alignment: center;
+                SelectableAvatar {
+                    seleccionado-lote: root.entrada.seleccionada_lote;
+                    modo-seleccion: root.modo-seleccion;
+                    hover-externo: touch.has-hover;
+                    icono-base: root.entrada.tipo == "TARJETA" ? @image-url("../assets/icons/credit_card.svg") :
+                                root.entrada.tipo == "CUENTA_BANCARIA" ? @image-url("../assets/icons/account_balance.svg") :
+                                root.entrada.tipo == "SERVIDOR" ? @image-url("../assets/icons/computer.svg") :
+                                root.entrada.tipo == "WIFI" ? @image-url("../assets/icons/wifi.svg") :
+                                root.entrada.tipo == "WALLET" ? @image-url("../assets/icons/wallet.svg") :
+                                root.entrada.tipo == "IDENTIDAD" ? @image-url("../assets/icons/badge.svg") :
+                                root.entrada.tipo == "CONTACTO" ? @image-url("../assets/icons/person.svg") :
+                                root.entrada.tipo == "NOTA" ? @image-url("../assets/icons/note.svg") :
+                                @image-url("../assets/icons/key.svg");
+                    alternar-seleccion => { root.alternar-seleccion-lote(); }
+                }
             }
 
             VerticalLayout {
@@ -186,8 +219,50 @@ export component EntryItem inherits Rectangle {
                 HorizontalLayout {
                     spacing: 8px;
 
-                    // Izquierda: Subtítulo (usuario / detalle)
-                    Text {
+                    // Izquierda: Chip de Identidad/Perfil o Subtítulo (usuario / detalle)
+                    if entrada.mostrar_chip_perfil : HorizontalLayout {
+                        horizontal-stretch: 1;
+                        alignment: start;
+
+                        Rectangle {
+                            height: 18px;
+                            background: entrada.color_perfil.transparentize(86%);
+                            border-radius: Theme.curvatura-esquinas > 4px ? Theme.curvatura-esquinas / 2 : 4px;
+                            border-width: 0.8px;
+                            border-color: entrada.color_perfil.transparentize(65%);
+
+                            HorizontalLayout {
+                                padding-left: 6px;
+                                padding-right: 6px;
+                                spacing: 4px;
+                                alignment: center;
+
+                                if entrada.es_documento_perfil : AppIcon {
+                                    source: @image-url("../assets/icons/badge.svg");
+                                    icon-size: 10px;
+                                    icon-color: entrada.color_perfil;
+                                    vertical-alignment: center;
+                                }
+
+                                if !entrada.es_documento_perfil : Rectangle {
+                                    width: 5px;
+                                    height: 5px;
+                                    border-radius: 2.5px;
+                                    background: entrada.color_perfil;
+                                }
+
+                                Text {
+                                    text: entrada.nombre_perfil;
+                                    color: entrada.color_perfil;
+                                    font-size: 10px;
+                                    font-weight: 600;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+
+                    if !entrada.mostrar_chip_perfil : Text {
                         text: entrada.subtitulo != "" ? entrada.subtitulo : "(sin usuario o detalle)";
                         color: Theme.text-secondary;
                         font-size: 11px;

@@ -9,6 +9,12 @@ import { SettingGroupHeader } from "../../../components/widgets/setting_group_he
 import { SettingSwitch } from "../../../components/widgets/setting_switch.slint";
 
 export component SubAppearanceSidebar inherits VerticalLayout {
+    in-out property <bool> menu-lateral-mostrar-cabecera: true;
+    in-out property <bool> menu-lateral-mostrar-pie: true;
+    in-out property <bool> menu-lateral-mostrar-boton-bloquear: true;
+    in-out property <bool> menu-lateral-agrupar-items: false;
+    in-out property <bool> menu-lateral-sin-bordes: false;
+
     callback restaurar-todo();
 
     spacing: 12px;
@@ -22,30 +28,30 @@ export component SubAppearanceSidebar inherits VerticalLayout {
     SettingSwitch {
         titulo: "Mostrar Cabecera de Bóveda";
         subtitulo: "Muestra el nombre de la bóveda, icono de seguridad y estado de candado.";
-        checked <=> Theme.menu-lateral-mostrar-cabecera;
+        checked <=> root.menu-lateral-mostrar-cabecera;
     }
 
     SettingSwitch {
         titulo: "Mostrar Pie de Seguridad";
         subtitulo: "Indica la versión de compilación y estado del perfil en la parte inferior.";
-        checked <=> Theme.menu-lateral-mostrar-pie;
+        checked <=> root.menu-lateral-mostrar-pie;
     }
 
     SettingSwitch {
         titulo: "Mostrar Botón de Bloqueo Rápido";
         subtitulo: "Botón para cerrar sesión y purgar la clave maestra de memoria de forma instantánea.";
-        checked <=> Theme.menu-lateral-mostrar-boton-bloquear;
+        checked <=> root.menu-lateral-mostrar-boton-bloquear;
     }
 
     SettingSwitch {
         titulo: "Agrupar Elementos en Secciones";
         subtitulo: "Organiza las categorías de cuentas y herramientas bajo títulos de sección.";
-        checked <=> Theme.menu-lateral-agrupar-items;
+        checked <=> root.menu-lateral-agrupar-items;
     }
 
     SettingSwitch {
         titulo: "Estilo Sin Bordes Divisores";
         subtitulo: "Oculta las líneas separadoras entre los elementos del menú lateral.";
-        checked <=> Theme.menu-lateral-sin-bordes;
+        checked <=> root.menu-lateral-sin-bordes;
     }
 }

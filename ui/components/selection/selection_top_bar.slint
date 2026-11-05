@@ -1,0 +1,81 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "../widgets/app_icon.slint";
+
+export component SelectionTopBar inherits Rectangle {
+    in property <int> conteo-seleccionadas: 0;
+    in property <bool> todas-seleccionadas: false;
+    callback cancelar-seleccion();
+    callback alternar-seleccionar-todas();
+
+    height: 40px;
+    background: Theme.accent-primary.transparentize(86%);
+    border-radius: Theme.radius-sm;
+    border-width: 1px;
+    border-color: Theme.accent-primary;
+    clip: true;
+
+    HorizontalLayout {
+        padding-left: 8px;
+        padding-right: 8px;
+        spacing: 8px;
+        alignment: space-between;
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+
+            btn-cancel := TouchArea {
+                width: 26px;
+                height: 26px;
+                clicked => { root.cancelar-seleccion(); }
+                Rectangle {
+                    background: btn-cancel.has-hover ? Theme.surface-hover : transparent;
+                    border-radius: Theme.radius-sm;
+                    AppIcon {
+                        source: @image-url("../../assets/icons/close.svg");
+                        icon-size: 14px;
+                        icon-color: Theme.text-primary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+
+            Text {
+                text: root.conteo-seleccionadas == 1 ? "1 seleccionada" : "\{root.conteo-seleccionadas} seleccionadas";
+                color: Theme.text-primary;
+                font-size: 12px;
+                font-weight: 700;
+                vertical-alignment: center;
+            }
+        }
+
+        btn-all := TouchArea {
+            height: 26px;
+            width: txt-all.preferred-width + 16px;
+            clicked => { root.alternar-seleccionar-todas(); }
+
+            Rectangle {
+                background: btn-all.has-hover ? Theme.accent-primary.transparentize(75%) : Theme.surface;
+                border-radius: Theme.radius-sm;
+                border-width: 1px;
+                border-color: Theme.accent-primary;
+
+                txt-all := Text {
+                    text: root.todas-seleccionadas ? "Deseleccionar todo" : "Seleccionar todo";
+                    color: Theme.accent-primary;
+                    font-size: 11px;
+                    font-weight: 700;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}

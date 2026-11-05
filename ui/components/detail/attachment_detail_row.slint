@@ -1,0 +1,113 @@
+import { Theme } from "../../theme.slint";
+import { AppIcon } from "../widgets/app_icon.slint";
+
+export struct DetailCustomFieldItem {
+    etiqueta: string,
+    valor: string,
+    es_sensible: bool,
+}
+
+export struct DetailLinkItem {
+    valor: string,
+    etiqueta: string,
+    es_app: bool,
+}
+
+export struct DetailAttachmentItem {
+    id: string,
+    nombre: string,
+    tamano: string,
+    mime_type: string,
+}
+
+export component AttachmentDetailRow inherits Rectangle {
+    in property <DetailAttachmentItem> adjunto;
+    callback guardar-adjunto(string);
+
+    background: Theme.surface;
+    border-width: Theme.grosor-borde;
+    border-color: Theme.border;
+    border-radius: Theme.curvatura-esquinas;
+    clip: true;
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 10px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        spacing: 8px;
+        alignment: space-between;
+
+        HorizontalLayout {
+            horizontal-stretch: 1;
+            min-width: 0px;
+            spacing: 8px;
+            alignment: start;
+
+            AppIcon {
+                horizontal-stretch: 0;
+                source: @image-url("../../assets/icons/file_download.svg");
+                icon-size: 16px;
+                icon-color: Theme.accent-primary;
+                vertical-alignment: center;
+            }
+
+            VerticalLayout {
+                horizontal-stretch: 1;
+                min-width: 0px;
+                spacing: 2px;
+
+                Text {
+                    text: root.adjunto.nombre;
+                    color: Theme.text-primary;
+                    font-size: 12px;
+                    font-weight: 600;
+                    overflow: elide;
+                    horizontal-alignment: left;
+                }
+
+                Text {
+                    text: root.adjunto.tamano + (root.adjunto.mime_type != "" ? "  •  " + root.adjunto.mime_type : "");
+                    color: Theme.text-muted;
+                    font-size: 10px;
+                    overflow: elide;
+                    horizontal-alignment: left;
+                }
+            }
+        }
+
+        btn-descargar := TouchArea {
+            horizontal-stretch: 0;
+            width: 78px;
+            height: 26px;
+            clicked => { root.guardar-adjunto(root.adjunto.id); }
+
+            Rectangle {
+                background: btn-descargar.has-hover ? Theme.surface-hover : Theme.background;
+                border-width: 1px;
+                border-color: Theme.border;
+                border-radius: Theme.radius-sm;
+
+                HorizontalLayout {
+                    alignment: center;
+                    spacing: 4px;
+
+                    AppIcon {
+                        source: @image-url("../../assets/icons/save.svg");
+                        icon-size: 12px;
+                        icon-color: Theme.text-primary;
+                        vertical-alignment: center;
+                    }
+
+                    Text {
+                        text: "Guardar";
+                        color: Theme.text-primary;
+                        font-size: 11px;
+                        font-weight: 600;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

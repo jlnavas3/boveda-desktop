@@ -1,0 +1,103 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+
+export struct TitleNormalizationGroupItem {
+    clave-servicio: string,
+    titulo-propuesto: string,
+    ejemplos-antes: string,
+    conteo-afectadas: int,
+}
+
+export component TitleGroupRow inherits Rectangle {
+    in property <TitleNormalizationGroupItem> grupo;
+    callback aplicar-grupo(string, string);
+
+    width: 100%;
+    height: 58px;
+    background: Theme.background;
+    border-radius: Theme.radius-sm;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        spacing: 12px;
+        alignment: space-between;
+
+        VerticalLayout {
+            horizontal-stretch: 1;
+            min-width: 0px;
+            alignment: center;
+            spacing: 4px;
+
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: start;
+
+                Text {
+                    text: root.grupo.ejemplos-antes;
+                    color: Theme.text-muted;
+                    font-size: 12px;
+                    overflow: elide;
+                    vertical-alignment: center;
+                }
+
+                Text {
+                    text: "→";
+                    color: Theme.accent-primary;
+                    font-size: 13px;
+                    font-weight: 800;
+                    vertical-alignment: center;
+                }
+
+                Text {
+                    text: root.grupo.titulo-propuesto;
+                    color: Theme.text-primary;
+                    font-size: 13px;
+                    font-weight: 700;
+                    vertical-alignment: center;
+                }
+            }
+
+            Text {
+                text: root.grupo.conteo-afectadas + (root.grupo.conteo-afectadas == 1 ? " cuenta se renombrará a este título limpio" : " cuentas se renombrarán a este título limpio");
+                color: Theme.text-secondary;
+                font-size: 11px;
+            }
+        }
+
+        VerticalLayout {
+            alignment: center;
+            btn-apply := TouchArea {
+                width: 108px;
+                height: 28px;
+                mouse-cursor: pointer;
+                clicked => {
+                    root.aplicar-grupo(root.grupo.clave-servicio, root.grupo.titulo-propuesto);
+                }
+
+                Rectangle {
+                    background: btn-apply.has-hover ? Theme.accent-hover : Theme.surface;
+                    border-radius: Theme.radius-sm;
+                    border-width: 1px;
+                    border-color: Theme.accent-primary;
+
+                    Text {
+                        text: "Aplicar grupo";
+                        color: btn-apply.has-hover ? #FFFFFF : Theme.accent-primary;
+                        font-size: 11px;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

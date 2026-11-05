@@ -19,6 +19,7 @@ use crate::gui::state::filter_engine::{
     calcular_resumen_tipos, construir_detalle_entrada, encontrar_id_por_letra,
     encontrar_indice_por_letra, filtrar_entradas,
 };
+use crate::gui::state::selection::EstadoSeleccionLista;
 use crate::gui::state::theme_manager::ModoTema;
 use crate::gui::{DropdownOption, EntryDetailData, EntryOverview, FilterItem, SettingsData};
 use crate::models::{ContenidoBoveda, Entrada};
@@ -40,10 +41,16 @@ pub struct GuiVaultState {
     pub ultimo_ancho_chips: f32,
     pub solo_favoritos: bool,
     pub grupos_expandidos: HashSet<String>,
+    pub seleccion: EstadoSeleccionLista,
+    pub historial_generador: Vec<crate::gui::GeneratedPasswordItem>,
+    pub bitacora_eventos: Vec<String>,
+    pub ultima_actividad_seg: u64,
+    pub intentos_fallidos_desbloqueo: i32,
 }
 
 impl GuiVaultState {
     pub fn new(ruta_boveda: PathBuf) -> Self {
+        let ahora_seg = chrono::Utc::now().timestamp() as u64;
         Self {
             boveda: None,
             ruta_boveda,
@@ -60,7 +67,25 @@ impl GuiVaultState {
             ultimo_ancho_chips: 720.0,
             solo_favoritos: false,
             grupos_expandidos: HashSet::new(),
+            seleccion: EstadoSeleccionLista::new(),
+            historial_generador: Vec::new(),
+            bitacora_eventos: Vec::new(),
+            ultima_actividad_seg: ahora_seg,
+            intentos_fallidos_desbloqueo: 0,
         }
+    }
+
+    pub fn tocar_actividad(&mut self) {
+        self.ultima_actividad_seg = chrono::Utc::now().timestamp() as u64;
+    }
+
+    pub fn registrar_evento(&mut self, descripcion: &str) {
+        let hora = chrono::Local::now().format("%H:%M:%S").to_string();
+        self.bitacora_eventos.insert(0, format!("[{hora}] {descripcion}"));
+        if self.bitacora_eventos.len() > 60 {
+            self.bitacora_eventos.truncate(60);
+        }
+        self.tocar_actividad();
     }
 
     pub fn cargar_boveda(
@@ -79,6 +104,9 @@ impl GuiVaultState {
         self.filtro_tipo = "TODOS".to_string();
         self.filtro_categoria = "TODAS".to_string();
         self.termino_busqueda.clear();
+        self.seleccion.limpiar();
+        self.intentos_fallidos_desbloqueo = 0;
+        self.registrar_evento("Bóveda descifrada y verificada con éxito (AES-256-GCM + Argon2id).");
     }
 
     pub fn esta_desbloqueada(&self) -> bool {
@@ -91,6 +119,9 @@ impl GuiVaultState {
         self.filtro_tipo = "TODOS".to_string();
         self.filtro_categoria = "TODAS".to_string();
         self.termino_busqueda.clear();
+        self.seleccion.limpiar();
+        self.historial_generador.clear();
+        self.bitacora_eventos.clear();
     }
 
     pub fn guardar_a_disco(&mut self) -> Result<(), BvdaError> {
@@ -130,9 +161,17 @@ impl GuiVaultState {
         let boveda = self.boveda.as_mut().ok_or(BvdaError::AutenticacionFallida)?;
         let ahora = chrono::Utc::now().timestamp_millis();
 
-        if let Some(entrada) = boveda.entradas.iter_mut().find(|e| e.id == id) {
+        if let Some(pos) = boveda.entradas.iter().position(|e| e.id == id) {
+            let mut entrada = boveda.entradas.remove(pos);
             entrada.eliminada_en = ahora;
             entrada.modificada_en = ahora;
+            entrada.revision += 1;
+            boveda.papelera.push(entrada);
+            self.guardar_a_disco()
+        } else if let Some(entrada) = boveda.papelera.iter_mut().find(|e| e.id == id) {
+            entrada.eliminada_en = ahora;
+            entrada.modificada_en = ahora;
+            entrada.revision += 1;
             self.guardar_a_disco()
         } else {
             Err(BvdaError::RegistroNoEncontrado(format!("No existe entrada con ID '{id}'")))
@@ -143,9 +182,17 @@ impl GuiVaultState {
         let boveda = self.boveda.as_mut().ok_or(BvdaError::AutenticacionFallida)?;
         let ahora = chrono::Utc::now().timestamp_millis();
 
-        if let Some(entrada) = boveda.entradas.iter_mut().find(|e| e.id == id) {
+        if let Some(pos) = boveda.papelera.iter().position(|e| e.id == id) {
+            let mut entrada = boveda.papelera.remove(pos);
             entrada.eliminada_en = 0;
             entrada.modificada_en = ahora;
+            entrada.revision += 1;
+            boveda.entradas.push(entrada);
+            self.guardar_a_disco()
+        } else if let Some(entrada) = boveda.entradas.iter_mut().find(|e| e.id == id) {
+            entrada.eliminada_en = 0;
+            entrada.modificada_en = ahora;
+            entrada.revision += 1;
             self.guardar_a_disco()
         } else {
             Err(BvdaError::RegistroNoEncontrado(format!("No existe entrada con ID '{id}'")))
@@ -154,14 +201,31 @@ impl GuiVaultState {
 
     pub fn eliminar_definitivamente(&mut self, id: &str) -> Result<(), BvdaError> {
         let boveda = self.boveda.as_mut().ok_or(BvdaError::AutenticacionFallida)?;
-        let longitud_inicial = boveda.entradas.len();
+        let len_entradas = boveda.entradas.len();
+        let len_papelera = boveda.papelera.len();
         boveda.entradas.retain(|e| e.id != id);
+        boveda.papelera.retain(|e| e.id != id);
 
-        if boveda.entradas.len() < longitud_inicial {
+        if boveda.entradas.len() < len_entradas || boveda.papelera.len() < len_papelera {
             self.guardar_a_disco()
         } else {
             Err(BvdaError::RegistroNoEncontrado(format!("No existe entrada con ID '{id}'")))
         }
+    }
+
+    pub fn vaciar_papelera(&mut self) -> Result<usize, BvdaError> {
+        let boveda = self.boveda.as_mut().ok_or(BvdaError::AutenticacionFallida)?;
+        let inicial_entradas = boveda.entradas.len();
+        boveda.entradas.retain(|e| e.eliminada_en == 0);
+        let mut eliminadas = inicial_entradas.saturating_sub(boveda.entradas.len());
+        eliminadas += boveda.papelera.len();
+        boveda.papelera.clear();
+
+        if eliminadas > 0 {
+            self.guardar_a_disco()?;
+            self.registrar_evento(&format!("Papelera vaciada: {eliminadas} entradas destruidas."));
+        }
+        Ok(eliminadas)
     }
 
     pub fn actualizar_ajustes(
@@ -206,6 +270,11 @@ impl GuiVaultState {
             if !puertos.is_empty() {
                 c.puertos_servicios_locales = puertos;
             }
+            c.menu_lateral_mostrar_cabecera = datos.menu_lateral_mostrar_cabecera;
+            c.menu_lateral_mostrar_pie = datos.menu_lateral_mostrar_pie;
+            c.menu_lateral_mostrar_boton_bloquear = datos.menu_lateral_mostrar_boton_bloquear;
+            c.menu_lateral_agrupar_items = datos.menu_lateral_agrupar_items;
+            c.menu_lateral_sin_bordes = datos.menu_lateral_sin_bordes;
         } else {
             boveda.configuracion = Some(crate::models::vault_config::ConfiguracionBovedaExportable {
                 portapapeles_segundos: datos.portapapeles_segundos,
@@ -219,6 +288,11 @@ impl GuiVaultState {
                 fijar_anclados_arriba: datos.fijar_anclados_arriba,
                 prefijos_subdominios: prefijos,
                 puertos_servicios_locales: puertos,
+                menu_lateral_mostrar_cabecera: datos.menu_lateral_mostrar_cabecera,
+                menu_lateral_mostrar_pie: datos.menu_lateral_mostrar_pie,
+                menu_lateral_mostrar_boton_bloquear: datos.menu_lateral_mostrar_boton_bloquear,
+                menu_lateral_agrupar_items: datos.menu_lateral_agrupar_items,
+                menu_lateral_sin_bordes: datos.menu_lateral_sin_bordes,
                 ..Default::default()
             });
         }
@@ -283,6 +357,10 @@ impl GuiVaultState {
             entradas.retain(|e| e.favorito);
         }
 
+        for e in &mut entradas {
+            e.seleccionada_lote = self.seleccion.contiene(e.id.as_str());
+        }
+
         let agrupar = boveda
             .configuracion
             .as_ref()
@@ -290,6 +368,60 @@ impl GuiVaultState {
             .unwrap_or(true);
 
         aplicar_agrupamiento_servicios(&entradas, agrupar, anclados, &self.grupos_expandidos)
+    }
+
+    pub fn obtener_ids_filtrados_reales(&self) -> Vec<String> {
+        let boveda = match &self.boveda {
+            Some(b) => b,
+            None => return Vec::new(),
+        };
+        let anclados = boveda
+            .configuracion
+            .as_ref()
+            .map(|c| c.fijar_anclados_arriba)
+            .unwrap_or(true);
+        let mut entradas = filtrar_entradas(
+            boveda,
+            &self.filtro_tipo,
+            &self.filtro_categoria,
+            &self.filtro_perfil,
+            &self.filtro_etiqueta,
+            &self.termino_busqueda,
+            anclados,
+        );
+        if self.solo_favoritos {
+            entradas.retain(|e| e.favorito);
+        }
+        entradas.into_iter().map(|e| e.id.to_string()).collect()
+    }
+
+    pub fn obtener_ids_grupo(&self, clave_grupo: &str) -> Vec<String> {
+        let boveda = match &self.boveda {
+            Some(b) => b,
+            None => return Vec::new(),
+        };
+        let anclados = boveda
+            .configuracion
+            .as_ref()
+            .map(|c| c.fijar_anclados_arriba)
+            .unwrap_or(true);
+        let mut entradas = filtrar_entradas(
+            boveda,
+            &self.filtro_tipo,
+            &self.filtro_categoria,
+            &self.filtro_perfil,
+            &self.filtro_etiqueta,
+            &self.termino_busqueda,
+            anclados,
+        );
+        if self.solo_favoritos {
+            entradas.retain(|e| e.favorito);
+        }
+        entradas
+            .into_iter()
+            .filter(|e| !(anclados && e.anclado) && e.servicio.as_str().eq_ignore_ascii_case(clave_grupo))
+            .map(|e| e.id.to_string())
+            .collect()
     }
 
     pub fn obtener_resumen_categorias(&self) -> Vec<FilterItem> {

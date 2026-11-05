@@ -1,0 +1,186 @@
+import { Theme } from "../../theme.slint";
+import { SecretField } from "../secret_field.slint";
+import { AppIcon } from "../widgets/app_icon.slint";
+
+export component PasskeyDetailCard inherits Rectangle {
+    in property <string> rp-name: "";
+    in property <string> rp-id: "";
+    in property <string> usuario: "";
+    in property <string> usuario-entrada: "";
+    in property <string> fecha-registro: "";
+    in property <string> cred-id: "";
+    in property <string> user-handle: "";
+
+    in-out property <bool> datos-tecnicos-expandidos: false;
+
+    callback copiar-campo(string, string);
+
+    background: Theme.surface;
+    border-width: Theme.grosor-borde;
+    border-color: Theme.color-ind-passkey.transparentize(65%);
+    border-radius: Theme.curvatura-esquinas;
+    clip: true;
+
+    // Franja vertical izquierda acentuada (4.5px) fiel a TarjetaPasskeyDetalle de Android
+    Rectangle {
+        x: 0px;
+        y: 0px;
+        width: 4.5px;
+        height: parent.height;
+        background: Theme.color-ind-passkey;
+    }
+
+    VerticalLayout {
+        width: 100%;
+        padding-left: 14px;
+        padding-right: 12px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        spacing: 6px;
+
+        // Cabecera: Etiqueta "Llave de acceso" + Badge de fecha
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: space-between;
+
+            HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+
+                AppIcon {
+                    source: @image-url("../../assets/icons/fingerprint.svg");
+                    icon-size: 14px;
+                    icon-color: Theme.color-ind-passkey;
+                    vertical-alignment: center;
+                }
+
+                Text {
+                    text: "Llave de acceso (Passkey)";
+                    color: Theme.text-secondary;
+                    font-size: 11px;
+                    font-weight: 600;
+                    vertical-alignment: center;
+                }
+            }
+
+            if root.fecha-registro != "" : Rectangle {
+                background: Theme.color-ind-passkey.transparentize(86%);
+                border-radius: 6px;
+                height: 20px;
+
+                HorizontalLayout {
+                    padding-left: 7px;
+                    padding-right: 7px;
+                    alignment: center;
+
+                    Text {
+                        text: root.fecha-registro;
+                        color: Theme.color-ind-passkey;
+                        font-size: 10px;
+                        font-weight: 600;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+
+        // Nombre principal del Relying Party
+        Text {
+            text: root.rp-name != "" ? root.rp-name : root.rp-id;
+            color: Theme.text-primary;
+            font-size: 14px;
+            font-weight: 600;
+            overflow: elide;
+            horizontal-alignment: left;
+        }
+
+        // Dominio rpId si difiere de rpName
+        if root.rp-name != "" && root.rp-id != "" && root.rp-name != root.rp-id : Text {
+            text: "Dominio: " + root.rp-id;
+            color: Theme.text-secondary;
+            font-size: 11px;
+            font-family: "monospace";
+            overflow: elide;
+            horizontal-alignment: left;
+        }
+
+        // Cuenta si difiere del usuario principal de la entrada
+        if root.usuario != "" && root.usuario != root.usuario-entrada : Text {
+            text: "Cuenta: " + root.usuario;
+            color: Theme.text-secondary;
+            font-size: 11px;
+            overflow: elide;
+            horizontal-alignment: left;
+        }
+
+        // Algoritmo y botón desplegable de Datos técnicos
+        HorizontalLayout {
+            alignment: space-between;
+            spacing: 8px;
+
+            Text {
+                text: "Algoritmo: ES256 (P-256)";
+                color: Theme.text-muted;
+                font-size: 11px;
+                vertical-alignment: center;
+            }
+
+            if root.cred-id != "" || root.user-handle != "" : btn-tecnicos := TouchArea {
+                width: 118px;
+                height: 24px;
+                clicked => {
+                    root.datos-tecnicos-expandidos = !root.datos-tecnicos-expandidos;
+                }
+
+                Rectangle {
+                    background: btn-tecnicos.has-hover ? Theme.surface-hover : Colors.transparent;
+                    border-radius: Theme.radius-sm;
+
+                    HorizontalLayout {
+                        alignment: end;
+                        spacing: 4px;
+                        padding-left: 6px;
+                        padding-right: 6px;
+
+                        Text {
+                            text: "Datos técnicos";
+                            color: Theme.color-ind-passkey;
+                            font-size: 11px;
+                            font-weight: 600;
+                            vertical-alignment: center;
+                        }
+
+                        AppIcon {
+                            source: root.datos-tecnicos-expandidos ? @image-url("../../assets/icons/expand_less.svg") : @image-url("../../assets/icons/expand_more.svg");
+                            icon-size: 14px;
+                            icon-color: Theme.color-ind-passkey;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Acordeón de Datos Técnicos (Credential ID y User Handle)
+        if root.datos-tecnicos-expandidos : VerticalLayout {
+            padding-top: 6px;
+            spacing: 8px;
+
+            if root.cred-id != "" : SecretField {
+                etiqueta: "Credential ID";
+                valor: root.cred-id;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-passkey;
+                copiar => { root.copiar-campo(root.cred-id, "Credential ID"); }
+            }
+
+            if root.user-handle != "" : SecretField {
+                etiqueta: "User Handle";
+                valor: root.user-handle;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-passkey;
+                copiar => { root.copiar-campo(root.user-handle, "User Handle"); }
+            }
+        }
+    }
+}

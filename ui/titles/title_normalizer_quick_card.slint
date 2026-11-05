@@ -1,0 +1,133 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+
+export component TitleNormalizerQuickCard inherits Rectangle {
+    in property <string> formato-activo: "CAPITALIZADO";
+    in property <bool> respetar-personalizados: true;
+    in property <int> total-grupos: 0;
+
+    callback cambiar-formato(string);
+    callback alternar-respetar-personalizados();
+    callback aplicar-todos();
+
+    width: 100%;
+    background: Theme.background;
+    border-radius: Theme.radius-md;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    VerticalLayout {
+        padding: 12px;
+        spacing: 10px;
+
+        HorizontalLayout {
+            alignment: space-between;
+            spacing: 8px;
+
+            HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+
+                Text {
+                    text: "Formato de estandarización:";
+                    color: Theme.text-secondary;
+                    font-size: 11px;
+                    font-weight: 600;
+                    vertical-alignment: center;
+                }
+
+                for fmt in [
+                    { id: "CAPITALIZADO", label: "Capitalizado (Google)" },
+                    { id: "MAYUSCULAS", label: "MAYÚSCULAS (GOOGLE)" },
+                    { id: "MINUSCULAS", label: "minúsculas (google)" },
+                    { id: "DOMINIO", label: "Dominio (google.com)" },
+                ] : fmt-btn := TouchArea {
+                    width: 125px;
+                    height: 26px;
+                    mouse-cursor: pointer;
+                    clicked => { root.cambiar-formato(fmt.id); }
+
+                    Rectangle {
+                        background: root.formato-activo == fmt.id ? Theme.accent-primary.transparentize(82%) :
+                                    fmt-btn.has-hover ? Theme.surface-hover : Theme.surface;
+                        border-radius: Theme.radius-sm;
+                        border-width: 1px;
+                        border-color: root.formato-activo == fmt.id ? Theme.accent-primary : Theme.border;
+
+                        Text {
+                            text: fmt.label;
+                            color: root.formato-activo == fmt.id ? Theme.accent-primary : Theme.text-secondary;
+                            font-size: 10px;
+                            font-weight: root.formato-activo == fmt.id ? 700 : 500;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            if root.total-grupos > 0 : btn-apply-all := TouchArea {
+                width: 165px;
+                height: 28px;
+                mouse-cursor: pointer;
+                clicked => { root.aplicar-todos(); }
+
+                Rectangle {
+                    background: btn-apply-all.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                    border-radius: Theme.radius-sm;
+
+                    Text {
+                        text: "Normalizar todo (" + root.total-grupos + " grupos)";
+                        color: #FFFFFF;
+                        font-size: 11px;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+
+        // Interruptor Respetar títulos personalizados
+        chk-resp := TouchArea {
+            height: 22px;
+            mouse-cursor: pointer;
+            clicked => { root.alternar-respetar-personalizados(); }
+
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: start;
+
+                Rectangle {
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 4px;
+                    background: root.respetar-personalizados ? Theme.accent-primary : Theme.surface;
+                    border-width: 1px;
+                    border-color: root.respetar-personalizados ? Theme.accent-primary : Theme.border;
+
+                    if root.respetar-personalizados : Text {
+                        text: "✓";
+                        color: #FFFFFF;
+                        font-size: 10px;
+                        font-weight: 800;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+
+                Text {
+                    text: "Respetar títulos personalizados manualmente por el usuario";
+                    color: Theme.text-secondary;
+                    font-size: 11px;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}

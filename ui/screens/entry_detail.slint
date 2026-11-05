@@ -2,66 +2,111 @@ import { Theme } from "../theme.slint";
 import { EntryBadge } from "../components/badge.slint";
 import { SecretField } from "../components/secret_field.slint";
 import { AppIcon } from "../components/widgets/app_icon.slint";
+import { PasskeyDetailCard } from "../components/detail/passkey_detail_card.slint";
+import { PasswordHistoryItem } from "../components/detail/password_history_row.slint";
+import { SecondaryPasskeyItem } from "../components/detail/secondary_passkey_row.slint";
+import { SecondaryTotpItem } from "../components/detail/secondary_totp_row.slint";
+import { AlternativeCredentialsCard } from "../components/detail/alternative_credentials_card.slint";
+import { DetailCustomFieldItem, DetailLinkItem, DetailAttachmentItem, AttachmentDetailRow } from "../components/detail/attachment_detail_row.slint";
+
+export { PasswordHistoryItem, SecondaryPasskeyItem, SecondaryTotpItem, DetailCustomFieldItem, DetailLinkItem, DetailAttachmentItem }
 
 export struct EntryDetailData {
     id: string,
     titulo: string,
     tipo: string,
     favorito: bool,
+    anclado: bool,
     papelera: bool,
     creada_en: string,
     modificada_en: string,
     categoria_nombre: string,
     perfil_nombre: string,
-    
+    caducidad_texto: string,
+    caducidad_estado: string,
+
     // Credenciales estándar
     usuario: string,
     password: string,
     url: string,
     totp_codigo: string,
-    
+
+    // Enlaces múltiples (URLs y paquetes de apps)
+    enlaces: [DetailLinkItem],
+
+    // Llave de acceso principal (Passkey)
+    tiene_passkey: bool,
+    passkey_rp_id: string,
+    passkey_rp_name: string,
+    passkey_usuario: string,
+    passkey_fecha: string,
+    passkey_cred_id: string,
+    passkey_user_handle: string,
+
+    // Credenciales alternativas
+    historial_passwords: [PasswordHistoryItem],
+    passkeys_secundarias: [SecondaryPasskeyItem],
+    totps_secundarios: [SecondaryTotpItem],
+
+    // Campos personalizados, etiquetas y adjuntos
+    campos_personalizados: [DetailCustomFieldItem],
+    etiquetas: [string],
+    adjuntos: [DetailAttachmentItem],
+
     // Tarjeta
     tarjeta_numero: string,
     tarjeta_titular: string,
     tarjeta_vencimiento: string,
     tarjeta_cvv: string,
     tarjeta_pin: string,
-    
+
     // Cuenta bancaria
     banco_iban: string,
     banco_cuenta: string,
     banco_entidad: string,
+    banco_titular: string,
     banco_bic: string,
-    
+
     // Servidor SSH
     servidor_host: string,
     servidor_puerto: string,
     servidor_usuario: string,
     servidor_password: string,
-    
+    servidor_clave_publica: string,
+
     // Wi-Fi
     wifi_ssid: string,
     wifi_password: string,
     wifi_seguridad: string,
-    
+
     // Cripto Wallet
     wallet_direccion: string,
     wallet_red: string,
     wallet_semilla: string,
-    
+    wallet_clave_privada: string,
+
     // Contacto
     contacto_email: string,
     contacto_telefono: string,
+    contacto_telefono_secundario: string,
     contacto_empresa: string,
-    
+    contacto_direccion: string,
+    contacto_cp: string,
+    contacto_ciudad: string,
+    contacto_provincia: string,
+    contacto_pais: string,
+
     // Identidad
     identidad_nombre_completo: string,
     identidad_numero_doc: string,
     identidad_tipo_doc: string,
-    
+    identidad_expedicion: string,
+    identidad_caducidad: string,
+    identidad_pais: string,
+
     // Notas generales
     notas: string,
-    
+
     // Flags
     tiene_datos: bool,
 }
@@ -74,6 +119,16 @@ export component EntryDetail inherits Rectangle {
     callback restaurar();
     callback eliminar-definitivo();
     callback cerrar();
+    callback alternar-favorito();
+    callback alternar-anclado();
+    callback filtrar-etiqueta(string);
+    callback restaurar-password-historial(string);
+    callback eliminar-password-historial(string);
+    callback promover-passkey-secundaria(string);
+    callback eliminar-passkey-secundaria(string);
+    callback promover-totp-secundario(string);
+    callback eliminar-totp-secundario(string);
+    callback guardar-adjunto(string);
 
     background: Theme.background;
     clip: true;
@@ -116,7 +171,7 @@ export component EntryDetail inherits Rectangle {
         contenido := VerticalLayout {
             width: 100%;
             padding: 20px;
-            spacing: 16px;
+            spacing: 14px;
             alignment: start;
 
             // Cabecera de la Entrada
@@ -124,7 +179,7 @@ export component EntryDetail inherits Rectangle {
                 spacing: 12px;
 
                 VerticalLayout {
-                    spacing: 4px;
+                    spacing: 6px;
                     horizontal-stretch: 1;
                     min-width: 0px;
 
@@ -143,18 +198,10 @@ export component EntryDetail inherits Rectangle {
                             horizontal-alignment: left;
                             vertical-alignment: center;
                         }
-
-                        if entrada.favorito : AppIcon {
-                            horizontal-stretch: 0;
-                            source: @image-url("../assets/icons/star.svg");
-                            icon-size: 18px;
-                            icon-color: Theme.accent-amber;
-                            vertical-alignment: center;
-                        }
                     }
 
                     HorizontalLayout {
-                        spacing: 8px;
+                        spacing: 6px;
                         alignment: start;
 
                         EntryBadge {
@@ -213,13 +260,88 @@ export component EntryDetail inherits Rectangle {
                                 }
                             }
                         }
+
+                        if entrada.caducidad_texto != "" : Rectangle {
+                            background: entrada.caducidad_estado == "EXPIRADA" ? Theme.danger.transparentize(84%) :
+                                        entrada.caducidad_estado == "POR_EXPIRAR" ? Theme.accent-amber.transparentize(84%) :
+                                        Theme.surface-hover;
+                            border-radius: Theme.radius-sm;
+                            height: 22px;
+                            HorizontalLayout {
+                                padding-left: 6px;
+                                padding-right: 6px;
+                                spacing: 4px;
+                                alignment: center;
+                                AppIcon {
+                                    source: @image-url("../assets/icons/timer.svg");
+                                    icon-size: 12px;
+                                    icon-color: entrada.caducidad_estado == "EXPIRADA" ? Theme.danger :
+                                                entrada.caducidad_estado == "POR_EXPIRAR" ? Theme.accent-amber :
+                                                Theme.text-secondary;
+                                    vertical-alignment: center;
+                                }
+                                Text {
+                                    text: entrada.caducidad_texto;
+                                    color: entrada.caducidad_estado == "EXPIRADA" ? Theme.danger :
+                                           entrada.caducidad_estado == "POR_EXPIRAR" ? Theme.accent-amber :
+                                           Theme.text-secondary;
+                                    font-size: 10px;
+                                    font-weight: 600;
+                                    overflow: elide;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
                     }
                 }
 
+                // Acciones rápidas de cabecera (Anclar, Favorito, Editar, Papelera/Restaurar, Cerrar)
                 HorizontalLayout {
                     horizontal-stretch: 0;
-                    spacing: 8px;
+                    spacing: 6px;
                     alignment: end;
+
+                    if !entrada.papelera : btn-pin := TouchArea {
+                        width: 28px;
+                        height: 28px;
+                        clicked => { root.alternar-anclado(); }
+
+                        Rectangle {
+                            background: entrada.anclado ? Theme.accent-blue.transparentize(82%) : (btn-pin.has-hover ? Theme.surface-hover : Theme.surface);
+                            border-width: 1px;
+                            border-color: entrada.anclado ? Theme.accent-blue : Theme.border;
+                            border-radius: Theme.radius-sm;
+
+                            AppIcon {
+                                source: @image-url("../assets/icons/pin.svg");
+                                icon-size: 13px;
+                                icon-color: entrada.anclado ? Theme.accent-blue : Theme.text-secondary;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    if !entrada.papelera : btn-fav := TouchArea {
+                        width: 28px;
+                        height: 28px;
+                        clicked => { root.alternar-favorito(); }
+
+                        Rectangle {
+                            background: entrada.favorito ? Theme.accent-amber.transparentize(82%) : (btn-fav.has-hover ? Theme.surface-hover : Theme.surface);
+                            border-width: 1px;
+                            border-color: entrada.favorito ? Theme.accent-amber : Theme.border;
+                            border-radius: Theme.radius-sm;
+
+                            AppIcon {
+                                source: entrada.favorito ? @image-url("../assets/icons/star.svg") : @image-url("../assets/icons/star_border.svg");
+                                icon-size: 14px;
+                                icon-color: entrada.favorito ? Theme.accent-amber : Theme.text-secondary;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
 
                     if !entrada.papelera : TouchArea {
                         width: 72px;
@@ -242,7 +364,7 @@ export component EntryDetail inherits Rectangle {
                     }
 
                     if !entrada.papelera : TouchArea {
-                        width: 32px;
+                        width: 30px;
                         height: 28px;
                         clicked => { root.mover-papelera(); }
 
@@ -329,9 +451,8 @@ export component EntryDetail inherits Rectangle {
                 background: Theme.border;
             }
 
-            // Campos según el tipo nativo
-            // 1. LOGIN / CREDENCIALES
-            if entrada.usuario != "" : SecretField {
+            // 1. LOGIN / CREDENCIALES ESTÁNDAR (se omite teléfono duplicado en CONTACTO)
+            if entrada.usuario != "" && entrada.tipo != "CONTACTO" : SecretField {
                 etiqueta: "Usuario / Identificador";
                 valor: entrada.usuario;
                 es-secreto: false;
@@ -347,20 +468,21 @@ export component EntryDetail inherits Rectangle {
                 copiar => { root.copiar-campo(entrada.password, "Contraseña"); }
             }
 
-            if entrada.url != "" : SecretField {
-                etiqueta: "URL / Sitio Web";
-                valor: entrada.url;
-                es-secreto: false;
-                color-indicador: Theme.color-ind-url;
-                copiar => { root.copiar-campo(entrada.url, "URL"); }
-            }
-
             if entrada.totp_codigo != "" : SecretField {
                 etiqueta: "Código de Verificación 2FA (TOTP)";
                 valor: entrada.totp_codigo;
                 es-secreto: false;
                 color-indicador: Theme.color-ind-totp;
                 copiar => { root.copiar-campo(entrada.totp_codigo, "Código TOTP"); }
+            }
+
+            // Enlaces múltiples (Sitios web y Aplicaciones vinculadas)
+            for enlace in entrada.enlaces : SecretField {
+                etiqueta: enlace.etiqueta;
+                valor: enlace.valor;
+                es-secreto: false;
+                color-indicador: enlace.es_app ? Theme.color-ind-app : Theme.color-ind-url;
+                copiar => { root.copiar-campo(enlace.valor, enlace.etiqueta); }
             }
 
             // 2. TARJETA BANCARIA
@@ -405,14 +527,6 @@ export component EntryDetail inherits Rectangle {
             }
 
             // 3. CUENTA BANCARIA
-            if entrada.banco_iban != "" : SecretField {
-                etiqueta: "IBAN";
-                valor: entrada.banco_iban;
-                es-secreto: false;
-                color-indicador: Theme.color-ind-url;
-                copiar => { root.copiar-campo(entrada.banco_iban, "IBAN"); }
-            }
-
             if entrada.banco_entidad != "" : SecretField {
                 etiqueta: "Entidad Bancaria";
                 valor: entrada.banco_entidad;
@@ -421,11 +535,19 @@ export component EntryDetail inherits Rectangle {
                 copiar => { root.copiar-campo(entrada.banco_entidad, "Banco"); }
             }
 
-            if entrada.banco_cuenta != "" : SecretField {
-                etiqueta: "Número de Cuenta";
-                valor: entrada.banco_cuenta;
+            if entrada.banco_titular != "" : SecretField {
+                etiqueta: "Titular de la Cuenta";
+                valor: entrada.banco_titular;
                 es-secreto: false;
-                color-indicador: Theme.color-ind-url;
+                color-indicador: Theme.color-ind-usuario;
+                copiar => { root.copiar-campo(entrada.banco_titular, "Titular"); }
+            }
+
+            if entrada.banco_cuenta != "" : SecretField {
+                etiqueta: "Número de Cuenta / IBAN";
+                valor: entrada.banco_cuenta;
+                es-secreto: true;
+                color-indicador: Theme.color-ind-password;
                 copiar => { root.copiar-campo(entrada.banco_cuenta, "Número de Cuenta"); }
             }
 
@@ -462,6 +584,15 @@ export component EntryDetail inherits Rectangle {
                 copiar => { root.copiar-campo(entrada.servidor_password, "Clave Servidor"); }
             }
 
+            if entrada.servidor_clave_publica != "" : SecretField {
+                etiqueta: "Clave Pública SSH";
+                valor: entrada.servidor_clave_publica;
+                es-secreto: false;
+                multi-linea: true;
+                color-indicador: Theme.color-ind-passkey;
+                copiar => { root.copiar-campo(entrada.servidor_clave_publica, "Clave Pública SSH"); }
+            }
+
             // 5. WI-FI
             if entrada.wifi_ssid != "" : SecretField {
                 etiqueta: "Nombre de Red (SSID)";
@@ -488,6 +619,14 @@ export component EntryDetail inherits Rectangle {
             }
 
             // 6. WALLET CRIPTO
+            if entrada.wallet_red != "" : SecretField {
+                etiqueta: "Red / Blockchain";
+                valor: entrada.wallet_red;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-url;
+                copiar => { root.copiar-campo(entrada.wallet_red, "Red Wallet"); }
+            }
+
             if entrada.wallet_direccion != "" : SecretField {
                 etiqueta: "Dirección Pública";
                 valor: entrada.wallet_direccion;
@@ -496,25 +635,25 @@ export component EntryDetail inherits Rectangle {
                 copiar => { root.copiar-campo(entrada.wallet_direccion, "Dirección Wallet"); }
             }
 
-            if entrada.wallet_red != "" : SecretField {
-                etiqueta: "Red / Blockchain";
-                valor: entrada.wallet_red;
-                es-secreto: false;
-                color-indicador: Theme.color-ind-passkey;
-                copiar => { root.copiar-campo(entrada.wallet_red, "Red Wallet"); }
-            }
-
             if entrada.wallet_semilla != "" : SecretField {
-                etiqueta: "Frase Semilla / Llave Privada";
+                etiqueta: "Frase Semilla (12 / 24 palabras)";
                 valor: entrada.wallet_semilla;
                 es-secreto: true;
                 color-indicador: Theme.color-ind-passkey;
                 copiar => { root.copiar-campo(entrada.wallet_semilla, "Semilla Wallet"); }
             }
 
+            if entrada.wallet_clave_privada != "" : SecretField {
+                etiqueta: "Clave Privada (Private Key)";
+                valor: entrada.wallet_clave_privada;
+                es-secreto: true;
+                color-indicador: Theme.color-ind-password;
+                copiar => { root.copiar-campo(entrada.wallet_clave_privada, "Clave Privada Wallet"); }
+            }
+
             // 7. IDENTIDAD
             if entrada.identidad_nombre_completo != "" : SecretField {
-                etiqueta: "Nombre Completo";
+                etiqueta: "Nombre Completo del Titular";
                 valor: entrada.identidad_nombre_completo;
                 es-secreto: false;
                 color-indicador: Theme.color-ind-usuario;
@@ -524,29 +663,114 @@ export component EntryDetail inherits Rectangle {
             if entrada.identidad_numero_doc != "" : SecretField {
                 etiqueta: "Número de Documento" + (entrada.identidad_tipo_doc != "" ? " (" + entrada.identidad_tipo_doc + ")" : "");
                 valor: entrada.identidad_numero_doc;
-                es-secreto: false;
-                color-indicador: Theme.color-ind-usuario;
+                es-secreto: true;
+                color-indicador: Theme.color-ind-password;
                 copiar => { root.copiar-campo(entrada.identidad_numero_doc, "Documento"); }
             }
 
+            if entrada.identidad_expedicion != "" : SecretField {
+                etiqueta: "Fecha de Expedición";
+                valor: entrada.identidad_expedicion;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-totp;
+                copiar => { root.copiar-campo(entrada.identidad_expedicion, "Fecha de Expedición"); }
+            }
+
+            if entrada.identidad_caducidad != "" : SecretField {
+                etiqueta: "Fecha de Caducidad";
+                valor: entrada.identidad_caducidad;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-totp;
+                copiar => { root.copiar-campo(entrada.identidad_caducidad, "Fecha de Caducidad"); }
+            }
+
+            if entrada.identidad_pais != "" : SecretField {
+                etiqueta: "País Emisor";
+                valor: entrada.identidad_pais;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-url;
+                copiar => { root.copiar-campo(entrada.identidad_pais, "País Emisor"); }
+            }
+
             // 8. CONTACTO
+            if entrada.contacto_telefono != "" : SecretField {
+                etiqueta: "Teléfono Principal";
+                valor: entrada.contacto_telefono;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-usuario;
+                copiar => { root.copiar-campo(entrada.contacto_telefono, "Teléfono Principal"); }
+            }
+
+            if entrada.contacto_telefono_secundario != "" : SecretField {
+                etiqueta: "Teléfono Secundario";
+                valor: entrada.contacto_telefono_secundario;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-usuario;
+                copiar => { root.copiar-campo(entrada.contacto_telefono_secundario, "Teléfono Secundario"); }
+            }
+
             if entrada.contacto_email != "" : SecretField {
                 etiqueta: "Correo Electrónico";
                 valor: entrada.contacto_email;
                 es-secreto: false;
-                color-indicador: Theme.color-ind-usuario;
+                color-indicador: Theme.color-ind-url;
                 copiar => { root.copiar-campo(entrada.contacto_email, "Email"); }
             }
 
-            if entrada.contacto_telefono != "" : SecretField {
-                etiqueta: "Teléfono";
-                valor: entrada.contacto_telefono;
+            if entrada.contacto_empresa != "" : SecretField {
+                etiqueta: "Empresa / Organización";
+                valor: entrada.contacto_empresa;
                 es-secreto: false;
                 color-indicador: Theme.color-ind-url;
-                copiar => { root.copiar-campo(entrada.contacto_telefono, "Teléfono"); }
+                copiar => { root.copiar-campo(entrada.contacto_empresa, "Empresa"); }
             }
 
-            // NOTAS GENERALES
+            if entrada.contacto_direccion != "" : SecretField {
+                etiqueta: "Dirección Física";
+                valor: entrada.contacto_direccion;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-notas;
+                copiar => { root.copiar-campo(entrada.contacto_direccion, "Dirección"); }
+            }
+
+            if entrada.contacto_ciudad != "" || entrada.contacto_cp != "" : SecretField {
+                etiqueta: "Localidad y Código Postal";
+                valor: entrada.contacto_ciudad + (entrada.contacto_cp != "" ? " (" + entrada.contacto_cp + ")" : "");
+                es-secreto: false;
+                color-indicador: Theme.color-ind-notas;
+                copiar => { root.copiar-campo(entrada.contacto_ciudad + " " + entrada.contacto_cp, "Localidad"); }
+            }
+
+            if entrada.contacto_provincia != "" || entrada.contacto_pais != "" : SecretField {
+                etiqueta: "Provincia / País";
+                valor: entrada.contacto_provincia + (entrada.contacto_provincia != "" && entrada.contacto_pais != "" ? ", " : "") + entrada.contacto_pais;
+                es-secreto: false;
+                color-indicador: Theme.color-ind-notas;
+                copiar => { root.copiar-campo(entrada.contacto_provincia + " " + entrada.contacto_pais, "País"); }
+            }
+
+            // 9. CAMPOS PERSONALIZADOS / ADICIONALES
+            if entrada.campos_personalizados.length > 0 : VerticalLayout {
+                spacing: 8px;
+
+                Text {
+                    text: "CAMPOS ADICIONALES (" + entrada.campos_personalizados.length + ")";
+                    color: Theme.text-muted;
+                    font-size: 10px;
+                    font-weight: 700;
+                    horizontal-alignment: left;
+                }
+
+                for cp in entrada.campos_personalizados : SecretField {
+                    etiqueta: cp.etiqueta;
+                    valor: cp.valor;
+                    es-secreto: cp.es_sensible;
+                    color-indicador: cp.es_sensible ? Theme.color-ind-password : Theme.color-ind-notas;
+                    copiar => { root.copiar-campo(cp.valor, cp.etiqueta); }
+                }
+            }
+
+            // 10. NOTAS GENERALES
             if entrada.notas != "" : SecretField {
                 etiqueta: "Notas Estructuradas";
                 valor: entrada.notas;
@@ -554,6 +778,93 @@ export component EntryDetail inherits Rectangle {
                 multi-linea: true;
                 color-indicador: Theme.color-ind-notas;
                 copiar => { root.copiar-campo(entrada.notas, "Notas"); }
+            }
+
+            // 11. ETIQUETAS (Pulsables para filtrar)
+            if entrada.etiquetas.length > 0 : VerticalLayout {
+                spacing: 6px;
+
+                Text {
+                    text: "ETIQUETAS";
+                    color: Theme.text-muted;
+                    font-size: 10px;
+                    font-weight: 700;
+                    horizontal-alignment: left;
+                }
+
+                HorizontalLayout {
+                    spacing: 6px;
+                    alignment: start;
+
+                    for tag in entrada.etiquetas : chip-tag := TouchArea {
+                        height: 24px;
+                        clicked => { root.filtrar-etiqueta(tag); }
+
+                        Rectangle {
+                            background: chip-tag.has-hover ? Theme.accent-primary.transparentize(80%) : Theme.surface;
+                            border-width: 1px;
+                            border-color: chip-tag.has-hover ? Theme.accent-primary : Theme.border;
+                            border-radius: 12px;
+
+                            HorizontalLayout {
+                                padding-left: 10px;
+                                padding-right: 10px;
+                                alignment: center;
+                                Text {
+                                    text: "#" + tag;
+                                    color: chip-tag.has-hover ? Theme.accent-primary : Theme.text-secondary;
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 12. ARCHIVOS ADJUNTOS CIFRADOS
+            if entrada.adjuntos.length > 0 : VerticalLayout {
+                spacing: 8px;
+
+                Text {
+                    text: "ARCHIVOS ADJUNTOS (" + entrada.adjuntos.length + ")";
+                    color: Theme.text-muted;
+                    font-size: 10px;
+                    font-weight: 700;
+                    horizontal-alignment: left;
+                }
+
+                for adj in entrada.adjuntos : AttachmentDetailRow {
+                    adjunto: adj;
+                    guardar-adjunto(aid) => { root.guardar-adjunto(aid); }
+                }
+            }
+
+            // 13. LLAVE DE ACCESO PRINCIPAL (PASSKEY)
+            if entrada.tiene_passkey : PasskeyDetailCard {
+                rp-name: entrada.passkey_rp_name;
+                rp-id: entrada.passkey_rp_id;
+                usuario: entrada.passkey_usuario;
+                usuario-entrada: entrada.usuario;
+                fecha-registro: entrada.passkey_fecha;
+                cred-id: entrada.passkey_cred_id;
+                user-handle: entrada.passkey_user_handle;
+                copiar-campo(v, n) => { root.copiar-campo(v, n); }
+            }
+
+            // 14. CREDENCIALES ALTERNATIVAS (Contraseñas anteriores, Passkeys y 2FA secundarios)
+            if entrada.historial_passwords.length > 0 || entrada.passkeys_secundarias.length > 0 || entrada.totps_secundarios.length > 0 : AlternativeCredentialsCard {
+                historial-passwords: entrada.historial_passwords;
+                passkeys-secundarias: entrada.passkeys_secundarias;
+                totps-secundarios: entrada.totps_secundarios;
+                copiar-campo(v, n) => { root.copiar-campo(v, n); }
+                restaurar-password(pw) => { root.restaurar-password-historial(pw); }
+                eliminar-password(pw) => { root.eliminar-password-historial(pw); }
+                promover-passkey(cid) => { root.promover-passkey-secundaria(cid); }
+                eliminar-passkey(cid) => { root.eliminar-passkey-secundaria(cid); }
+                promover-totp(tid) => { root.promover-totp-secundario(tid); }
+                eliminar-totp(tid) => { root.eliminar-totp-secundario(tid); }
             }
 
             // Metadatos

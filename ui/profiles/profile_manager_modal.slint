@@ -1,0 +1,380 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
+import { Theme } from "../theme.slint";
+import { AppIcon } from "../components/widgets/app_icon.slint";
+import { ProfileRowItem, ProfileManagerItem } from "profile_row_item.slint";
+
+export { ProfileManagerItem }
+
+export component ProfileManagerModal inherits Rectangle {
+    in property <[ProfileManagerItem]> perfiles: [];
+
+    property <string> id-editando: "";
+    property <string> nombre-input: "";
+    property <string> correo-input: "";
+    property <string> correos-sec-input: "";
+    property <string> tipo-doc-input: "CI";
+    property <string> doc-input: "";
+    property <string> pref-input: "correo";
+
+    callback guardar-perfil(string, string, string, string, string, string, string);
+    callback eliminar-perfil(string);
+    callback cerrar();
+
+    width: 100%;
+    height: 100%;
+    background: #000000B0;
+
+    TouchArea {
+        width: 100%;
+        height: 100%;
+    }
+
+    Rectangle {
+        width: Math.min(740px, root.width - 48px);
+        height: Math.min(620px, root.height - 48px);
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        background: Theme.surface;
+        border-radius: Theme.radius-lg;
+        border-width: 1px;
+        border-color: Theme.border;
+        clip: true;
+
+        VerticalLayout {
+            padding: 20px;
+            spacing: 12px;
+
+            // Encabezado
+            HorizontalLayout {
+                alignment: space-between;
+                Text {
+                    text: "Gestión de Perfiles e Identidades";
+                    color: Theme.text-primary;
+                    font-size: 16px;
+                    font-weight: 800;
+                    vertical-alignment: center;
+                }
+
+                btn-close := TouchArea {
+                    width: 32px;
+                    height: 32px;
+                    mouse-cursor: pointer;
+                    clicked => { root.cerrar(); }
+
+                    Rectangle {
+                        background: btn-close.has-hover ? Theme.surface-hover : Theme.background;
+                        border-radius: Theme.radius-sm;
+                        border-width: 1px;
+                        border-color: Theme.border;
+
+                        AppIcon {
+                            source: @image-url("../assets/icons/close.svg");
+                            icon-size: 14px;
+                            icon-color: Theme.text-primary;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            // Banner explicativo canónico (Paridad 1:1 con Android)
+            Rectangle {
+                background: Theme.surface-hover;
+                border-radius: Theme.radius-sm;
+                border-width: 1px;
+                border-color: Theme.border;
+
+                HorizontalLayout {
+                    padding-left: 12px;
+                    padding-right: 12px;
+                    padding-top: 8px;
+                    padding-bottom: 8px;
+
+                    Text {
+                        text: "Vinculación inteligente activa. Las cuentas que utilicen el correo principal o alias de cada perfil se agrupan automáticamente sin necesidad de editarlas a mano.";
+                        color: Theme.text-secondary;
+                        font-size: 11px;
+                        wrap: word-wrap;
+                    }
+                }
+            }
+
+            // Formulario de Creación / Edición
+            Rectangle {
+                background: Theme.background;
+                border-radius: Theme.radius-md;
+                border-width: 1px;
+                border-color: Theme.border;
+
+                VerticalLayout {
+                    padding: 12px;
+                    spacing: 8px;
+
+                    // Fila 1: Nombre y Correo Principal
+                    HorizontalLayout {
+                        spacing: 8px;
+
+                        // Nombre
+                        Rectangle {
+                            horizontal-stretch: 1;
+                            height: 32px;
+                            background: Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            border-width: 1px;
+                            border-color: Theme.border;
+                            HorizontalLayout {
+                                padding-left: 8px;
+                                padding-right: 8px;
+                                TextInput {
+                                    width: 100%;
+                                    height: 100%;
+                                    text <=> root.nombre-input;
+                                    color: Theme.text-primary;
+                                    font-size: 11px;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        // Correo Principal
+                        Rectangle {
+                            horizontal-stretch: 1;
+                            height: 32px;
+                            background: Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            border-width: 1px;
+                            border-color: Theme.border;
+                            HorizontalLayout {
+                                padding-left: 8px;
+                                padding-right: 8px;
+                                TextInput {
+                                    width: 100%;
+                                    height: 100%;
+                                    text <=> root.correo-input;
+                                    color: Theme.text-primary;
+                                    font-size: 11px;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+
+                    // Fila 2: Correos Secundarios / Alias
+                    HorizontalLayout {
+                        spacing: 8px;
+
+                        Rectangle {
+                            horizontal-stretch: 1;
+                            height: 32px;
+                            background: Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            border-width: 1px;
+                            border-color: Theme.border;
+                            HorizontalLayout {
+                                padding-left: 8px;
+                                padding-right: 8px;
+                                TextInput {
+                                    width: 100%;
+                                    height: 100%;
+                                    text <=> root.correos-sec-input;
+                                    color: Theme.text-primary;
+                                    font-size: 11px;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+
+                    // Fila 3: Tipo Documento, Número de Documento, Preferencia y Botón Guardar
+                    HorizontalLayout {
+                        spacing: 8px;
+
+                        // Tipo Documento
+                        Rectangle {
+                            width: 70px;
+                            height: 32px;
+                            background: Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            border-width: 1px;
+                            border-color: Theme.border;
+                            HorizontalLayout {
+                                padding-left: 6px;
+                                padding-right: 6px;
+                                TextInput {
+                                    width: 100%;
+                                    height: 100%;
+                                    text <=> root.tipo-doc-input;
+                                    color: Theme.text-primary;
+                                    font-size: 11px;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        // Número Documento
+                        Rectangle {
+                            horizontal-stretch: 1;
+                            height: 32px;
+                            background: Theme.surface;
+                            border-radius: Theme.radius-sm;
+                            border-width: 1px;
+                            border-color: Theme.border;
+                            HorizontalLayout {
+                                padding-left: 8px;
+                                padding-right: 8px;
+                                TextInput {
+                                    width: 100%;
+                                    height: 100%;
+                                    text <=> root.doc-input;
+                                    color: Theme.text-primary;
+                                    font-size: 11px;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        // Preferencia Identificador (Correo / Documento)
+                        btn-pref := TouchArea {
+                            width: 125px;
+                            height: 32px;
+                            mouse-cursor: pointer;
+                            clicked => {
+                                root.pref-input = (root.pref-input == "documento" ? "correo" : "documento");
+                            }
+
+                            Rectangle {
+                                background: btn-pref.has-hover ? Theme.surface-hover : Theme.surface;
+                                border-radius: Theme.radius-sm;
+                                border-width: 1px;
+                                border-color: Theme.border;
+
+                                Text {
+                                    text: root.pref-input == "documento" ? "ID: Documento" : "ID: Correo";
+                                    color: Theme.text-primary;
+                                    font-size: 10px;
+                                    font-weight: 600;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        // Botón Cancelar (si editando)
+                        if root.id-editando != "" : btn-cancel := TouchArea {
+                            width: 70px;
+                            height: 32px;
+                            mouse-cursor: pointer;
+                            clicked => {
+                                root.id-editando = "";
+                                root.nombre-input = "";
+                                root.correo-input = "";
+                                root.correos-sec-input = "";
+                                root.tipo-doc-input = "CI";
+                                root.doc-input = "";
+                                root.pref-input = "correo";
+                            }
+
+                            Rectangle {
+                                background: btn-cancel.has-hover ? Theme.surface-hover : Theme.surface;
+                                border-radius: Theme.radius-sm;
+                                border-width: 1px;
+                                border-color: Theme.border;
+
+                                Text {
+                                    text: "Cancelar";
+                                    color: Theme.text-muted;
+                                    font-size: 10px;
+                                    font-weight: 600;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        // Botón Guardar / Crear
+                        btn-save := TouchArea {
+                            width: 110px;
+                            height: 32px;
+                            mouse-cursor: pointer;
+                            clicked => {
+                                if root.nombre-input != "" {
+                                    root.guardar-perfil(
+                                        root.id-editando,
+                                        root.nombre-input,
+                                        root.correo-input,
+                                        root.correos-sec-input,
+                                        root.tipo-doc-input,
+                                        root.doc-input,
+                                        root.pref-input
+                                    );
+                                    root.id-editando = "";
+                                    root.nombre-input = "";
+                                    root.correo-input = "";
+                                    root.correos-sec-input = "";
+                                    root.tipo-doc-input = "CI";
+                                    root.doc-input = "";
+                                    root.pref-input = "correo";
+                                }
+                            }
+
+                            Rectangle {
+                                background: btn-save.has-hover ? Theme.accent-hover : Theme.accent-primary;
+                                border-radius: Theme.radius-sm;
+
+                                Text {
+                                    text: root.id-editando == "" ? "+ Crear Perfil" : "✓ Actualizar";
+                                    color: #FFFFFF;
+                                    font-size: 11px;
+                                    font-weight: 700;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+
+                    Text {
+                        text: "Nombre · Correo Principal · Alias (separados por coma) · Tipo / Nº Documento · Identificador Predeterminado";
+                        color: Theme.text-muted;
+                        font-size: 10px;
+                    }
+                }
+            }
+
+            // Lista de Perfiles Existentes
+            Flickable {
+                vertical-stretch: 1;
+                content-width: self.width;
+                content-height: list-perf.min-height;
+
+                list-perf := VerticalLayout {
+                    width: 100%;
+                    spacing: 8px;
+                    alignment: start;
+
+                    for p in root.perfiles : ProfileRowItem {
+                        perfil: p;
+                        editar-perfil(item) => {
+                            root.id-editando = item.id;
+                            root.nombre-input = item.nombre;
+                            root.correo-input = item.correo;
+                            root.correos-sec-input = item.correos_secundarios;
+                            root.tipo-doc-input = item.tipo_documento != "" ? item.tipo_documento : "CI";
+                            root.doc-input = item.documento;
+                            root.pref-input = item.preferencia_identificador != "" ? item.preferencia_identificador : "correo";
+                        }
+                        eliminar-perfil(id) => {
+                            root.eliminar-perfil(id);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

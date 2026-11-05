@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2026 Jose Luis Navas
+ * Licensed under the GNU General Public License v3.0 (GPLv3).
+ * See LICENSE file in the project root for full license information.
+ */
+
 import { Theme } from "../../theme.slint";
 
 export component TotpField inherits VerticalLayout {
@@ -11,7 +17,7 @@ export component TotpField inherits VerticalLayout {
     HorizontalLayout {
         alignment: space-between;
         Text { text: "Verificación en Dos Pasos (TOTP RFC 6238)"; color: Theme.text-secondary; font-size: 11px; font-weight: 600; }
-        Text { text: "Secreto Base32"; color: Theme.text-muted; font-size: 10px; }
+        Text { text: "Secreto Base32 / otpauth://"; color: Theme.text-muted; font-size: 10px; }
     }
 
     HorizontalLayout {
@@ -44,6 +50,42 @@ export component TotpField inherits VerticalLayout {
                         text <=> root.totp-emisor;
                         color: Theme.text-primary; font-size: 12px;
                         vertical-alignment: center; single-line: true;
+                    }
+                }
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 4px;
+            for d in [6, 8]: TouchArea {
+                width: 34px; height: 36px;
+                clicked => { root.totp-digitos = d; }
+                Rectangle {
+                    background: root.totp-digitos == d ? Theme.accent-primary.transparentize(84%) : Theme.background;
+                    border-width: 1px;
+                    border-color: root.totp-digitos == d ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+                    Text {
+                        text: "\{d}d";
+                        color: root.totp-digitos == d ? Theme.accent-primary : Theme.text-secondary;
+                        font-size: 11px; font-weight: 600;
+                        horizontal-alignment: center; vertical-alignment: center;
+                    }
+                }
+            }
+            for p in [30, 60]: TouchArea {
+                width: 36px; height: 36px;
+                clicked => { root.totp-periodo = p; }
+                Rectangle {
+                    background: root.totp-periodo == p ? Theme.accent-primary.transparentize(84%) : Theme.background;
+                    border-width: 1px;
+                    border-color: root.totp-periodo == p ? Theme.accent-primary : Theme.border;
+                    border-radius: Theme.radius-sm;
+                    Text {
+                        text: "\{p}s";
+                        color: root.totp-periodo == p ? Theme.accent-primary : Theme.text-secondary;
+                        font-size: 11px; font-weight: 600;
+                        horizontal-alignment: center; vertical-alignment: center;
                     }
                 }
             }
