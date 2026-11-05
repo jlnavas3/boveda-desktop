@@ -6,7 +6,7 @@
 [![Security Standard](https://img.shields.io/badge/Crypto-Argon2id%20%7C%20AES--256--GCM%20%7C%20ChaCha20--Poly1305-red.svg)]()
 [![Tests](https://img.shields.io/badge/Tests-146%20Passed-brightgreen.svg)]()
 
-Este documento detalla la arquitectura técnica, el diseño criptográfico, los protocolos de sincronización descentralizada y las directivas de implementación de **Bóveda Local Desktop**, garantizando su completa interoperabilidad y simetría con la plataforma móvil **Bóveda Local Android**.
+Este documento detalla la arquitectura técnica, el diseño criptográfico, los protocolos de sincronización descentralizada y las directivas de implementación de **Bóveda Local Desktop**, garantizando su completa interoperabilidad y simetría con la plataforma móvil [**Bóveda Local Android**](https://github.com/jlnavas3/boveda) (`com.jlnavas3.bovedalocal`).
 
 ---
 
@@ -275,6 +275,8 @@ sequenceDiagram
 ---
 
 ## 8. Matriz de Simetría e Interoperabilidad (Rust vs Android)
+
+La siguiente tabla resume la correlación exacta entre los módulos de **Bóveda Local Desktop** y la aplicación hermana [**Bóveda Local Android**](https://github.com/jlnavas3/boveda) (`com.jlnavas3.bovedalocal`):
 
 | Componente Arquitectónico | Bóveda Local Desktop (Rust) | Bóveda Local Android (Kotlin) |
 | :--- | :--- | :--- |

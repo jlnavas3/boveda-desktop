@@ -6,11 +6,12 @@
 [![Security](https://img.shields.io/badge/Security-Zero--Knowledge%20%7C%20Zero--Network-blueviolet.svg)]()
 [![Tests](https://img.shields.io/badge/Tests-146%2F146%20Passing-brightgreen.svg?logo=rust)]()
 [![Clippy](https://img.shields.io/badge/Clippy-0%20Warnings-success.svg?logo=rust)]()
+[![Android Companion](https://img.shields.io/badge/Companion%20App-Android-3DDC84.svg?logo=android&logoColor=white)](https://github.com/jlnavas3/boveda)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 **Bóveda Local Desktop** es el cliente de escritorio oficial y soberano (Linux y Windows) para la gestión ultra-segura de credenciales, autenticación de dos factores (**TOTP RFC 6238**), llaves de acceso (**Passkeys / WebAuthn FIDO2**), identidades, notas seguras y sincronización descentralizada entre pares (**P2P**).
 
-Diseñado desde sus cimientos en **Rust** bajo la regla estricta de **Micro-Diseño desacoplado** (1 archivo = 1 responsabilidad pura, cero efectos secundarios), opera con paridad binaria y criptográfica total con la aplicación móvil **Bóveda Local Android** (`com.jlnavas3.bovedalocal`).
+Diseñado desde sus cimientos en **Rust** bajo la regla estricta de **Micro-Diseño desacoplado** (1 archivo = 1 responsabilidad pura, cero efectos secundarios), opera con paridad binaria y criptográfica total con la aplicación móvil [**Bóveda Local Android**](https://github.com/jlnavas3/boveda) (`com.jlnavas3.bovedalocal`).
 
 ---
 
@@ -192,13 +193,17 @@ target/release/boveda-gui
 
 ---
 
-## 🤝 Interoperabilidad con Bóveda Local Android
+## 📱 Ecosistema y Aplicación Móvil Hermana
 
-Bóveda Local Desktop está diseñado para coexistir en perfecta sincronía con **Bóveda Local Android**:
-* Mismo formato canónico de almacenamiento cifrado `.bvda` (versión 1).
-* Mismo vector de oro para el handshake X25519 y derivación HKDF-SHA256.
-* Idéntico cálculo de huellas visuales deterministas (`XX:XX:XX:XX:XX:XX`).
-* Misma estructura JSON de serialización para todas las categorías de entradas y submodelos.
+Bóveda Local Desktop está diseñado para coexistir e interoperar en perfecta sincronía con la aplicación móvil oficial para Android:
+
+👉 **Repositorio Android**: [**github.com/jlnavas3/boveda**](https://github.com/jlnavas3/boveda) (`com.jlnavas3.bovedalocal`)
+
+* **Paridad Binaria `.bvda`**: Mismo formato canónico de almacenamiento cifrado (versión 1) intercambiable por archivo o cable.
+* **Vector de Oro Criptográfico**: Mismo handshake asimétrico X25519 (RFC 7748) y derivación HKDF-SHA256 (RFC 5869).
+* **Huellas Visuales Deterministas**: Mismo algoritmo de verificación SHA-256 (`XX:XX:XX:XX:XX:XX`) para cotejo visual seguro en ambas pantallas.
+* **Modelos Compartidos**: Misma estructura JSON de serialización para inicios de sesión, passkeys WebAuthn, tarjetas, identidades, cuentas bancarias, notas, TOTP y adjuntos.
+* **Doble Canal de Sincronización**: Compatible bit a bit tanto por red local Wi-Fi / Hotspot (`bvda-sync://`) como por transporte óptico Airgap (`bvda-opt://`).
 
 ---
 
